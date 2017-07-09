@@ -1,2 +1,8 @@
 .idea/
 cmake-build-debug/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+curlplus.cbp
+curlplus

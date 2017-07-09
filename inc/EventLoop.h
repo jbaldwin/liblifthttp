@@ -19,7 +19,7 @@ public:
     auto GetUVTimeoutTimer() -> uv_timer_t*;
     auto GetCurlMultiHandle() -> CURLM*;
 
-    auto OnUvTimeout(uv_timer_t* handle, int status);
+    auto OnUvTimeout(uv_timer_t* handle, int status) -> void;
     auto CurlPerform(
         uv_poll_t* req,
         int status,

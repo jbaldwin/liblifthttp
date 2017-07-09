@@ -1,12 +1,16 @@
 #include "EventLoop.h"
 
+#include <functional>
+
 class CurlContext
 {
 public:
     CurlContext(
+        EventLoop& event_loop,
         uv_loop_t* uv_loop,
         curl_socket_t sock_fd
     ) :
+        m_event_loop(event_loop),
         m_sock_fd(sock_fd)
     {
         uv_poll_init_socket(uv_loop, &m_poll_handle, m_sock_fd);
@@ -26,6 +30,11 @@ public:
         uv_close((uv_handle_t*)&m_poll_handle, CurlContext::on_close);
     }
 
+    auto GetEventLoop() -> EventLoop&
+    {
+        return m_event_loop;
+    }
+
     auto GetPollHandle() -> uv_poll_t*
     {
         return &m_poll_handle;
@@ -36,6 +45,7 @@ public:
     }
 
 private:
+    EventLoop& m_event_loop;
     uv_poll_t m_poll_handle;
     curl_socket_t m_sock_fd;
 
@@ -69,6 +79,7 @@ EventLoop::EventLoop() :
     m_cmh(curl_multi_init())
 {
     uv_timer_init(m_loop, &m_timeout_timer);
+    m_timeout_timer.data = this;
 
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETFUNCTION, curl_handle_socket);
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA, this);
@@ -102,7 +113,7 @@ auto EventLoop::GetCurlMultiHandle() -> CURLM* {
 auto EventLoop::OnUvTimeout(
     uv_timer_t* /*handle*/,
     int /*status*/
-) {
+) -> void {
     int running_handles;
     curl_multi_socket_action(m_cmh, CURL_SOCKET_TIMEOUT, 0, &running_handles);
     checkMultiInfo();
@@ -162,6 +173,15 @@ auto EventLoop::CurlPerform(
     checkMultiInfo();
 }
 
+static auto on_uv_timeout_callback(
+    uv_timer_t* handle,
+    int status
+)
+{
+    EventLoop* event_loop = static_cast<EventLoop*>(handle->data);
+    event_loop->OnUvTimeout(handle, status);
+}
+
 static auto curl_start_timeout(
     CURLM* /*cmh*/,
     long timeout_ms,
@@ -174,12 +194,23 @@ static auto curl_start_timeout(
     {
         timeout_ms = 1;
     }
+
     uv_timer_start(
         event_loop->GetUVTimeoutTimer(),
-        event_loop->OnUvTimeout,
+        on_uv_timeout_callback,
         static_cast<uint64_t>(timeout_ms),
         0
     );
+}
+
+static auto on_uv_curl_perform_callback(
+    uv_poll_t* req,
+    int status,
+    int events
+) -> void
+{
+    CurlContext* curl_context = static_cast<CurlContext*>(req->data);
+    curl_context->GetEventLoop().CurlPerform(req, status, events);
 }
 
 static auto curl_handle_socket(
@@ -203,7 +234,7 @@ static auto curl_handle_socket(
         else
         {
             // new request
-            curl_context = new CurlContext(event_loop->GetUVLoop(), socket);
+            curl_context = new CurlContext(*event_loop, event_loop->GetUVLoop(), socket);
             curl_multi_assign(event_loop->GetCurlMultiHandle(), socket, static_cast<void*>(curl_context));
         }
     }
@@ -211,10 +242,10 @@ static auto curl_handle_socket(
     switch(action)
     {
         case CURL_POLL_IN:
-            uv_poll_start(curl_context->GetPollHandle(), UV_READABLE, event_loop->CurlPerform);
+            uv_poll_start(curl_context->GetPollHandle(), UV_READABLE, on_uv_curl_perform_callback);
             break;
         case CURL_POLL_OUT:
-            uv_poll_start(curl_context->GetPollHandle(), UV_WRITABLE, event_loop->CurlPerform);
+            uv_poll_start(curl_context->GetPollHandle(), UV_WRITABLE, on_uv_curl_perform_callback);
             break;
         case CURL_POLL_REMOVE:
             if(socketp != nullptr)

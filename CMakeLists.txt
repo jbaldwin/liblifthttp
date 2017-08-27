@@ -5,7 +5,9 @@ set(CMAKE_CXX_FLAGS "-std=c++14")
 include_directories(inc)
 
 set(SOURCE_FILES
+    inc/AsyncRequest.h src/AsyncRequest.cpp
     inc/EventLoop.h src/EventLoop.cpp
+    inc/Request.h src/Request.cpp
     src/main.cpp
 )
 

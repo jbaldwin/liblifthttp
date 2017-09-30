@@ -9,11 +9,11 @@
 class Driver : public IRequestCallbacks
 {
 public:
-    uint64_t m_completed = 2;
+    uint64_t m_completed = 3;
 
-    auto OnHostLookupFailure(std::unique_ptr<AsyncRequest> request) -> void override
+    auto OnConnectTimeout(std::unique_ptr<AsyncRequest> request) -> void override
     {
-        std::cout << "HOST LOOKUP FAILURE " << request->GetUrl() << std::endl;
+        std::cout << "CONNECT TIMEOUT" << request->GetUrl() << std::endl;
         m_completed--;
     }
 
@@ -28,10 +28,16 @@ public:
     {
         std::cout << request->GetUrl() << " timedout..." << std::endl;
         m_completed--;
-    };
+    }
+
+    auto OnError(std::unique_ptr<AsyncRequest> request) -> void override
+    {
+        std::cout << request->GetUrl() << " ERROR!..." << std::endl;
+        m_completed--;
+    }
 };
 
-auto run_driver(EventLoop& event_loop) -> void
+static auto run_driver(EventLoop& event_loop) -> void
 {
     std::cout << "run_driver start" << std::endl;
 
@@ -42,6 +48,9 @@ auto run_driver(EventLoop& event_loop) -> void
 
 int main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
+
     curl_global_init(CURL_GLOBAL_ALL);
 
 //    Request request("http://www.example.com");
@@ -58,12 +67,16 @@ int main(int argc, char* argv[])
     std::this_thread::sleep_for(1s);
 
     auto async_request_ptr1 = std::make_unique<AsyncRequest>("http://www.cnn.com");
-    async_request_ptr1->SetTimeoutMilliseconds(50);
+    async_request_ptr1->SetTimeoutMilliseconds(250);
     event_loop.AddRequest(std::move(async_request_ptr1));
 
     auto async_request_ptr2 = std::make_unique<AsyncRequest>("http://www.example.com");
-    async_request_ptr2->SetTimeoutMilliseconds(50);
+    async_request_ptr2->SetTimeoutMilliseconds(1000);
     event_loop.AddRequest(std::move(async_request_ptr2));
+
+    auto async_request_ptr3 = std::make_unique<AsyncRequest>("http://www.google.com");
+    async_request_ptr3->SetTimeoutMilliseconds(1000);
+    event_loop.AddRequest(std::move(async_request_ptr3));
 
     while(true)
     {
@@ -76,12 +89,8 @@ int main(int argc, char* argv[])
         std::this_thread::sleep_for(1s);
     }
 
-    std::cout << "Stopping event loop " << std::endl;
     event_loop.Stop();
-    std::cout << "Joining driver threads " << std::endl;
     driver_thread.join();
-
-    std::cout << "Cleaning up curl " << std::endl;
 
     curl_global_cleanup();
 

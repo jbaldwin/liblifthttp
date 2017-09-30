@@ -20,10 +20,13 @@ Request::Request(const std::string& url)
     m_curl_handle = curl_easy_init();
     SetUrl(url);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL, 1l);
+#pragma clang diagnostic pop
 }
 
 Request::~Request()
@@ -43,7 +46,10 @@ auto Request::SetUrl(const std::string& url) -> bool {
     }
 
     m_url = url;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_URL, url.c_str());
+#pragma clang diagnostic pop
     return (error_code == CURLE_OK);
 }
 
@@ -53,7 +59,10 @@ auto Request::GetUrl() const -> const std::string& {
 
 auto Request::SetTimeoutMilliseconds(uint64_t timeout_ms) -> bool
 {
-    auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, &timeout_ms);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+    auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout_ms));
+#pragma clang diagnostic pop
     return (error_code == CURLE_OK);
 }
 
@@ -71,7 +80,10 @@ auto Request::GetDownloadData() const -> std::string {
 auto Request::GetTotalTimeMilliseconds() const -> uint64_t
 {
     double total_time = 0;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
+#pragma clang diagnostic pop
     return static_cast<uint64_t>(total_time * 1000);
 }
 

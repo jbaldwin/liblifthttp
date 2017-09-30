@@ -31,17 +31,21 @@ https://github.com/jbaldwin/liblifthttp
         cmake -DCMAKE_BUILD_TYPE=Release ..
         cmake --build . -- -j4
 
-## Example Synchronous
-        // A simple synchronous request
+## Examples
+
+See all of the examples under the examples/ directory.
+
+### Simple Synchronous
+
         lift::initialize();
         
         lift::Request request("http://www.example.com");
         request.Perform();
-        std::cout << request.GetDownloadData() << std::endl;
+        std::cout << request.GetResponseData() << std::endl;
         
         lift::cleanup();
 
-## Example Asynchronous
+### Simple Asynchronous
 
 See [Async Simple](https://github.com/jbaldwin/liblifthttp/blob/master/examples/async_simple.cpp)
 

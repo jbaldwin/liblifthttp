@@ -1,4 +1,4 @@
-#include "Lift.h"
+#include "lift/Lift.h"
 
 #include <iostream>
 #include <string>
@@ -68,11 +68,11 @@ int main(int argc, char* argv[])
     }
 
     auto urls = std::vector<std::string>
-        {
-            "http://www.example.com",
-            "http://www.google.com",
-            "http://www.reddit.com"
-        };
+    {
+        "http://www.example.com",
+        "http://www.google.com",
+        "http://www.reddit.com"
+    };
 
     /**
      * Create asynchronous requests for each url and inject them into

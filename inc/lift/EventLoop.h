@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AsyncRequest.h"
-#include "IRequestCb.h"
+#include "lift/AsyncRequest.h"
+#include "lift/IRequestCb.h"
 
 #include <curl/curl.h>
 #include <uv.h>

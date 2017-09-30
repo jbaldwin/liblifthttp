@@ -1,15 +1,14 @@
 #pragma once
 
+#include "lift/Types.h"
 #include "lift/RequestStatus.h"
+#include "lift/Header.h"
 
 #include <curl/curl.h>
 #include <uv.h>
 
 #include <string>
-#include <sstream>
-#include <experimental/string_view>
-
-using std::experimental::string_view;
+#include <vector>
 
 namespace lift
 {
@@ -66,7 +65,7 @@ public:
     /**
      * @return The currently set URL for this HTTP request.
      */
-    auto GetUrl() const -> string_view;
+    auto GetUrl() const -> StringView;
 
     /**
      * Sets the timeout for this HTTP request.  This should be set before Perform() is called
@@ -95,9 +94,14 @@ public:
     auto Perform() -> bool;
 
     /**
+     * @return The HTTP response headers.
+     */
+    auto GetResponseHeaders() const -> const std::vector<Header>&;
+
+    /**
      * @return The HTTP download payload.
      */
-    auto GetDownloadData() const -> const std::string&;
+    auto GetResponseData() const -> const std::string&;
 
     /**
      * @return The total HTTP request time in milliseconds.
@@ -120,10 +124,12 @@ public:
     auto Reset() -> void;
 
 protected:
-    string_view m_url;           ///< A view into the curl url.
-    CURL* m_curl_handle;         ///< The curl easy handle for this request.
-    RequestStatus m_status_code; ///< The status of this HTTP request.
-    std::string m_response_data; ///< The response data if any.
+    StringView m_url;              ///< A view into the curl url.
+    CURL* m_curl_handle;            ///< The curl easy handle for this request.
+    RequestStatus m_status_code;    ///< The status of this HTTP request.
+    std::string m_response_headers; ///< The response headers.
+    std::vector<Header> m_response_headers_idx; ///< Views into each header.
+    std::string m_response_data;    ///< The response data if any.
 
     /**
      * Converts a CURLcode into a RequestStatus.
@@ -134,20 +140,19 @@ protected:
         CURLcode curl_code
     ) -> RequestStatus;
 
-    /**
-     * libcurl will call this function when data is received from for HTTP request.
-     * @param ptr A raw pointer to the received data.
-     * @param size The size of the data.
-     * @param nmemb The number of items in the data.
-     * @param user_ptr This pointer is 'this' Request object.
-     * @return The size in bytes consumed by the callback (always size * nmemb).
-     */
-    friend auto curl_write_data(
-        void* ptr,
+    friend auto curl_write_header(
+        char* buffer,
         size_t size,
-        size_t nmemb,
+        size_t nitems,
         void* user_ptr
-    ) -> size_t;
+    ) -> size_t; ///< libcurl will call this function when a header is received for the HTTP request.
+
+    friend auto curl_write_data(
+        void* buffer,
+        size_t size,
+        size_t nitems,
+        void* user_ptr
+    ) -> size_t; ///< libcurl will call this function when data is received for the HTTP request.
 };
 
 } // lift

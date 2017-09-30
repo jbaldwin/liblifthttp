@@ -11,9 +11,11 @@ set(SOURCE_FILES
     inc/lift/AsyncRequest.h src/AsyncRequest.cpp
     inc/lift/Lift.h src/Lift.cpp
     inc/lift/EventLoop.h src/EventLoop.cpp
+    inc/lift/Header.h src/Header.cpp
     inc/lift/IRequestCb.h
     inc/lift/Request.h src/Request.cpp
     inc/lift/RequestStatus.h
+    inc/lift/Types.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})

@@ -3,10 +3,17 @@
 namespace lift
 {
 
-auto curl_write_data(
-    void* ptr,
+auto curl_write_header(
+    char* buffer,
     size_t size,
-    size_t nmemb,
+    size_t nitems,
+    void* user_ptr
+) -> size_t;
+
+auto curl_write_data(
+    void* buffer,
+    size_t size,
+    size_t nitems,
     void* user_ptr
 ) -> size_t;
 
@@ -30,6 +37,8 @@ Request::Request(
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE,        this);
+    curl_easy_setopt(m_curl_handle, CURLOPT_HEADERFUNCTION, curl_write_header);
+    curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA,     this);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION,  curl_write_data);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA,      this);
     curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL,       1l);
@@ -38,7 +47,9 @@ Request::Request(
 
     SetTimeoutMilliseconds(timeout_ms);
 
-    // TODO make the reservation configurable.
+    // TODO make the buffer reservations configurable.
+    m_response_headers.reserve(4096);
+    m_response_headers_idx.reserve(16);
     m_response_data.reserve(16'384);
 }
 
@@ -68,7 +79,7 @@ auto Request::SetUrl(const std::string& url) -> bool {
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
         if(curl_url)
         {
-            m_url = string_view(curl_url, std::strlen(curl_url));
+            m_url = StringView(curl_url, std::strlen(curl_url));
             return true;
         }
     }
@@ -76,7 +87,7 @@ auto Request::SetUrl(const std::string& url) -> bool {
     return false;
 }
 
-auto Request::GetUrl() const -> string_view {
+auto Request::GetUrl() const -> StringView {
     return m_url;
 }
 
@@ -107,13 +118,20 @@ auto Request::SetFollowRedirects(
 
 auto Request::Reset() -> void
 {
-    m_url = string_view();
-    curl_easy_reset(m_curl_handle);
+    // Intentionally do not call curl_easy_reset() as it wipes the curl_easy_setopt() settings.
+
+    m_url = StringView();
     m_status_code = RequestStatus::SUCCESS;
+    m_response_headers.clear();
     m_response_data.clear();
 }
 
-auto Request::GetDownloadData() const -> const std::string&
+auto Request::GetResponseHeaders() const -> const std::vector<Header>&
+{
+    return m_response_headers_idx;
+}
+
+auto Request::GetResponseData() const -> const std::string&
 {
     return m_response_data;
 }
@@ -164,16 +182,71 @@ auto Request::curl_code2request_status(
 #pragma clang diagnostic pop
 }
 
-auto curl_write_data(
-    void* ptr,
+auto curl_write_header(
+    char* buffer,
     size_t size,
-    size_t nmemb,
+    size_t nitems,
     void* user_ptr
 ) -> size_t
 {
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
-    size_t data_length = size * nmemb;
-    raw_request_ptr->m_response_data.append(static_cast<const char*>(ptr), data_length);
+    size_t data_length = size * nitems;
+
+    StringView data_view(buffer, data_length);
+
+    if(data_view.empty())
+    {
+        return data_length;
+    }
+
+    // Ignore empty header lines from curl.
+    if(data_view.length() == 2 && data_view == "\r\n")
+    {
+        return data_length;
+    }
+    // Ignore the HTTP/ 'header' line from curl.
+    if(data_view.length() >= 4 && data_view.substr(0, 5) == "HTTP/")
+    {
+        return data_length;
+    }
+
+    // Drop the trailing \r\n from the header.
+    if(data_view.length() >= 2)
+    {
+        size_t rm_size = 0;
+        if(data_view[data_view.length() - 1] == '\n')
+        {
+            ++rm_size;
+        }
+        if(data_view[data_view.length() - 2] == '\r')
+        {
+            ++rm_size;
+        }
+        data_view.remove_suffix(rm_size);
+    }
+
+    // Append the entire header into the full header buffer.
+    raw_request_ptr->m_response_headers.append(data_view.data(), data_view.length());
+
+    // Calculate and append the Header view object.
+    const char* start = raw_request_ptr->m_response_headers.c_str();
+    auto total_length = raw_request_ptr->m_response_headers.length();
+    StringView request_data_view((start + total_length) - data_view.length(), data_view.length());
+    raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
+
+    return data_length;
+}
+
+auto curl_write_data(
+    void* buffer,
+    size_t size,
+    size_t nitems,
+    void* user_ptr
+) -> size_t
+{
+    auto* raw_request_ptr = static_cast<Request*>(user_ptr);
+    size_t data_length = size * nitems;
+    raw_request_ptr->m_response_data.append(static_cast<const char*>(buffer), data_length);
     return data_length;
 }
 

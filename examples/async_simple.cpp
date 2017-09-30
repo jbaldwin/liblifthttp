@@ -9,8 +9,13 @@
 class CompletedCtx : public lift::IRequestCb
 {
 public:
+    CompletedCtx(size_t total_requests) : m_completed(total_requests)
+    {
+
+    }
+
     // This variable is used across the Completed context and main threads.
-    std::atomic<uint64_t> m_completed{3};
+    std::atomic<size_t> m_completed;
 
     auto OnComplete(std::unique_ptr<lift::AsyncRequest> request) -> void override
     {
@@ -19,9 +24,19 @@ public:
         {
             case lift::RequestStatus::SUCCESS:
                 std::cout
-                    << "COMPLETED " << request->GetUrl()
-                    << " ms:" << request->GetTotalTimeMilliseconds() << std::endl
-                    << request->GetDownloadData() << std::endl << std::endl;
+                    << "Completed " << request->GetUrl()
+                    << " ms:" << request->GetTotalTimeMilliseconds() << std::endl << std::endl;
+
+                for(auto& header : request->GetResponseHeaders())
+                {
+                    std::cout << header.GetName();
+                    if(header.HasValue())
+                    {
+                        std::cout << ": " << header.GetValue();
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << request->GetResponseData() << std::endl << std::endl;
                 break;
             case lift::RequestStatus::CONNECT_ERROR:
                 std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
@@ -51,10 +66,17 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
+    auto urls = std::vector<std::string>
+    {
+        "http://www.example.com",
+        "http://www.google.com",
+        "http://www.reddit.com"
+    };
+
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
     // Create the EventLoop with a Request callback 'Completed'.
-    lift::EventLoop event_loop(std::make_unique<CompletedCtx>());
+    lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size()));
 
     // Spin-up a separate thread to run the asynchronous requests and drive the event loop.
     std::thread driver_thread(
@@ -66,13 +88,6 @@ int main(int argc, char* argv[])
     {
         std::this_thread::sleep_for(100ms);
     }
-
-    auto urls = std::vector<std::string>
-    {
-        "http://www.example.com",
-        "http://www.google.com",
-        "http://www.reddit.com"
-    };
 
     /**
      * Create asynchronous requests for each url and inject them into

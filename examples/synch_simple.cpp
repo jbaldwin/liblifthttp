@@ -13,12 +13,12 @@ int main(int argc, char* argv[])
 
     lift::Request request("http://www.example.com");
     request.Perform();
-    std::cout << request.GetDownloadData() << std::endl;
+    std::cout << request.GetResponseData() << std::endl;
 
     request.Reset();
     request.SetUrl("http://www.google.com");
     request.Perform();
-    std::cout << request.GetDownloadData() << std::endl;
+    std::cout << request.GetResponseData() << std::endl;
 
     lift::cleanup();
 

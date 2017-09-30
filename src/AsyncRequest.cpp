@@ -1,6 +1,7 @@
 #include "AsyncRequest.h"
 
-#include <iostream>
+namespace lift
+{
 
 AsyncRequest::AsyncRequest()
     :
@@ -9,14 +10,21 @@ AsyncRequest::AsyncRequest()
 
 }
 
-AsyncRequest::AsyncRequest(const std::string& url)
+AsyncRequest::AsyncRequest(
+    const std::string& url,
+    uint64_t timeout_ms
+)
     :
-        Request(url)
+        Request(url, timeout_ms)
 {
 
 }
 
-AsyncRequest::~AsyncRequest()
+auto AsyncRequest::setRequestStatus(
+    CURLcode curl_request_code
+) -> void
 {
-
+    m_status_code = Request::curl_code2request_status(curl_request_code);
 }
+
+} // lift

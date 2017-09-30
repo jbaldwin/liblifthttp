@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(curlplus)
+project(liblifthttp)
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -9,9 +9,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
 
 set(SOURCE_FILES
     inc/AsyncRequest.h src/AsyncRequest.cpp
+    inc/Lift.h src/Lift.cpp
     inc/EventLoop.h src/EventLoop.cpp
-    inc/IRequestCallbacks.h
+    inc/IRequestCb.h
     inc/Request.h src/Request.cpp
+    inc/RequestStatus.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})

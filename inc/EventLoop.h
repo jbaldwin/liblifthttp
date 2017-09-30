@@ -1,51 +1,60 @@
 #pragma once
 
 #include "AsyncRequest.h"
-#include "IRequestCallbacks.h"
+#include "IRequestCb.h"
 
 #include <curl/curl.h>
 #include <uv.h>
 
+#include <atomic>
 #include <vector>
 #include <mutex>
 #include <memory>
 #include <list>
+
+namespace lift
+{
 
 class EventLoop
 {
 public:
     /**
      * Creates a new evenloop with the given request callbacks.
-     * @param request_callbacks Callbacks used for when requests
-     *                          complete/error/timeout.  The EventLoop
-     *                          owns the lifetime of this callback object
-     *                          and will release it upon destruction.
+     * @param request_callback Callback used for when requests
+     *                         complete/error/timeout.  The EventLoop
+     *                         owns the lifetime of this callback object
+     *                         and will release it upon destruction.
      */
     explicit EventLoop(
-        std::unique_ptr<IRequestCallbacks> request_callbacks
+        std::unique_ptr<IRequestCb> request_callback
     );
 
     ~EventLoop();
 
     /**
-     * No copying allowed.
+     * @param copy No copying allowed.
      */
     EventLoop(const EventLoop& copy) = delete;
 
     /**
-     * Moving is allowed.
+     * @param move Moving is allowed
      */
     EventLoop(EventLoop&& move) = default;
 
     /**
-     * No copy assignment allowed.
+     * @param copy_assign No copy assignment allowed.
      */
-    auto operator=(const EventLoop& assign) = delete;
+    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;
 
     /**
-     * Move assign allowed.
+     * @param move_assign Copy assignment allowed.
      */
-    auto operator=(EventLoop&& assign) -> EventLoop& = default;
+    auto operator = (EventLoop&& move_assign) -> EventLoop& = default;
+
+    /**
+     * @return True if the event loop is currently running.
+     */
+    auto IsRunning() -> bool;
 
     /**
      * Runs the event loop until EventLoop::Stop() is called.
@@ -78,17 +87,19 @@ public:
      * @return Gets a borrowed reference to the callback functions.
      * @{
      */
-    auto GetRequestCallbacks() -> IRequestCallbacks&;
-    auto GetRequestCallbacks() const -> const IRequestCallbacks&;
+    auto GetRequestCallback() -> IRequestCb&;
+    auto GetRequestCallback() const -> const IRequestCb&;
     /** @} */
 
 private:
-    std::unique_ptr<IRequestCallbacks> m_request_callbacks; ///< Callback functions
+    std::atomic<bool> m_is_running; ///< Set to true if the EventLoop is currently running.
 
-    uv_loop_t* m_loop; ///< The UV event loop to drive libcurl.
-    uv_async_t m_async; ///< An async trigger for injecting new requests into the event loop.
+    std::unique_ptr<IRequestCb> m_request_callback; ///< Callback function for on completion.
+
+    uv_loop_t* m_loop;          ///< The UV event loop to drive libcurl.
+    uv_async_t m_async;         ///< The async trigger for injecting new requests into the event loop.
     uv_timer_t m_timeout_timer; ///< libcurl requires a single timer to drive timeouts/wake-ups.
-    CURLM* m_cmh; ///< The libcurl multi handle for driving multiple easy handles at once.
+    CURLM* m_cmh;               ///< The libcurl multi handle for driving multiple easy handles at once.
 
     std::mutex m_pending_requests_lock; ///< Pending requests are safely queued via this lock.
     /**
@@ -101,10 +112,13 @@ private:
     /**
      * Active requests that are being processed.  The data structure used is a list for quick
      * addition of new requests and also quick removal of requests that finish asynchronously.
+     *
+     * This data structure maintains ownership over the asynchronous requests until they are completed.
+     * Upon completion their ownership is moved back into the client via the IRequestCb::OnComplete().
      */
     std::list<std::unique_ptr<AsyncRequest>> m_active_requests;
 
-    bool m_async_closed; ///< Flag to denote that the m_async handle has been closed on shutdown.
+    bool m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
     bool m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.
 
     /**
@@ -218,3 +232,5 @@ private:
         int status
     ) -> void;
 };
+
+} // lift

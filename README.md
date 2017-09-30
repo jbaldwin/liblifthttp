@@ -1,18 +1,19 @@
-libcfh - The asynchronous fast C++14 HTTP client library
-========================================================
+liblifthttp - The fast asynchronous C++14 HTTP client library
+=============================================================
+
+You're using curl? Do you even lift?
 
 Copyright (c) 2017, Josh Baldwin
 
-https://github.com/jbaldwin/libcfh
+https://github.com/jbaldwin/liblifthttp
 
-**libcfh** is a C++14 client library that provides an easy to use high throughput asynchronous HTTP request client library.  This library was designed with an easy to use client API and maximum performance for thousands of asynchronous HTTP requests  on a single (or multiple) worker threads.  Additional HTTP requests can be injected into one of the worker threads with different timeouts at any point in time safely.  **TODO performance overview**
+**liblifthttp** is a C++14 client library that provides an easy to use high throughput asynchronous HTTP request client library.  This library was designed with an easy to use client API and maximum performance for thousands of asynchronous HTTP requests on a single (or multiple) worker threads.  Additional HTTP requests can be injected into one of the worker threads with different timeouts at any point in time safely.  **TODO performance overview**
 
-**libcfh** is licensed under the Apache 2.0 license.
+**liblifthttp** is licensed under the Apache 2.0 license.
 
 # Overview #
-* Synchronous HTTP Request support.
-* Asynchronous HTTP Request support.
-* C++14 Client library API.
+* Synchronous and Asynchronous HTTP Request support.
+* Easy and safe to use C++14 Client library API.
 
 # Usage #
 
@@ -25,24 +26,24 @@ https://github.com/jbaldwin/libcfh
 ## Instructions
 
 ### Building
-        # This will produce lib/libcfh.a and bin/libcfh_test
+        # This will produce lib/liblifthttp.a and bin/liblifthttp_test
         mkdir Release && cd Release;
         cmake -DCMAKE_BUILD_TYPE=Release ..
         cmake --build . -- -j4
 
 ## Example Synchronous
         // A simple synchronous request
-        curl_global_init(CURL_GLOBAL_ALL);
+        lift::initialize();
         
-        Request request("http://www.example.com");
+        lift::Request request("http://www.example.com");
         request.Perform();
         std::cout << request.GetDownloadData() << std::endl;
         
-        curl_global_cleanup();
+        lift::cleanup();
 
 ## Example Asynchronous
 
-See example/async_simple.cpp
+See [Async Simple](https://github.com/jbaldwin/liblifthttp/blob/master/example/async_simple.cpp
 
 ## Performance
 
@@ -50,4 +51,4 @@ TODO
 
 ## Support
 
-File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/libcfh/issues)
+File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)

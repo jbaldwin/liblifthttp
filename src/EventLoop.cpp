@@ -5,6 +5,9 @@
 #include <thread>
 #include <chrono>
 
+namespace lift
+{
+
 class CurlContext
 {
 public:
@@ -99,10 +102,11 @@ auto requests_accept_async(
 ) -> void;
 
 EventLoop::EventLoop(
-    std::unique_ptr<IRequestCallbacks> request_callbacks
+    std::unique_ptr<IRequestCb> request_callback
 )
     :
-        m_request_callbacks(std::move(request_callbacks)),
+        m_is_running(false),
+        m_request_callback(std::move(request_callback)),
         m_loop(uv_default_loop()),
         m_cmh(curl_multi_init()),
         m_async_closed(false),
@@ -129,14 +133,23 @@ EventLoop::~EventLoop()
     curl_multi_cleanup(m_cmh);
 }
 
+auto EventLoop::IsRunning() -> bool
+{
+    return m_is_running;
+}
+
 auto EventLoop::Run() -> void
 {
+    m_is_running = true;
     uv_run(m_loop, UV_RUN_DEFAULT);
+    m_is_running = false;
 }
 
 auto EventLoop::RunOnce() -> void
 {
+    m_is_running = true;
     uv_run(m_loop, UV_RUN_NOWAIT);
+    m_is_running = false;
 }
 
 auto EventLoop::Stop() -> void
@@ -175,14 +188,14 @@ auto EventLoop::AddRequest(
     uv_async_send(&m_async);
 }
 
-auto EventLoop::GetRequestCallbacks() -> IRequestCallbacks&
+auto EventLoop::GetRequestCallback() -> IRequestCb&
 {
-    return *m_request_callbacks;
+    return *m_request_callback;
 }
 
-auto EventLoop::GetRequestCallbacks() const -> const IRequestCallbacks&
+auto EventLoop::GetRequestCallback() const -> const IRequestCb&
 {
-    return *m_request_callbacks;
+    return *m_request_callback;
 }
 
 auto EventLoop::checkActions() -> void
@@ -194,7 +207,8 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
 {
     int running_handles = 0;
     CURLMcode curl_code = CURLM_OK;
-    do {
+    do
+    {
         curl_code = curl_multi_socket_action(m_cmh, socket, event_bitmask, &running_handles);
     } while(curl_code == CURLM_CALL_MULTI_PERFORM);
 
@@ -205,37 +219,24 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
     {
         if(message->msg == CURLMSG_DONE)
         {
-            AsyncRequest* request = nullptr;
+            AsyncRequest* raw_request_ptr = nullptr;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &request);
+            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &raw_request_ptr);
 #pragma clang diagnostic pop
 
-            auto curl_request_ptr = std::move(*request->m_active_requests_position);
-            m_active_requests.erase(request->m_active_requests_position);
+            /**
+             * Remove the completed request from:
+             *    (1) The active requests list.
+             *    (2) The curl multi handle.
+             * Next set the request status.
+             * Finally move ownership of the request to the client through the OnComplete() callback.
+             */
+            auto request_ptr = std::move(*raw_request_ptr->m_active_requests_position);
+            m_active_requests.erase(raw_request_ptr->m_active_requests_position);
             curl_multi_remove_handle(m_cmh, message->easy_handle);
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-enum"
-            switch(message->data.result)
-            {
-                case CURLcode::CURLE_GOT_NOTHING:
-                case CURLcode::CURLE_OPERATION_TIMEDOUT:
-                    m_request_callbacks->OnTimeout(std::move(curl_request_ptr));
-                    break;
-                case CURLcode::CURLE_COULDNT_CONNECT:
-                case CURLcode::CURLE_COULDNT_RESOLVE_HOST:
-                case CURLcode::CURLE_SSL_CONNECT_ERROR:
-                    m_request_callbacks->OnConnectTimeout(std::move(curl_request_ptr));
-                    break;
-                case CURLcode::CURLE_OK:
-                    m_request_callbacks->OnComplete(std::move(curl_request_ptr));
-                    break;
-                default:
-                    m_request_callbacks->OnError(std::move(curl_request_ptr));
-                    break;
-            }
-#pragma clang diagnostic pop
+            request_ptr->setRequestStatus(message->data.result);
+            m_request_callback->OnComplete(std::move(request_ptr));
         }
     }
 }
@@ -386,3 +387,5 @@ auto requests_accept_async(
         event_loop->m_pending_requests.clear();
     }
 }
+
+} // lift

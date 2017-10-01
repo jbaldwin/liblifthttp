@@ -1,4 +1,5 @@
 #include "lift/Request.h"
+#include "CurlPool.h"
 
 namespace lift
 {
@@ -17,21 +18,17 @@ auto curl_write_data(
     void* user_ptr
 ) -> size_t;
 
-Request::Request()
-    :
-        Request("")
-{
-
-}
-
 Request::Request(
     const std::string& url,
-    uint64_t timeout_ms
+    uint64_t timeout_ms,
+    CURL* curl_handle,
+    CurlPool& curl_pool
 )
     :
+        m_curl_handle(curl_handle),
+        m_curl_pool(curl_pool),
         m_status_code(RequestStatus::SUCCESS)
 {
-    m_curl_handle = curl_easy_init(); // TODO create pool for curl handles
     SetUrl(url);
 
 #pragma clang diagnostic push
@@ -55,12 +52,16 @@ Request::Request(
 
 Request::~Request()
 {
-    curl_easy_cleanup(m_curl_handle);
+    if(m_curl_handle)
+    {
+        m_curl_pool.Return(m_curl_handle);
+        m_curl_handle = nullptr;
+    }
 }
 
 auto Request::Perform() -> bool {
     auto curl_error_code = curl_easy_perform(m_curl_handle);
-    m_status_code = curl_code2request_status(curl_error_code);
+    setRequestStatus(curl_error_code);
     return (m_status_code == RequestStatus::SUCCESS);
 }
 
@@ -156,28 +157,35 @@ auto Request::GetStatus() const -> RequestStatus
     return m_status_code;
 }
 
-auto Request::curl_code2request_status(
+auto Request::setRequestStatus(
     CURLcode curl_code
-) -> RequestStatus
+) -> void
 {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wswitch-enum"
     switch(curl_code)
     {
         case CURLcode::CURLE_OK:
-            return RequestStatus::SUCCESS;
+            m_status_code = RequestStatus::SUCCESS;
+            break;
         case CURLcode::CURLE_GOT_NOTHING:
-            return RequestStatus::RESPONSE_EMPTY;
+            m_status_code = RequestStatus::RESPONSE_EMPTY;
+            break;
         case CURLcode::CURLE_OPERATION_TIMEDOUT:
-            return RequestStatus::TIMEOUT;
+            m_status_code = RequestStatus::TIMEOUT;
+            break;
         case CURLcode::CURLE_COULDNT_CONNECT:
-            return RequestStatus::CONNECT_ERROR;
+            m_status_code = RequestStatus::CONNECT_ERROR;
+            break;
         case CURLcode::CURLE_COULDNT_RESOLVE_HOST:
-            return RequestStatus::CONNECT_DNS_ERROR;
+            m_status_code = RequestStatus::CONNECT_DNS_ERROR;
+            break;
         case CURLcode::CURLE_SSL_CONNECT_ERROR:
-            return RequestStatus::CONNECT_SSL_ERROR;
+            m_status_code = RequestStatus::CONNECT_SSL_ERROR;
+            break;
         default:
-            return RequestStatus::ERROR;
+            m_status_code = RequestStatus::ERROR;
+            break;
     }
 #pragma clang diagnostic pop
 }

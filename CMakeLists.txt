@@ -8,18 +8,20 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -g -gdwarf-2 -D_GLIBCXX_DE
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
 
 set(SOURCE_FILES
-    inc/lift/AsyncRequest.h src/AsyncRequest.cpp
+    src/internal/CurlPool.h src/CurlPool.cpp
     inc/lift/Lift.h src/Lift.cpp
     inc/lift/EventLoop.h src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
     inc/lift/IRequestCb.h
     inc/lift/Request.h src/Request.cpp
+    inc/lift/RequestPool.h src/RequestPool.cpp
     inc/lift/RequestStatus.h
     inc/lift/Types.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC inc)
+target_include_directories(${PROJECT_NAME} PRIVATE src/internal)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     uv

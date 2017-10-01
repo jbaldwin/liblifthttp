@@ -9,15 +9,21 @@
 class CompletedCtx : public lift::IRequestCb
 {
 public:
-    CompletedCtx(size_t total_requests) : m_completed(total_requests)
+    CompletedCtx(
+        size_t total_requests,
+        lift::RequestPool& request_pool
+    )
+        :
+            m_completed(total_requests),
+            m_request_pool(request_pool)
     {
 
     }
 
-    // This variable is used across the Completed context and main threads.
-    std::atomic<size_t> m_completed;
+    std::atomic<size_t> m_completed;    ///< This variable signals to the main thread all the requests are completed.
+    lift::RequestPool&  m_request_pool; ///< This reference is used to re-use Request objects.
 
-    auto OnComplete(std::unique_ptr<lift::AsyncRequest> request) -> void override
+    auto OnComplete(std::unique_ptr<lift::Request> request) -> void override
     {
         m_completed--;
         switch(request->GetStatus())
@@ -57,6 +63,12 @@ public:
                 std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
                 break;
         }
+
+        /**
+         * This return crosses thread barriers, but it is safe as the RequestPool
+         * internally is thread safe.
+         */
+        m_request_pool.Return(std::move(request));
     }
 };
 
@@ -66,17 +78,19 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
-    auto urls = std::vector<std::string>
+    // Initialize must be called first before using the LiftHttp library.
+    lift::initialize();
+
+    lift::RequestPool request_pool;
+    std::vector<std::string> urls =
     {
         "http://www.example.com",
         "http://www.google.com",
         "http://www.reddit.com"
     };
 
-    // Initialize must be called first before using the LiftHttp library.
-    lift::initialize();
     // Create the EventLoop with a Request callback 'Completed'.
-    lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size()));
+    lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size(), request_pool));
 
     // Spin-up a separate thread to run the asynchronous requests and drive the event loop.
     std::thread driver_thread(
@@ -97,8 +111,8 @@ int main(int argc, char* argv[])
     uint64_t timeout_ms = 250;
     for(auto& url : urls)
     {
-        auto async_request = std::make_unique<lift::AsyncRequest>(url, timeout_ms);
-        event_loop.AddRequest(std::move(async_request));
+        auto request = request_pool.Produce(url, timeout_ms);
+        event_loop.AddRequest(std::move(request));
         timeout_ms += 250;
         std::this_thread::sleep_for(50ms);
     }

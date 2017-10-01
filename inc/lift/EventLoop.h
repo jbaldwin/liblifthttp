@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/AsyncRequest.h"
+#include "lift/RequestPool.h"
 #include "lift/IRequestCb.h"
 
 #include <curl/curl.h>
@@ -19,7 +19,7 @@ class EventLoop
 {
 public:
     /**
-     * Creates a new evenloop with the given request callbacks.
+     * Creates a new event loop with the given request completion callback.
      * @param request_callback Callback used for when requests
      *                         complete/error/timeout.  The EventLoop
      *                         owns the lifetime of this callback object
@@ -31,25 +31,10 @@ public:
 
     ~EventLoop();
 
-    /**
-     * @param copy No copying allowed.
-     */
-    EventLoop(const EventLoop& copy) = delete;
-
-    /**
-     * @param move Moving is allowed
-     */
-    EventLoop(EventLoop&& move) = default;
-
-    /**
-     * @param copy_assign No copy assignment allowed.
-     */
-    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;
-
-    /**
-     * @param move_assign Copy assignment allowed.
-     */
-    auto operator = (EventLoop&& move_assign) -> EventLoop& = default;
+    EventLoop(const EventLoop& copy) = delete;                              ///< No copying
+    EventLoop(EventLoop&& move) = default;                                  ///< Can move
+    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;  ///< No copy assign
+    auto operator = (EventLoop&& move_assign) -> EventLoop& = default;      ///< Can move assign
 
     /**
      * @return True if the event loop is currently running.
@@ -75,12 +60,12 @@ public:
     /**
      * Adds a request to process.  This function is safe to call from
      * the same or different threads.
-     * @param async_request_ptr The request to process.  This request
-     *                          will have the IRequestCallbacks called
-     *                          when this request completes/timesout/errors.
+     * @param request The request to process.  This request
+     *                will have the IRequestCb called
+     *                when this request completes/timesout/errors.
      */
     auto AddRequest(
-        std::unique_ptr<AsyncRequest> async_request_ptr
+        std::unique_ptr<Request> request
     ) -> void;
 
     /**
@@ -107,7 +92,7 @@ private:
      * uv loop iteration.  Any memory accesses to this object should first acquire the
      * m_pending_requests_lock to guarantee thread safety.
      */
-    std::vector<std::unique_ptr<AsyncRequest>> m_pending_requests;
+    std::vector<std::unique_ptr<Request>> m_pending_requests;
 
     /**
      * Active requests that are being processed.  The data structure used is a list for quick
@@ -116,7 +101,7 @@ private:
      * This data structure maintains ownership over the asynchronous requests until they are completed.
      * Upon completion their ownership is moved back into the client via the IRequestCb::OnComplete().
      */
-    std::list<std::unique_ptr<AsyncRequest>> m_active_requests;
+    std::list<std::unique_ptr<Request>> m_active_requests;
 
     bool m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
     bool m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.

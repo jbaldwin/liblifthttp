@@ -1,9 +1,9 @@
 #pragma once
 
 #include "lift/Request.h"
-#include "lift/AsyncRequest.h"
 #include "lift/IRequestCb.h"
 #include "lift/EventLoop.h"
+#include "lift/RequestPool.h"
 
 namespace lift
 {

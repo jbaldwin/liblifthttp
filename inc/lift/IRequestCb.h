@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lift/RequestPool.h"
+
 namespace lift
 {
 
@@ -18,7 +20,7 @@ public:
      * @param request The request that has completed.
      */
     virtual auto OnComplete(
-        std::unique_ptr<AsyncRequest> request
+        std::unique_ptr<Request> request
     ) -> void = 0;
 };
 

@@ -18,18 +18,18 @@ https://github.com/jbaldwin/liblifthttp
 # Usage #
 
 ## Requirements
-        CMake
-        pthreads
-        libcurl
-        libuv
+    CMake
+    pthreads/std::thread
+    libcurl
+    libuv
 
 ## Instructions
 
 ### Building
-        # This will produce lib/liblifthttp.a and bin/liblifthttp_test
-        mkdir Release && cd Release;
-        cmake -DCMAKE_BUILD_TYPE=Release ..
-        cmake --build . -- -j4
+    # This will produce lib/liblifthttp.a and bin/liblifthttp_test + all the examples
+    mkdir Release && cd Release;
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    cmake --build . -- -j4
 
 ## Examples
 
@@ -37,13 +37,15 @@ See all of the examples under the examples/ directory.
 
 ### Simple Synchronous
 
-        lift::initialize();
-        
-        lift::Request request("http://www.example.com");
-        request.Perform();
-        std::cout << request.GetResponseData() << std::endl;
-        
-        lift::cleanup();
+    lift::initialize();
+
+    lift::RequestPool request_pool;
+    auto request = request_pool.Produce("http://www.example.com");
+    std::cout << "Requesting http://www.example.com" << std::endl;
+    request->Perform();
+    std::cout << request->GetResponseData() << std::endl;
+
+    lift::cleanup();
 
 ### Simple Asynchronous
 

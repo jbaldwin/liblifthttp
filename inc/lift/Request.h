@@ -9,50 +9,25 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 namespace lift
 {
 
+class CurlPool;
+
 class Request
 {
+    friend class EventLoop;
+    friend class RequestPool;
+
 public:
-    /**
-     * Creates an empty request.
-     */
-    Request();
+    ~Request();
 
-    /**
-     * Creates a request with a url and timeout.
-     * @param url The request url.
-     * @param timeout_ms The timeout for this request in milliseconds.  Defaults to 0,
-     *                   where 0 is an infinite timeout.
-     */
-    Request(
-        const std::string& url,
-        uint64_t timeout_ms = 0
-    );
-
-    virtual ~Request();
-
-    /**
-     * @param copy No copying allowed.
-     */
-    Request(const Request& copy) = delete;
-
-    /**
-     * @param move Moving is allowed.
-     */
-    Request(Request&& move) = default;
-
-    /**
-     * @param copy_assign No copy assignment allowed.
-     */
-    auto operator=(const Request& copy_assign) = delete;
-
-    /**
-     * @param move_assign Move assignemnt allowed.
-     */
-    auto operator=(Request&& move_assign) -> Request& = default;
+    Request(const Request&) = delete;                  ///< No copying
+    Request(Request&&) = default;                      ///< Can move
+    auto operator = (const Request&) = delete;         ///< No copy assign
+    auto operator = (Request&&) -> Request& = default; ///< Can move assign
 
     /**
      * @param url The URL of the HTTP request.
@@ -123,22 +98,43 @@ public:
      */
     auto Reset() -> void;
 
-protected:
-    StringView m_url;              ///< A view into the curl url.
-    CURL* m_curl_handle;            ///< The curl easy handle for this request.
-    RequestStatus m_status_code;    ///< The status of this HTTP request.
-    std::string m_response_headers; ///< The response headers.
+private:
+    /**
+     * Private constructor -- only the RequestPool can create new Requests.
+     * @param url         The url for the request.
+     * @param timeout_ms  The timeout for the request in milliseconds.
+     * @param curl_handle The CURL* handle for this Request.
+     * @param curl_pool   The CurlPool to return the CURL* handle when this request destructs.
+     */
+    explicit Request(
+        const std::string& url,
+        uint64_t timeout_ms,
+        CURL* curl_handle,
+        CurlPool& curl_pool
+    );
+
+    StringView m_url;                           ///< A view into the curl url.
+    CURL* m_curl_handle;                        ///< The curl handle for this request.
+    CurlPool& m_curl_pool;                      ///< The curl handle pool.
+    RequestStatus m_status_code;                ///< The status of this HTTP request.
+    // TODO: merge into a single large buffer
+    std::string m_response_headers;             ///< The response headers.
     std::vector<Header> m_response_headers_idx; ///< Views into each header.
-    std::string m_response_data;    ///< The response data if any.
+    std::string m_response_data;                ///< The response data if any.
+
+    /**
+     * If this Request is a part of an asynchronous event loop this is the position
+     * in the event loops internal list.
+     */
+    std::list<std::unique_ptr<Request>>::iterator m_active_requests_position;
 
     /**
      * Converts a CURLcode into a RequestStatus.
      * @param curl_code The CURLcode to convert.
-     * @return RequestStatus
      */
-    static auto curl_code2request_status(
+    auto setRequestStatus(
         CURLcode curl_code
-    ) -> RequestStatus;
+    ) -> void;
 
     friend auto curl_write_header(
         char* buffer,
@@ -153,6 +149,11 @@ protected:
         size_t nitems,
         void* user_ptr
     ) -> size_t; ///< libcurl will call this function when data is received for the HTTP request.
+
+    friend auto requests_accept_async(
+        uv_async_t* async,
+        int status
+    ) -> void; ///< libuv will call this function when the AddRequest() function is called.
 };
 
 } // lift

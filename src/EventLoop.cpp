@@ -178,12 +178,12 @@ auto EventLoop::Stop() -> void
 }
 
 auto EventLoop::AddRequest(
-    std::unique_ptr<AsyncRequest> async_request_ptr
+    std::unique_ptr<Request> request
 ) -> void
 {
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
-        m_pending_requests.emplace_back(std::move(async_request_ptr));
+        m_pending_requests.emplace_back(std::move(request));
     }
     uv_async_send(&m_async);
 }
@@ -219,7 +219,7 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
     {
         if(message->msg == CURLMSG_DONE)
         {
-            AsyncRequest* raw_request_ptr = nullptr;
+            Request* raw_request_ptr = nullptr;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
             curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &raw_request_ptr);

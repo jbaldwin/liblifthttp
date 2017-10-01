@@ -4,21 +4,28 @@
 
 int main(int argc, char* argv[])
 {
-    using namespace std::chrono_literals;
     (void)argc;
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
-    lift::Request request("http://www.example.com");
-    request.Perform();
-    std::cout << request.GetResponseData() << std::endl;
+    lift::RequestPool request_pool;
+    {
+        auto request = request_pool.Produce("http://www.example.com");
+        std::cout << "Requesting http://www.example.com" << std::endl;
+        request->Perform();
+        std::cout << request->GetResponseData() << std::endl;
+        request_pool.Return(std::move(request));
+    }
 
-    request.Reset();
-    request.SetUrl("http://www.google.com");
-    request.Perform();
-    std::cout << request.GetResponseData() << std::endl;
+    {
+        auto request = request_pool.Produce("http://www.google.com");
+        std::cout << "Requesting http://www.google.com" << std::endl;
+        request->Perform();
+        std::cout << request->GetResponseData() << std::endl;
+        request_pool.Return(std::move(request));
+    }
 
     lift::cleanup();
 

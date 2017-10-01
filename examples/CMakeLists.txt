@@ -16,3 +16,10 @@ set(SYNCH_SIMPLE_SOURCE_FILES
 )
 add_executable(synch_simple ${SYNCH_SIMPLE_SOURCE_FILES})
 target_link_libraries(synch_simple PRIVATE lifthttp uv curl)
+
+### query_builder ###
+set(QUERY_BUILDER_SOURCE_FILES
+    examples/query_builder.cpp
+)
+add_executable(query_builder ${QUERY_BUILDER_SOURCE_FILES})
+target_link_libraries(query_builder PRIVATE lifthttp uv curl)

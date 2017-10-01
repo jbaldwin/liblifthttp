@@ -4,6 +4,7 @@
 #include "lift/IRequestCb.h"
 #include "lift/EventLoop.h"
 #include "lift/RequestPool.h"
+#include "lift/QueryBuilder.h"
 
 namespace lift
 {

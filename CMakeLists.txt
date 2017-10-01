@@ -9,13 +9,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
 
 set(SOURCE_FILES
     src/internal/CurlPool.h src/CurlPool.cpp
-    inc/lift/Lift.h src/Lift.cpp
     inc/lift/EventLoop.h src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
     inc/lift/IRequestCb.h
+    inc/lift/Lift.h src/Lift.cpp
+    inc/lift/Method.h
     inc/lift/Request.h src/Request.cpp
     inc/lift/RequestPool.h src/RequestPool.cpp
-    inc/lift/RequestStatus.h
+    inc/lift/RequestStatus.h src/RequestStatus.cpp
     inc/lift/Types.h
 )
 

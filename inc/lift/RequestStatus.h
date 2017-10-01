@@ -1,11 +1,16 @@
 #pragma once
 
+#include <string>
+
 namespace lift
 {
 
 enum class RequestStatus
 {
-    SUCCESS,            ///< The request completed succesfully.
+    BUILDING,           ///< The request is under construction.
+    EXECUTING,          ///< The request is being executed.
+
+    SUCCESS,            ///< The request completed successfully.
 
     CONNECT_ERROR,      ///< The request had a connect error.
     CONNECT_DNS_ERROR,  ///< The request couldn't lookup the DNS for the url.
@@ -16,5 +21,13 @@ enum class RequestStatus
 
     ERROR               ///< The request had an error and failed.
 };
+
+/**
+ * @param request_status Convert to string.
+ * @return String representation of the request status.
+ */
+auto request_status2str(
+    RequestStatus request_status
+) -> const std::string&;
 
 } // lift

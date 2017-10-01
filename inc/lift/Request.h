@@ -3,6 +3,7 @@
 #include "lift/Types.h"
 #include "lift/RequestStatus.h"
 #include "lift/Header.h"
+#include "lift/Method.h"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -43,6 +44,13 @@ public:
     auto GetUrl() const -> StringView;
 
     /**
+     * @param http_method Sets the HTTP method for this request.
+     */
+    auto SetMethod(
+        Method http_method
+    ) -> void;
+
+    /**
      * Sets the timeout for this HTTP request.  This should be set before Perform() is called
      * or if this is an AsyncRequest before adding to an EventLoop.
      * @param timeout_ms The timeout in milliseconds.
@@ -61,6 +69,33 @@ public:
     auto SetFollowRedirects(
         bool follow_redirects
     ) -> bool;
+
+    /**
+     * Adds a request header with an empty value.
+     * @param name The name of the header, e.g. 'Accept'.
+     */
+    auto AddHeader(
+        StringView name
+    ) -> void;
+
+    /**
+     * Adds a request header with its value.
+     * @param name The name of the header, e.g. 'Connection'.
+     * @param value The value of the header, e.g. 'Keep-Alive'.
+     */
+    auto AddHeader(
+        StringView name,
+        StringView value
+    ) -> void;
+
+    /**
+     * Sets the request to HTTP POST and the body of the request
+     * to the provided data.
+     * @param data The request data to send in the HTTP POST.
+     */
+    auto SetRequestData(
+        std::string data
+    ) -> void;
 
     /**
      * Performs the HTTP request synchronously.  This call will block the calling thread.
@@ -82,11 +117,6 @@ public:
      * @return The total HTTP request time in milliseconds.
      */
     auto GetTotalTimeMilliseconds() const -> uint64_t;
-
-    /**
-     * @return True if the HTTP request has had an error.
-     */
-    auto HasError() const -> bool;
 
     /**
      * @return Gets the request error.
@@ -113,9 +143,17 @@ private:
         CurlPool& curl_pool
     );
 
-    StringView m_url;                           ///< A view into the curl url.
+    auto init() -> void;
+
     CURL* m_curl_handle;                        ///< The curl handle for this request.
     CurlPool& m_curl_pool;                      ///< The curl handle pool.
+
+    StringView m_url;                           ///< A view into the curl url.
+    std::string m_request_headers;              ///< The request headers.
+    std::vector<const char*> m_request_headers_idx;   ///< The request headers index.
+    curl_slist* m_curl_request_headers;         ///< The curl request headers.
+    std::string m_request_data;                 ///< The request data if any.
+
     RequestStatus m_status_code;                ///< The status of this HTTP request.
     // TODO: merge into a single large buffer
     std::string m_response_headers;             ///< The response headers.
@@ -127,6 +165,14 @@ private:
      * in the event loops internal list.
      */
     std::list<std::unique_ptr<Request>>::iterator m_active_requests_position;
+
+    /**
+     * Prepares the request to be performed.  This is called on a request
+     * before it is sync or async executed.
+     *
+     * Commits the request headers if any are available.
+     */
+    auto prepareForPerform() -> void;
 
     /**
      * Converts a CURLcode into a RequestStatus.

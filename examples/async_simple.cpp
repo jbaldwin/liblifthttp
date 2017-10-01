@@ -62,6 +62,11 @@ public:
             case lift::RequestStatus::ERROR:
                 std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
                 break;
+            case lift::RequestStatus::BUILDING:
+            case lift::RequestStatus::EXECUTING:
+                std::cout << "Request is in an invalid state: "
+                          << request_status2str(request->GetStatus()) << std::endl;
+                break;
         }
 
         /**

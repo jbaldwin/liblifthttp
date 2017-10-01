@@ -27,10 +27,26 @@ Request::Request(
     :
         m_curl_handle(curl_handle),
         m_curl_pool(curl_pool),
-        m_status_code(RequestStatus::SUCCESS)
+        m_curl_request_headers(nullptr),
+        m_status_code(RequestStatus::BUILDING)
 {
+    init();
     SetUrl(url);
+    SetTimeoutMilliseconds(timeout_ms);
+}
 
+Request::~Request()
+{
+    Reset();
+    if(m_curl_handle)
+    {
+        m_curl_pool.Return(m_curl_handle);
+        m_curl_handle = nullptr;
+    }
+}
+
+auto Request::init() -> void
+{
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE,        this);
@@ -42,30 +58,16 @@ Request::Request(
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1l);
 #pragma clang diagnostic pop
 
-    SetTimeoutMilliseconds(timeout_ms);
-
     // TODO make the buffer reservations configurable.
-    m_response_headers.reserve(4096);
+    m_request_headers.reserve(16'384);
+    m_request_headers_idx.reserve(16);
+    m_response_headers.reserve(16'384);
     m_response_headers_idx.reserve(16);
     m_response_data.reserve(16'384);
 }
 
-Request::~Request()
+auto Request::SetUrl(const std::string& url) -> bool
 {
-    if(m_curl_handle)
-    {
-        m_curl_pool.Return(m_curl_handle);
-        m_curl_handle = nullptr;
-    }
-}
-
-auto Request::Perform() -> bool {
-    auto curl_error_code = curl_easy_perform(m_curl_handle);
-    setRequestStatus(curl_error_code);
-    return (m_status_code == RequestStatus::SUCCESS);
-}
-
-auto Request::SetUrl(const std::string& url) -> bool {
     if(url.empty())
     {
         return false;
@@ -88,8 +90,45 @@ auto Request::SetUrl(const std::string& url) -> bool {
     return false;
 }
 
-auto Request::GetUrl() const -> StringView {
+auto Request::GetUrl() const -> StringView
+{
     return m_url;
+}
+
+auto Request::SetMethod(
+    Method http_method
+) -> void
+{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+    switch(http_method)
+    {
+        case Method::GET:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
+            break;
+        case Method::HEAD:
+            curl_easy_setopt(m_curl_handle, CURLOPT_NOBODY, 1L);
+            break;
+        case Method::POST:
+            curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
+            break;
+        case Method::PUT:
+            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PUT");
+            break;
+        case Method::DELETE:
+            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+            break;
+        case Method::CONNECT:
+            curl_easy_setopt(m_curl_handle, CURLOPT_CONNECT_ONLY, 1L);
+            break;
+        case Method::OPTIONS:
+            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "OPTIONS");
+            break;
+        case Method::PATCH:
+            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+            break;
+    }
+#pragma clang diagnostic pop
 }
 
 auto Request::SetTimeoutMilliseconds(uint64_t timeout_ms) -> bool
@@ -117,14 +156,65 @@ auto Request::SetFollowRedirects(
     return (error_code == CURLE_OK);
 }
 
-auto Request::Reset() -> void
+auto Request::AddHeader(
+    StringView name
+) -> void
 {
-    // Intentionally do not call curl_easy_reset() as it wipes the curl_easy_setopt() settings.
+    AddHeader(name, StringView());
+}
 
-    m_url = StringView();
-    m_status_code = RequestStatus::SUCCESS;
-    m_response_headers.clear();
-    m_response_data.clear();
+auto Request::AddHeader(
+    StringView name,
+    StringView value
+) -> void
+{
+    size_t capacity = m_request_headers.capacity();
+    size_t header_len = name.length() + value.length() + 3; //": \0"
+    size_t total_len = m_request_headers.size() + header_len;
+    if(capacity < total_len)
+    {
+        do
+        {
+            capacity *= 1.5;
+        } while(capacity < total_len);
+        m_request_headers.reserve(capacity);
+    }
+
+    const char* start = m_request_headers.data() + m_request_headers.size();
+
+    m_request_headers.append(name.data(), name.length());
+    m_request_headers.append(": ");
+    if(!value.empty())
+    {
+        m_request_headers.append(value.data(), value.length());
+    }
+    m_request_headers.append("\0"); // curl expects null byte
+
+    m_request_headers_idx.push_back(start);
+}
+
+auto Request::SetRequestData(
+    std::string data
+) -> void
+{
+    // libcurl expects the data lifetime to be longer
+    // than the request so require it to be moved into
+    // the lifetime of the request object.
+    m_request_data = std::move(data);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+    curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request_data.size()));
+    curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS,    m_request_data.data());
+#pragma clang diagnostic pop
+}
+
+auto Request::Perform() -> bool
+{
+    prepareForPerform();
+    auto curl_error_code = curl_easy_perform(m_curl_handle);
+    setRequestStatus(curl_error_code);
+    return (m_status_code == RequestStatus::SUCCESS);
 }
 
 auto Request::GetResponseHeaders() const -> const std::vector<Header>&
@@ -147,14 +237,46 @@ auto Request::GetTotalTimeMilliseconds() const -> uint64_t
     return static_cast<uint64_t>(total_time * 1000);
 }
 
-auto Request::HasError() const -> bool
-{
-    return m_status_code != RequestStatus::SUCCESS;
-}
-
 auto Request::GetStatus() const -> RequestStatus
 {
     return m_status_code;
+}
+
+auto Request::Reset() -> void
+{
+    m_url = StringView();
+    m_request_headers.clear();
+    m_request_headers_idx.clear();
+    if(m_curl_request_headers)
+    {
+        curl_slist_free_all(m_curl_request_headers);
+        m_curl_request_headers = nullptr;
+    }
+
+    m_status_code = RequestStatus::BUILDING;
+    m_response_headers.clear();
+    m_response_data.clear();
+
+    curl_easy_reset(m_curl_handle);
+    init();
+}
+
+auto Request::prepareForPerform() -> void
+{
+    if(!m_request_headers_idx.empty())
+    {
+        for(auto* header : m_request_headers_idx)
+        {
+            m_curl_request_headers = curl_slist_append(m_curl_request_headers, header);
+        }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
+#pragma clang diagnostic pop
+    }
+
+    m_status_code = RequestStatus::EXECUTING;
 }
 
 auto Request::setRequestStatus(
@@ -231,6 +353,17 @@ auto curl_write_header(
             ++rm_size;
         }
         data_view.remove_suffix(rm_size);
+    }
+
+    size_t capacity = raw_request_ptr->m_response_headers.capacity();
+    size_t total_len = raw_request_ptr->m_response_headers.size() + data_view.length();
+    if(capacity < total_len)
+    {
+        do
+        {
+            capacity *= 1.5;
+        } while(capacity < total_len);
+        raw_request_ptr->m_response_headers.reserve(capacity);
     }
 
     // Append the entire header into the full header buffer.

@@ -121,9 +121,9 @@ EventLoop::EventLoop(
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETFUNCTION, curl_handle_socket_actions);
-    curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA, this);
-    curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION, curl_start_timeout);
-    curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA, this);
+    curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA,     this);
+    curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION,  curl_start_timeout);
+    curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA,      this);
 #pragma clang diagnostic pop
 }
 
@@ -161,7 +161,7 @@ auto EventLoop::Stop() -> void
      * as properly closed before stop is called on the loop.
      */
     uv_close(reinterpret_cast<uv_handle_t*>(&m_timeout_timer), uv_close_callback);
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_async), uv_close_callback);
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_async),         uv_close_callback);
 
     /**
      * Fake a request to the event loop so it will wake up if it is in a blocking wait.
@@ -172,7 +172,7 @@ auto EventLoop::Stop() -> void
     while(!m_timeout_timer_closed && !m_async_closed)
     {
         using namespace std::chrono_literals;
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(100ms);
     }
     uv_stop(m_loop);
 }
@@ -181,6 +181,7 @@ auto EventLoop::AddRequest(
     std::unique_ptr<Request> request
 ) -> void
 {
+    request->prepareForPerform();
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
         m_pending_requests.emplace_back(std::move(request));

@@ -30,7 +30,6 @@ int main(int argc, char* argv[])
     std::cout << "Requesting http://www.example.com" << std::endl;
     request->Perform();
     std::cout << request->GetResponseData() << std::endl;
-    request_pool.Return(std::move(request));
 
     lift::cleanup();
 

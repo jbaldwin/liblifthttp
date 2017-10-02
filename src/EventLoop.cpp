@@ -178,9 +178,10 @@ auto EventLoop::Stop() -> void
 }
 
 auto EventLoop::AddRequest(
-    std::unique_ptr<Request> request
+    Request request
 ) -> void
 {
+    // We'll prepare now since it won't block the event loop thread.
     request->prepareForPerform();
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
@@ -220,10 +221,10 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
     {
         if(message->msg == CURLMSG_DONE)
         {
-            Request* raw_request_ptr = nullptr;
+            RequestHandle* raw_request_handle_ptr = nullptr;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &raw_request_ptr);
+            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
 #pragma clang diagnostic pop
 
             /**
@@ -233,11 +234,11 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
              * Next set the request status.
              * Finally move ownership of the request to the client through the OnComplete() callback.
              */
-            auto request_ptr = std::move(*raw_request_ptr->m_active_requests_position);
-            m_active_requests.erase(raw_request_ptr->m_active_requests_position);
+            Request request = std::move(*raw_request_handle_ptr->m_active_requests_position);
+            m_active_requests.erase(raw_request_handle_ptr->m_active_requests_position);
             curl_multi_remove_handle(m_cmh, message->easy_handle);
-            request_ptr->setRequestStatus(message->data.result);
-            m_request_callback->OnComplete(std::move(request_ptr));
+            request->setRequestStatus(message->data.result);
+            m_request_callback->OnComplete(std::move(request));
         }
     }
 }
@@ -375,14 +376,16 @@ auto requests_accept_async(
     // Lock scope.
     {
         std::lock_guard<std::mutex> guard(event_loop->m_pending_requests_lock);
-        for(auto& request : event_loop->m_pending_requests) {
+
+        for(auto& request : event_loop->m_pending_requests)
+        {
             curl_multi_add_handle(event_loop->m_cmh, request->m_curl_handle);
             auto position = event_loop->m_active_requests.emplace(
                 event_loop->m_active_requests.end(),
                 std::move(request)
             );
 
-            position->get()->m_active_requests_position = position;
+            position->operator->()->m_active_requests_position = position;
         }
 
         event_loop->m_pending_requests.clear();

@@ -18,6 +18,7 @@ set(SOURCE_FILES
     inc/lift/Method.h
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp
     inc/lift/Request.h src/Request.cpp
+    inc/lift/RequestHandle.h src/RequestHandle.cpp
     inc/lift/RequestPool.h src/RequestPool.cpp
     inc/lift/RequestStatus.h src/RequestStatus.cpp
     inc/lift/Types.h

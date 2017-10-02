@@ -16,15 +16,15 @@ int main(int argc, char* argv[])
         std::cout << "Requesting http://www.example.com" << std::endl;
         request->Perform();
         std::cout << request->GetResponseData() << std::endl;
-        request_pool.Return(std::move(request));
+        // when the request destructs it will return to the pool automatically
     }
 
     {
+        // this request object will be the same one as above recycled through the pool
         auto request = request_pool.Produce("http://www.google.com");
         std::cout << "Requesting http://www.google.com" << std::endl;
         request->Perform();
         std::cout << request->GetResponseData() << std::endl;
-        request_pool.Return(std::move(request));
     }
 
     lift::cleanup();

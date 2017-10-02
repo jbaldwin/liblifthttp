@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lift/Request.h"
+#include "lift/RequestHandle.h"
 
 #include <deque>
 #include <memory>
@@ -12,6 +13,8 @@ class CurlPool;
 
 class RequestPool
 {
+    friend class Request;
+
 public:
     RequestPool();
     ~RequestPool();
@@ -33,7 +36,12 @@ public:
     auto Produce(
         const std::string& url,
         uint64_t timeout_ms = 0
-    ) -> std::unique_ptr<Request>;
+    ) -> Request;
+
+private:
+    std::mutex m_lock;                                      ///< Used for thread safe calls.
+    std::deque<std::unique_ptr<RequestHandle>> m_requests;  ///< Pool of un-used Request handles.
+    std::unique_ptr<CurlPool> m_curl_pool;                  ///< Pool of CURL* handles.
 
     /**
      * Returns a Request object to the pool to be re-used.
@@ -42,14 +50,9 @@ public:
      *
      * @param request The request to return to the pool to be re-used.
      */
-    auto Return(
-        std::unique_ptr<Request> request
+    auto returnRequest(
+        std::unique_ptr<RequestHandle> request
     ) -> void;
-
-private:
-    std::mutex m_lock;                                  ///< Used for thread safe calls.
-    std::deque<std::unique_ptr<Request>> m_requests;    ///< Pool of un-used Request handles.
-    std::unique_ptr<CurlPool> m_curl_pool;              ///< Pool of CURL* handles.
 };
 
 } // lift

@@ -65,7 +65,7 @@ public:
      *                when this request completes/timesout/errors.
      */
     auto AddRequest(
-        std::unique_ptr<Request> request
+        Request request
     ) -> void;
 
     /**
@@ -92,7 +92,7 @@ private:
      * uv loop iteration.  Any memory accesses to this object should first acquire the
      * m_pending_requests_lock to guarantee thread safety.
      */
-    std::vector<std::unique_ptr<Request>> m_pending_requests;
+    std::vector<Request> m_pending_requests;
 
     /**
      * Active requests that are being processed.  The data structure used is a list for quick
@@ -101,7 +101,7 @@ private:
      * This data structure maintains ownership over the asynchronous requests until they are completed.
      * Upon completion their ownership is moved back into the client via the IRequestCb::OnComplete().
      */
-    std::list<std::unique_ptr<Request>> m_active_requests;
+    std::list<Request> m_active_requests;
 
     bool m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
     bool m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.

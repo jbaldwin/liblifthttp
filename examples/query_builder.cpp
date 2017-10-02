@@ -27,7 +27,6 @@ int main(int argc, char* argv[])
     std::cout << "Requesting " << url << std::endl;
     request->Perform();
     std::cout << request->GetResponseData() << std::endl;
-    request_pool.Return(std::move(request));
 
     /**
      * The query builder can be re-used after calling Build()
@@ -39,11 +38,11 @@ int main(int argc, char* argv[])
         .AppendPathPart("r")
         .AppendPathPart("funny");
     url = query_builder.Build();
-    request = request_pool.Produce(url);
+    request->Reset(); // Resetting a request clears all fields.
+    request->SetUrl(url);
     std::cout << "Requesting " << url << std::endl;
     request->Perform();
     std::cout << request->GetResponseData() << std::endl;
-    request_pool.Return(std::move(request));
 
     lift::cleanup();
 

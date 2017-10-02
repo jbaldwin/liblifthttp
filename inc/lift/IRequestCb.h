@@ -20,7 +20,7 @@ public:
      * @param request The request that has completed.
      */
     virtual auto OnComplete(
-        std::unique_ptr<Request> request
+        Request request
     ) -> void = 0;
 };
 

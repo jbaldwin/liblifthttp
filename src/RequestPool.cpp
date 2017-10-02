@@ -24,31 +24,33 @@ RequestPool::~RequestPool()
 auto RequestPool::Produce(
     const std::string& url,
     uint64_t timeout_ms
-) -> std::unique_ptr<Request>
+) -> Request
 {
     m_lock.lock();
     if(m_requests.empty())
     {
         m_lock.unlock();
-        return std::unique_ptr<Request>(
-            new Request(url, timeout_ms, m_curl_pool->Produce(), *m_curl_pool)
+        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
+            new RequestHandle(url, timeout_ms, m_curl_pool->Produce(), *m_curl_pool)
         );
+
+        return Request(*this, std::move(request_handle_ptr));
     }
     else
     {
-        auto request_ptr = std::move(m_requests.back());
+        auto request_handle_ptr = std::move(m_requests.back());
         m_requests.pop_back();
         m_lock.unlock();
 
-        request_ptr->SetUrl(url);
-        request_ptr->SetTimeoutMilliseconds(timeout_ms);
+        request_handle_ptr->SetUrl(url);
+        request_handle_ptr->SetTimeoutMilliseconds(timeout_ms);
 
-        return request_ptr;
+        return Request(*this, std::move(request_handle_ptr));
     }
 }
 
-auto RequestPool::Return(
-    std::unique_ptr<Request> request
+auto RequestPool::returnRequest(
+    std::unique_ptr<RequestHandle> request
 ) -> void
 {
     std::lock_guard<std::mutex> guard(m_lock);

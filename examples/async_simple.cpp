@@ -23,7 +23,7 @@ public:
     std::atomic<size_t> m_completed;    ///< This variable signals to the main thread all the requests are completed.
     lift::RequestPool&  m_request_pool; ///< This reference is used to re-use Request objects.
 
-    auto OnComplete(std::unique_ptr<lift::Request> request) -> void override
+    auto OnComplete(lift::Request request) -> void override
     {
         m_completed--;
         switch(request->GetStatus())
@@ -70,10 +70,10 @@ public:
         }
 
         /**
-         * This return crosses thread barriers, but it is safe as the RequestPool
-         * internally is thread safe.
+         * When the Request destructs here it will return to the pool. To continue working
+         * on this request -- or work on the response data in a separate thread std::move()
+         * the request to where the processing should be done.
          */
-        m_request_pool.Return(std::move(request));
     }
 };
 
@@ -116,7 +116,8 @@ int main(int argc, char* argv[])
     uint64_t timeout_ms = 250;
     for(auto& url : urls)
     {
-        auto request = request_pool.Produce(url, timeout_ms);
+        std::cout << "Requesting " << url << std::endl;
+        lift::Request request = request_pool.Produce(url, timeout_ms);
         event_loop.AddRequest(std::move(request));
         timeout_ms += 250;
         std::this_thread::sleep_for(50ms);

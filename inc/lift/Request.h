@@ -88,6 +88,8 @@ public:
         StringView value
     ) -> void;
 
+    auto GetRequestHeaders() const -> const std::vector<StringView>&;
+
     /**
      * Sets the request to HTTP POST and the body of the request
      * to the provided data.
@@ -96,6 +98,11 @@ public:
     auto SetRequestData(
         std::string data
     ) -> void;
+
+    /**
+     * @return The request data.  If never set an empty string is returned.
+     */
+    auto GetRequestData() const -> const std::string&;
 
     /**
      * Performs the HTTP request synchronously.  This call will block the calling thread.
@@ -150,7 +157,7 @@ private:
 
     StringView m_url;                           ///< A view into the curl url.
     std::string m_request_headers;              ///< The request headers.
-    std::vector<const char*> m_request_headers_idx;   ///< The request headers index.
+    std::vector<StringView> m_request_headers_idx;   ///< The request headers index.
     curl_slist* m_curl_request_headers;         ///< The curl request headers.
     std::string m_request_data;                 ///< The request data if any.
 

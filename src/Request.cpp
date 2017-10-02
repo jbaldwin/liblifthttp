@@ -190,7 +190,12 @@ auto Request::AddHeader(
     }
     m_request_headers.append("\0"); // curl expects null byte
 
-    m_request_headers_idx.push_back(start);
+    m_request_headers_idx.emplace_back(start, header_len - 1); // subtract off the null byte
+}
+
+auto Request::GetRequestHeaders() const -> const std::vector<StringView>&
+{
+    return m_request_headers_idx;
 }
 
 auto Request::SetRequestData(
@@ -207,6 +212,11 @@ auto Request::SetRequestData(
     curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request_data.size()));
     curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS,    m_request_data.data());
 #pragma clang diagnostic pop
+}
+
+auto Request::GetRequestData() const -> const std::string&
+{
+    return m_request_data;
 }
 
 auto Request::Perform() -> bool
@@ -252,6 +262,7 @@ auto Request::Reset() -> void
         curl_slist_free_all(m_curl_request_headers);
         m_curl_request_headers = nullptr;
     }
+    m_request_data = std::string(); // replace since this buffer is 'moved' into the Request.
 
     m_status_code = RequestStatus::BUILDING;
     m_response_headers.clear();
@@ -265,9 +276,9 @@ auto Request::prepareForPerform() -> void
 {
     if(!m_request_headers_idx.empty())
     {
-        for(auto* header : m_request_headers_idx)
+        for(auto header : m_request_headers_idx)
         {
-            m_curl_request_headers = curl_slist_append(m_curl_request_headers, header);
+            m_curl_request_headers = curl_slist_append(m_curl_request_headers, header.data());
         }
 
 #pragma clang diagnostic push

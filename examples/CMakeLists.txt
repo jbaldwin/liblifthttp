@@ -23,3 +23,10 @@ set(QUERY_BUILDER_SOURCE_FILES
 )
 add_executable(query_builder ${QUERY_BUILDER_SOURCE_FILES})
 target_link_libraries(query_builder PRIVATE lifthttp uv curl)
+
+### request_headers ###
+set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
+    examples/request_headers_simple.cpp
+)
+add_executable(request_headers_simple ${REQUEST_HEADERS_SIMPLE_SOURCE_FILES})
+target_link_libraries(request_headers_simple PRIVATE lifthttp uv curl)

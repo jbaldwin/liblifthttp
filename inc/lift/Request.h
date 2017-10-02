@@ -88,7 +88,10 @@ public:
         StringView value
     ) -> void;
 
-    auto GetRequestHeaders() const -> const std::vector<StringView>&;
+    /**
+     * @return The list of headers applied to this request.
+     */
+    auto GetRequestHeaders() const -> const std::vector<Header>&;
 
     /**
      * Sets the request to HTTP POST and the body of the request
@@ -157,7 +160,7 @@ private:
 
     StringView m_url;                           ///< A view into the curl url.
     std::string m_request_headers;              ///< The request headers.
-    std::vector<StringView> m_request_headers_idx;   ///< The request headers index.
+    std::vector<Header> m_request_headers_idx;  ///< The request headers index.
     curl_slist* m_curl_request_headers;         ///< The curl request headers.
     std::string m_request_data;                 ///< The request data if any.
 

@@ -17,6 +17,11 @@ public:
     );
 
     /**
+     * @return The entire header, e.g. "Connection: Keep-Alive"
+     */
+    auto GetHeader() const -> StringView;
+
+    /**
      * @return A view into the header's name.
      */
     auto GetName() const -> StringView;
@@ -32,8 +37,9 @@ public:
     auto GetValue() const -> StringView;
 
 private:
-    StringView m_name;  ///< The header's name.
-    StringView m_value; ///< The header's value if it has one.
+    StringView m_header; ///< The full header data.
+    StringView m_name;        ///< The header's name.
+    StringView m_value;       ///< The header's value if it has one.
 };
 
 } // lift

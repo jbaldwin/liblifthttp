@@ -190,10 +190,11 @@ auto Request::AddHeader(
     }
     m_request_headers.append("\0"); // curl expects null byte
 
-    m_request_headers_idx.emplace_back(start, header_len - 1); // subtract off the null byte
+    StringView full_header(start, header_len - 1); // subtract off the null byte
+    m_request_headers_idx.emplace_back(full_header);
 }
 
-auto Request::GetRequestHeaders() const -> const std::vector<StringView>&
+auto Request::GetRequestHeaders() const -> const std::vector<Header>&
 {
     return m_request_headers_idx;
 }
@@ -278,7 +279,10 @@ auto Request::prepareForPerform() -> void
     {
         for(auto header : m_request_headers_idx)
         {
-            m_curl_request_headers = curl_slist_append(m_curl_request_headers, header.data());
+            m_curl_request_headers = curl_slist_append(
+                m_curl_request_headers,
+                header.GetHeader().data()
+            );
         }
 
 #pragma clang diagnostic push

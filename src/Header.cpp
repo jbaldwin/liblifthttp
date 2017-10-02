@@ -7,6 +7,7 @@ Header::Header(
     StringView header_data
 )
     :
+        m_header(header_data),
         m_name(header_data)
 {
     auto colon_pos = m_name.find(':');
@@ -29,6 +30,11 @@ Header::Header(
         }
     }
 
+}
+
+auto Header::GetHeader() const -> StringView
+{
+    return m_header;
 }
 
 auto Header::GetName() const -> StringView

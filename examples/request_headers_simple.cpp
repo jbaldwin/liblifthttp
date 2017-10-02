@@ -18,7 +18,12 @@ int main(int argc, char* argv[])
 
     for(auto& header : request->GetRequestHeaders())
     {
-        std::cout << header << std::endl;
+        std::cout << header.GetHeader() << std::endl;
+    }
+    std::cout << std::endl;
+    for(auto& header : request->GetRequestHeaders())
+    {
+        std::cout << header.GetName() << ": " << header.GetValue() << std::endl;
     }
     std::cout << std::endl;
 

@@ -27,18 +27,7 @@ public:
             case lift::RequestStatus::SUCCESS:
                 std::cout
                     << "Completed " << request->GetUrl()
-                    << " ms:" << request->GetTotalTimeMilliseconds() << std::endl << std::endl;
-
-                for(auto& header : request->GetResponseHeaders())
-                {
-                    std::cout << header.GetName();
-                    if(header.HasValue())
-                    {
-                        std::cout << ": " << header.GetValue();
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << std::endl << request->GetResponseData() << std::endl << std::endl;
+                    << " ms:" << request->GetTotalTimeMilliseconds() << std::endl;
                 break;
             case lift::RequestStatus::CONNECT_ERROR:
                 std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
@@ -60,16 +49,11 @@ public:
                 break;
             case lift::RequestStatus::BUILDING:
             case lift::RequestStatus::EXECUTING:
-                std::cout << "Request is in an invalid state: "
-                          << request_status2str(request->GetStatus()) << std::endl;
+                std::cout
+                    << "Request is in an invalid state: "
+                    << request_status2str(request->GetStatus()) << std::endl;
                 break;
         }
-
-        /**
-         * When the Request destructs here it will return to the pool. To continue working
-         * on this request -- or work on the response data in a separate thread std::move()
-         * the request to where the processing should be done.
-         */
     }
 };
 
@@ -93,19 +77,20 @@ int main(int argc, char* argv[])
     // Create the EventLoop with a Request callback 'Completed'.
     lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size()));
 
-    /**
-     * Create asynchronous requests for each url and inject them into
-     * the event loop with 50ms pause between injection
-     * and an additional 250ms timeout per each request.
-     */
-    uint64_t timeout_ms = 250;
-    for(auto& url : urls)
     {
-        std::cout << "Requesting " << url << std::endl;
-        lift::Request request = request_pool.Produce(url, timeout_ms);
-        event_loop.AddRequest(std::move(request));
-        timeout_ms += 250;
-        std::this_thread::sleep_for(50ms);
+        std::vector<lift::Request> requests;
+        requests.reserve(urls.size());
+        for(auto& url : urls) {
+            requests.emplace_back(request_pool.Produce(url, 250));
+        }
+
+        /**
+         * This will 'move' all of the Request objects into the event loop.
+         * The values in the 'requests' vector are now no longer valid.  This
+         * example intentionally has 'requests' go out of scope to further
+         * demonstrate this.
+         */
+        event_loop.AddRequests(requests);
     }
 
     // Now wait for all the requests to finish before cleaning up.

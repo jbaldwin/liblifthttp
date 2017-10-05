@@ -58,6 +58,11 @@ public:
         Request request
     ) -> void;
 
+    template<typename Container>
+    auto AddRequests(
+        Container& requests
+    ) -> void;
+
     /**
      * @return Gets a borrowed reference to the callback functions.
      * @{
@@ -213,3 +218,5 @@ private:
 };
 
 } // lift
+
+#include "EventLoop.tcc"

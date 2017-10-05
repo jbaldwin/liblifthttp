@@ -11,7 +11,7 @@ set(SOURCE_FILES
     src/internal/CurlPool.h src/CurlPool.cpp
 
     inc/lift/Escape.h src/Escape.cpp
-    inc/lift/EventLoop.h src/EventLoop.cpp
+    inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
     inc/lift/IRequestCb.h
     inc/lift/Lift.h src/Lift.cpp

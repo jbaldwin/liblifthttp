@@ -109,7 +109,7 @@ EventLoop::EventLoop(
     :
         m_is_running(false),
         m_request_callback(std::move(request_callback)),
-        m_loop(uv_default_loop()),
+        m_loop(uv_loop_new()),
         m_cmh(curl_multi_init()),
         m_async_closed(false),
         m_timeout_timer_closed(false)
@@ -143,8 +143,9 @@ EventLoop::EventLoop(
 
 EventLoop::~EventLoop()
 {
-    uv_loop_delete(m_loop);
+    // Curl needs to be cleaned up first or the uv_loop close callbacks will fail.
     curl_multi_cleanup(m_cmh);
+    uv_loop_delete(m_loop);
 }
 
 auto EventLoop::IsRunning() -> bool
@@ -229,11 +230,18 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
     {
         if(message->msg == CURLMSG_DONE)
         {
+            /**
+             * Per docs do not use 'message' after calling curl_multi_remove_handle.
+             */
+            auto easy_handle = message->easy_handle;
+            auto easy_result = message->data.result;
+
             RequestHandle* raw_request_handle_ptr = nullptr;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-            curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
+            curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
 #pragma clang diagnostic pop
+            curl_multi_remove_handle(m_cmh, easy_handle);
 
             /**
              * Remove the completed request from:
@@ -242,10 +250,11 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
              * Next set the request status.
              * Finally move ownership of the request to the client through the OnComplete() callback.
              */
-            Request request = std::move(*raw_request_handle_ptr->m_active_requests_position);
-            m_active_requests.erase(raw_request_handle_ptr->m_active_requests_position);
-            curl_multi_remove_handle(m_cmh, message->easy_handle);
-            request->setRequestStatus(message->data.result);
+            auto active_pos = raw_request_handle_ptr->m_active_requests_position;
+
+            Request request = std::move(*active_pos);
+            m_active_requests.erase(active_pos);
+            request->setRequestStatus(easy_result);
             m_request_callback->OnComplete(std::move(request));
         }
     }

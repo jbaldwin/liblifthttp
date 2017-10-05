@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 2.8)
 project(liblifthttp_examples)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
@@ -37,3 +37,10 @@ set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
 )
 add_executable(request_headers_simple ${REQUEST_HEADERS_SIMPLE_SOURCE_FILES})
 target_link_libraries(request_headers_simple PRIVATE lifthttp uv curl)
+
+### benchmark_simple ###
+set(REQUEST_BENCHMARK_SIMPLE_SOURCE_FILES
+        examples/benchmark_simple.cpp
+)
+add_executable(benchmark_simple ${REQUEST_BENCHMARK_SIMPLE_SOURCE_FILES})
+target_link_libraries(benchmark_simple PRIVATE lifthttp uv curl)

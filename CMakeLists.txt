@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.3)
-project(lifthttp)
+cmake_minimum_required(VERSION 2.8)
+project(lifthttp CXX)
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -29,6 +29,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 target_link_libraries(${PROJECT_NAME} PRIVATE
     uv
     curl
+    pthread
 )
 
 include(examples/CMakeLists.txt)

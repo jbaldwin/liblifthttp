@@ -2,6 +2,8 @@
 #include "lift/RequestHandle.h"
 #include "lift/CurlPool.h"
 
+#include <cstring>
+
 namespace lift
 {
 
@@ -62,6 +64,8 @@ auto RequestHandle::init() -> void
     // TODO make the buffer reservations configurable.
     m_request_headers.reserve(16'384);
     m_request_headers_idx.reserve(16);
+    m_headers_commited = false;
+
     m_response_headers.reserve(16'384);
     m_response_headers_idx.reserve(16);
     m_response_data.reserve(16'384);
@@ -156,6 +160,7 @@ auto RequestHandle::AddHeader(
     StringView value
 ) -> void
 {
+    m_headers_commited = false; // A new header was added, they need to be committed again.
     size_t capacity = m_request_headers.capacity();
     size_t header_len = name.length() + value.length() + 3; //": \0"
     size_t total_len = m_request_headers.size() + header_len;
@@ -253,18 +258,26 @@ auto RequestHandle::Reset() -> void
     }
     m_request_data = std::string(); // replace since this buffer is 'moved' into the Request.
 
-    m_status_code = RequestStatus::BUILDING;
-    m_response_headers.clear();
-    m_response_data.clear();
+    clearResponseBuffers();
 
     curl_easy_reset(m_curl_handle);
     init();
+    m_status_code = RequestStatus::BUILDING;
 }
 
 auto RequestHandle::prepareForPerform() -> void
 {
-    if(!m_request_headers_idx.empty())
+    clearResponseBuffers();
+    if(!m_headers_commited && !m_request_headers_idx.empty())
     {
+        // Its possible the headers have been previous committed -- this will re-commit them all
+        // in the event additional headers have been added between requests.
+        if(m_curl_request_headers)
+        {
+            curl_slist_free_all(m_curl_request_headers);
+            m_curl_request_headers = nullptr;
+        }
+
         for(auto header : m_request_headers_idx)
         {
             m_curl_request_headers = curl_slist_append(
@@ -277,9 +290,18 @@ auto RequestHandle::prepareForPerform() -> void
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
 #pragma clang diagnostic pop
+
+        m_headers_commited = true;
     }
 
     m_status_code = RequestStatus::EXECUTING;
+}
+
+auto RequestHandle::clearResponseBuffers() -> void
+{
+    m_response_headers.clear();
+    m_response_headers_idx.clear();
+    m_response_data.clear();
 }
 
 auto RequestHandle::setRequestStatus(

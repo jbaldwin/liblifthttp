@@ -165,6 +165,7 @@ private:
     std::string m_request_headers;              ///< The request headers.
     std::vector<Header> m_request_headers_idx;  ///< The request headers index.
     curl_slist* m_curl_request_headers;         ///< The curl request headers.
+    bool m_headers_commited;                    ///< Have the headers been commited into CURL?
     std::string m_request_data;                 ///< The request data if any.
 
     RequestStatus m_status_code;                ///< The status of this HTTP request.
@@ -186,6 +187,12 @@ private:
      * Commits the request headers if any are available.
      */
     auto prepareForPerform() -> void;
+
+    /**
+     * Clears response buffers unrelated to curl.  This is useful if you want
+     * to make the exact same request multiple times.
+     */
+    auto clearResponseBuffers() -> void;
 
     /**
      * Converts a CURLcode into a RequestStatus.

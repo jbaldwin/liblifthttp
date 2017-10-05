@@ -6,6 +6,7 @@
 #include <deque>
 #include <memory>
 #include <chrono>
+#include <mutex>
 
 namespace lift
 {

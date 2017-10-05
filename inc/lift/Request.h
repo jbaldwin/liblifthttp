@@ -18,7 +18,10 @@ public:
     Request(Request&& from) = default;
     auto operator = (Request&&) -> Request& = default;
 
+    auto operator * () -> RequestHandle&;
+    auto operator * () const -> const RequestHandle&;
     auto operator -> () -> RequestHandle*;
+    auto operator -> () const -> const RequestHandle*;
 
 private:
     Request(

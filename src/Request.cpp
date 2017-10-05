@@ -28,7 +28,23 @@ Request::~Request()
     }
 }
 
-auto Request::operator->() -> RequestHandle* {
+auto Request::operator * () -> RequestHandle&
+{
+    return *m_request_handle;
+}
+
+auto Request::operator * () const -> const RequestHandle&
+{
+    return *m_request_handle;
+}
+
+auto Request::operator->() -> RequestHandle*
+{
+    return m_request_handle.get();
+}
+
+auto Request::operator -> () const -> const RequestHandle*
+{
     return m_request_handle.get();
 }
 

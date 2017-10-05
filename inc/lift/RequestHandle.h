@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <chrono>
 
 namespace lift
 {
@@ -54,11 +55,12 @@ public:
     /**
      * Sets the timeout for this HTTP request.  This should be set before Perform() is called
      * or if this is an AsyncRequest before adding to an EventLoop.
-     * @param timeout_ms The timeout in milliseconds.
+     * @param timeout The timeout for the request.
      * @return True if the timeout was set.
      */
-    auto SetTimeoutMilliseconds(
-        uint64_t timeout_ms
+    template<typename Rep, typename Period>
+    auto SetTimeout(
+        std::chrono::duration<Rep, Period> timeout
     ) -> bool;
 
     /**
@@ -143,13 +145,13 @@ private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
      * @param url         The url for the request.
-     * @param timeout_ms  The timeout for the request in milliseconds.
+     * @param timeout     The timeout for the request in milliseconds.
      * @param curl_handle The CURL* handle for this Request.
      * @param curl_pool   The CurlPool to return the CURL* handle when this request destructs.
      */
     explicit RequestHandle(
         const std::string& url,
-        uint64_t timeout_ms,
+        std::chrono::milliseconds timeout,
         CURL* curl_handle,
         CurlPool& curl_pool
     );
@@ -214,3 +216,5 @@ private:
 };
 
 } // lift
+
+#include "lift/RequestHandle.tcc"

@@ -8,8 +8,7 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -g -gdwarf-2 -D_GLIBCXX_DE
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
 
 set(SOURCE_FILES
-    src/internal/CurlPool.h src/CurlPool.cpp
-
+    inc/lift/CurlPool.h src/CurlPool.cpp
     inc/lift/Escape.h src/Escape.cpp
     inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
@@ -18,15 +17,14 @@ set(SOURCE_FILES
     inc/lift/Method.h
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp
     inc/lift/Request.h src/Request.cpp
-    inc/lift/RequestHandle.h src/RequestHandle.cpp
-    inc/lift/RequestPool.h src/RequestPool.cpp
+    inc/lift/RequestHandle.h inc/lift/RequestHandle.tcc src/RequestHandle.cpp
+    inc/lift/RequestPool.h inc/lift/RequestPool.tcc src/RequestPool.cpp
     inc/lift/RequestStatus.h src/RequestStatus.cpp
     inc/lift/Types.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
-target_include_directories(${PROJECT_NAME} PUBLIC inc)
-target_include_directories(${PROJECT_NAME} PRIVATE src/internal)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     uv

@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
         std::vector<lift::Request> requests;
         requests.reserve(urls.size());
         for(auto& url : urls) {
-            requests.emplace_back(request_pool.Produce(url, 250));
+            requests.emplace_back(request_pool.Produce(url, 250ms));
         }
 
         /**

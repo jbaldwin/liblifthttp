@@ -1,5 +1,4 @@
 #include "lift/RequestPool.h"
-#include "CurlPool.h"
 
 namespace lift
 {
@@ -22,31 +21,11 @@ RequestPool::~RequestPool()
 }
 
 auto RequestPool::Produce(
-    const std::string& url,
-    uint64_t timeout_ms
+    const std::string& url
 ) -> Request
 {
-    m_lock.lock();
-    if(m_requests.empty())
-    {
-        m_lock.unlock();
-        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
-            new RequestHandle(url, timeout_ms, m_curl_pool->Produce(), *m_curl_pool)
-        );
-
-        return Request(*this, std::move(request_handle_ptr));
-    }
-    else
-    {
-        auto request_handle_ptr = std::move(m_requests.back());
-        m_requests.pop_back();
-        m_lock.unlock();
-
-        request_handle_ptr->SetUrl(url);
-        request_handle_ptr->SetTimeoutMilliseconds(timeout_ms);
-
-        return Request(*this, std::move(request_handle_ptr));
-    }
+    using namespace std::chrono_literals;
+    return Produce(url, 0ms);
 }
 
 auto RequestPool::returnRequest(

@@ -1,6 +1,6 @@
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
-#include "CurlPool.h"
+#include "lift/CurlPool.h"
 
 namespace lift
 {
@@ -21,7 +21,7 @@ auto curl_write_data(
 
 RequestHandle::RequestHandle(
     const std::string& url,
-    uint64_t timeout_ms,
+    std::chrono::milliseconds timeout_ms,
     CURL* curl_handle,
     CurlPool& curl_pool
 )
@@ -33,7 +33,7 @@ RequestHandle::RequestHandle(
 {
     init();
     SetUrl(url);
-    SetTimeoutMilliseconds(timeout_ms);
+    SetTimeout(timeout_ms);
 }
 
 RequestHandle::~RequestHandle()
@@ -130,19 +130,6 @@ auto RequestHandle::SetMethod(
             break;
     }
 #pragma clang diagnostic pop
-}
-
-auto RequestHandle::SetTimeoutMilliseconds(uint64_t timeout_ms) -> bool
-{
-    if(timeout_ms > 0)
-    {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-        auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout_ms));
-#pragma clang diagnostic pop
-        return (error_code == CURLE_OK);
-    }
-    return false;
 }
 
 auto RequestHandle::SetFollowRedirects(

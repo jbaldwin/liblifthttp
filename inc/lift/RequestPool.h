@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <memory>
+#include <chrono>
 
 namespace lift
 {
@@ -25,17 +26,27 @@ public:
     auto operator = (RequestPool&&) -> RequestPool& = default;      ///< Can move assign
 
     /**
+     * Produces a new Request with inifinite timeout.
+     * @param url The url of the Request.
+     * @return A request object setup for the URL.
+     */
+    auto Produce(
+        const std::string& url
+    ) -> Request;
+
+    /**
      * Produces a new Request.
      *
      * This function is thread safe.
      *
      * @param url The url of the Request.
-     * @param timeout_ms The timeout of the request in milliseconds.
+     * @param timeout The timeout of the request.
      * @return A Request object setup for the URL + Timeout.
      */
+    template<typename Rep, typename Period>
     auto Produce(
         const std::string& url,
-        uint64_t timeout_ms = 0
+        std::chrono::duration<Rep, Period> timeout
     ) -> Request;
 
 private:
@@ -56,3 +67,5 @@ private:
 };
 
 } // lift
+
+#include "lift/RequestPool.tcc"

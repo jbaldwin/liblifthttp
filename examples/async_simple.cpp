@@ -98,13 +98,13 @@ int main(int argc, char* argv[])
      * the event loop with 50ms pause between injection
      * and an additional 250ms timeout per each request.
      */
-    uint64_t timeout_ms = 250;
+    std::chrono::milliseconds timeout = 250ms;
     for(auto& url : urls)
     {
         std::cout << "Requesting " << url << std::endl;
-        lift::Request request = request_pool.Produce(url, timeout_ms);
+        lift::Request request = request_pool.Produce(url, timeout);
         event_loop.AddRequest(std::move(request));
-        timeout_ms += 250;
+        timeout += 250ms;
         std::this_thread::sleep_for(50ms);
     }
 

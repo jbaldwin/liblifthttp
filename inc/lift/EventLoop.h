@@ -48,8 +48,10 @@ public:
     auto Stop() -> void;
 
     /**
-     * Adds a request to process.  This function is safe to call from
-     * the same or different threads.
+     * Adds a request to process.
+     *
+     * This function is thread safe.
+     *
      * @param request The request to process.  This request
      *                will have the IRequestCb called
      *                when this request completes/timesout/errors.
@@ -58,6 +60,14 @@ public:
         Request request
     ) -> void;
 
+    /**
+     * Adds a batch of requests to process.
+     *
+     * This function is thread safe.
+     *
+     * @tparam Container A container of class Request.
+     * @param requests The batch of requests to process.
+     */
     template<typename Container>
     auto AddRequests(
         Container& requests

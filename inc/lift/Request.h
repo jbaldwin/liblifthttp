@@ -9,19 +9,31 @@ namespace lift
 
 class RequestPool;
 
+/**
+ * This is a proxy object to automatically reclaim finished requests
+ * into the RequestPool.  The user simply uses it like a std::unique_ptr
+ * by accessing the underlying RequestHandle via the * or -> operators.
+ */
 class Request
 {
     friend class RequestPool;
 public:
 
     ~Request();
-    Request(Request&& from) = default;
-    auto operator = (Request&&) -> Request& = default;
+    Request(const Request&) = delete;                   ///< No copying
+    Request(Request&& from) = default;                  ///< Can move
+    auto operator = (const Request&) = delete;          ///< No copy assign
+    auto operator = (Request&&) -> Request& = default;  ///< Can move assign
 
+    /**
+     * @return Access to the underlying request handle.
+     * @{
+     */
     auto operator * () -> RequestHandle&;
     auto operator * () const -> const RequestHandle&;
     auto operator -> () -> RequestHandle*;
     auto operator -> () const -> const RequestHandle*;
+    /** @} */
 
 private:
     Request(
@@ -29,11 +41,8 @@ private:
         std::unique_ptr<RequestHandle> request_handle
     );
 
-    Request(const Request&) = delete;
-    auto operator = (const Request&) = delete;
-
-    RequestPool& m_request_pool;
-    std::unique_ptr<RequestHandle> m_request_handle;
+    RequestPool& m_request_pool;                        ///< The request pool that owns this request.
+    std::unique_ptr<RequestHandle> m_request_handle;    ///< The actual underlying request object.
 };
 
 } // lift

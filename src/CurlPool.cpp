@@ -1,4 +1,4 @@
-#include "CurlPool.h"
+#include "lift/CurlPool.h"
 
 namespace lift
 {

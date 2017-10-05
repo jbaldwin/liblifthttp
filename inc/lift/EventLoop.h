@@ -11,6 +11,7 @@
 #include <mutex>
 #include <memory>
 #include <list>
+#include <thread>
 
 namespace lift
 {
@@ -40,17 +41,6 @@ public:
      * @return True if the event loop is currently running.
      */
     auto IsRunning() -> bool;
-
-    /**
-     * Runs the event loop until EventLoop::Stop() is called.
-     */
-    auto Run() -> void;
-
-    /**
-     * Runs a single iteration of the EventLoop and the returns
-     * control to the caller.
-     */
-    auto RunOnce() -> void;
 
     /**
      * Stops the EventLoop and shutsdown all resources.
@@ -103,8 +93,12 @@ private:
      */
     std::list<Request> m_active_requests;
 
+    std::thread m_background_thread; ///< The background thread spawned to drive the event loop.
+
     bool m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
     bool m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.
+
+    auto run() -> void; ///< The background thread runs from this function.
 
     /**
      * Checks current pending curl actions like timeouts.

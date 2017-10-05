@@ -5,6 +5,8 @@
 #include <thread>
 #include <chrono>
 
+using namespace std::chrono_literals;
+
 namespace lift
 {
 
@@ -125,6 +127,18 @@ EventLoop::EventLoop(
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION,  curl_start_timeout);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA,      this);
 #pragma clang diagnostic pop
+
+    m_background_thread = std::thread([this] { run(); });
+
+    /**
+     * Wait for the thread to spin-up and run the event loop,
+     * this means when the constructor returns the user can start adding requests
+     * immediately without waiting.
+     */
+    while(!IsRunning())
+    {
+        std::this_thread::sleep_for(5ms);
+    }
 }
 
 EventLoop::~EventLoop()
@@ -136,20 +150,6 @@ EventLoop::~EventLoop()
 auto EventLoop::IsRunning() -> bool
 {
     return m_is_running;
-}
-
-auto EventLoop::Run() -> void
-{
-    m_is_running = true;
-    uv_run(m_loop, UV_RUN_DEFAULT);
-    m_is_running = false;
-}
-
-auto EventLoop::RunOnce() -> void
-{
-    m_is_running = true;
-    uv_run(m_loop, UV_RUN_NOWAIT);
-    m_is_running = false;
 }
 
 auto EventLoop::Stop() -> void
@@ -171,10 +171,11 @@ auto EventLoop::Stop() -> void
 
     while(!m_timeout_timer_closed && !m_async_closed)
     {
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(100ms);
+        std::this_thread::sleep_for(5ms);
     }
     uv_stop(m_loop);
+
+    m_background_thread.join();
 }
 
 auto EventLoop::AddRequest(
@@ -198,6 +199,13 @@ auto EventLoop::GetRequestCallback() -> IRequestCb&
 auto EventLoop::GetRequestCallback() const -> const IRequestCb&
 {
     return *m_request_callback;
+}
+
+auto EventLoop::run() -> void
+{
+    m_is_running = true;
+    uv_run(m_loop, UV_RUN_DEFAULT);
+    m_is_running = false;
 }
 
 auto EventLoop::checkActions() -> void

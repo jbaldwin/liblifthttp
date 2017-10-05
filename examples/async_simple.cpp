@@ -97,17 +97,6 @@ int main(int argc, char* argv[])
     // Create the EventLoop with a Request callback 'Completed'.
     lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size(), request_pool));
 
-    // Spin-up a separate thread to run the asynchronous requests and drive the event loop.
-    std::thread driver_thread(
-        [&]() { event_loop.Run(); }
-    );
-
-    // Wait for the thread to spin-up and run the event loop.
-    while(!event_loop.IsRunning())
-    {
-        std::this_thread::sleep_for(100ms);
-    }
-
     /**
      * Create asynchronous requests for each url and inject them into
      * the event loop with 50ms pause between injection
@@ -132,7 +121,6 @@ int main(int argc, char* argv[])
 
     // Cleanup EventLoop / Threads and LiftHttp library.
     event_loop.Stop();
-    driver_thread.join();
 
     lift::cleanup();
 

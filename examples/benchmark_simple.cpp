@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
         {
             auto request = request_pool->Produce(url, 1000ms);
             request->SetFollowRedirects(false);
+            request->AddHeader("Connection", "Keep-Alive");
             event_loop->AddRequest(std::move(request));
         }
 

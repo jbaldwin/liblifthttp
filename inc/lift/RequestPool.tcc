@@ -13,6 +13,7 @@ auto RequestPool::Produce(
     if(m_requests.empty())
     {
         m_lock.unlock();
+        // Cannot use std::make_unique here since RequestHandle ctor is private friend.
         auto request_handle_ptr = std::unique_ptr<RequestHandle>(
             new RequestHandle(
                 url,
@@ -22,7 +23,7 @@ auto RequestPool::Produce(
             )
         );
 
-        return Request(*this, std::move(request_handle_ptr));
+        return Request(this, std::move(request_handle_ptr));
     }
     else
     {
@@ -33,7 +34,7 @@ auto RequestPool::Produce(
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
 
-        return Request(*this, std::move(request_handle_ptr));
+        return Request(this, std::move(request_handle_ptr));
     }
 };
 

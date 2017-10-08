@@ -5,8 +5,7 @@ namespace lift
 {
 
 QueryBuilder::QueryBuilder()
-    :
-        m_port_int(0)
+    : m_port_int(0)
 {
     m_query.reserve(2048);
 }

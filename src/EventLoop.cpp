@@ -18,9 +18,8 @@ public:
         uv_loop_t* uv_loop,
         curl_socket_t sock_fd
     )
-        :
-            m_event_loop(event_loop),
-            m_sock_fd(sock_fd)
+        : m_event_loop(event_loop),
+          m_sock_fd(sock_fd)
     {
         uv_poll_init_socket(uv_loop, &m_poll_handle, m_sock_fd);
         m_poll_handle.data = this;
@@ -106,13 +105,12 @@ auto requests_accept_async(
 EventLoop::EventLoop(
     std::unique_ptr<IRequestCb> request_callback
 )
-    :
-        m_is_running(false),
-        m_request_callback(std::move(request_callback)),
-        m_loop(uv_loop_new()),
-        m_cmh(curl_multi_init()),
-        m_async_closed(false),
-        m_timeout_timer_closed(false)
+    : m_is_running(false),
+      m_request_callback(std::move(request_callback)),
+      m_loop(uv_loop_new()),
+      m_cmh(curl_multi_init()),
+      m_async_closed(false),
+      m_timeout_timer_closed(false)
 {
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;
@@ -177,6 +175,11 @@ auto EventLoop::Stop() -> void
     uv_stop(m_loop);
 
     m_background_thread.join();
+}
+
+auto EventLoop::GetRequestPool() -> RequestPool&
+{
+    return m_request_pool;
 }
 
 auto EventLoop::AddRequest(
@@ -244,16 +247,10 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
             curl_multi_remove_handle(m_cmh, easy_handle);
 
             /**
-             * Remove the completed request from:
-             *    (1) The active requests list.
-             *    (2) The curl multi handle.
-             * Next set the request status.
-             * Finally move ownership of the request to the client through the OnComplete() callback.
+             * Encapsulate the RequestHandle into  Request proxy object for the client
+             * OnComplete() callback.  Curl has kept the memory alive for us.
              */
-            auto active_pos = raw_request_handle_ptr->m_active_requests_position;
-
-            Request request = std::move(*active_pos);
-            m_active_requests.erase(active_pos);
+            Request request(&m_request_pool, std::unique_ptr<RequestHandle>(raw_request_handle_ptr));
             request->setRequestStatus(easy_result);
             m_request_callback->OnComplete(std::move(request));
         }
@@ -396,13 +393,14 @@ auto requests_accept_async(
 
         for(auto& request : event_loop->m_pending_requests)
         {
-            curl_multi_add_handle(event_loop->m_cmh, request->m_curl_handle);
-            auto position = event_loop->m_active_requests.emplace(
-                event_loop->m_active_requests.end(),
-                std::move(request)
-            );
+            /**
+             * Drop the unique_ptr safety around the RequestHandle while it is being
+             * processed by curl.  When curl is finished completing the request
+             * it will be put back into a Request object for the client to use.
+             */
+            auto* raw_request_handle_ptr = request.m_request_handle.release();
 
-            position->operator->()->m_active_requests_position = position;
+            curl_multi_add_handle(event_loop->m_cmh, raw_request_handle_ptr->m_curl_handle);
         }
 
         event_loop->m_pending_requests.clear();

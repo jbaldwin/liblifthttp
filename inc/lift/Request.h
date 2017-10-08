@@ -8,6 +8,7 @@ namespace lift
 {
 
 class RequestPool;
+class EventLoop;
 
 /**
  * This is a proxy object to automatically reclaim finished requests
@@ -17,6 +18,7 @@ class RequestPool;
 class Request
 {
     friend class RequestPool;
+    friend class EventLoop;
 public:
 
     ~Request();
@@ -37,12 +39,17 @@ public:
 
 private:
     Request(
-        RequestPool& request_pool,
+        RequestPool* request_pool,
         std::unique_ptr<RequestHandle> request_handle
     );
 
-    RequestPool& m_request_pool;                        ///< The request pool that owns this request.
+    RequestPool* m_request_pool;                        ///< The request pool that owns this request.
     std::unique_ptr<RequestHandle> m_request_handle;    ///< The actual underlying request object.
+
+    friend auto requests_accept_async(
+        uv_async_t* async,
+        int status
+    ) -> void; ///< Friend so it can release the m_request_handle appropriately.
 };
 
 } // lift

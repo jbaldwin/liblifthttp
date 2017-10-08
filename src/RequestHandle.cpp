@@ -27,11 +27,10 @@ RequestHandle::RequestHandle(
     CURL* curl_handle,
     CurlPool& curl_pool
 )
-    :
-        m_curl_handle(curl_handle),
-        m_curl_pool(curl_pool),
-        m_curl_request_headers(nullptr),
-        m_status_code(RequestStatus::BUILDING)
+    : m_curl_handle(curl_handle),
+      m_curl_pool(curl_pool),
+      m_curl_request_headers(nullptr),
+      m_status_code(RequestStatus::BUILDING)
 {
     init();
     SetUrl(url);

@@ -82,7 +82,6 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
-    lift::RequestPool request_pool;
     std::vector<std::string> urls =
     {
         "http://www.example.com",
@@ -92,6 +91,7 @@ int main(int argc, char* argv[])
 
     // Create the EventLoop with a Request callback 'Completed'.
     lift::EventLoop event_loop(std::make_unique<CompletedCtx>(urls.size()));
+    auto& request_pool = event_loop.GetRequestPool();
 
     /**
      * Create asynchronous requests for each url and inject them into

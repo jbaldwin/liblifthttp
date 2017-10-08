@@ -6,9 +6,8 @@ namespace lift
 Header::Header(
     StringView header_data
 )
-    :
-        m_header(header_data),
-        m_name(header_data)
+    : m_header(header_data),
+      m_name(header_data)
 {
     auto colon_pos = m_name.find(':');
     if(colon_pos != StringView::npos)

@@ -48,6 +48,11 @@ public:
     auto Stop() -> void;
 
     /**
+     * @return The request pool for this EventLoop.
+     */
+    auto GetRequestPool() -> RequestPool&;
+
+    /**
      * Adds a request to process.
      *
      * This function is thread safe.
@@ -82,6 +87,12 @@ public:
     /** @} */
 
 private:
+    /**
+     * Each event loop gets its own private request pool for efficiency.
+     * This needs to be first so it de-allocates all its RequestHandles on shutdown.
+     */
+    RequestPool m_request_pool;
+
     std::atomic<bool> m_is_running; ///< Set to true if the EventLoop is currently running.
 
     std::unique_ptr<IRequestCb> m_request_callback; ///< Callback function for on completion.
@@ -98,15 +109,6 @@ private:
      * m_pending_requests_lock to guarantee thread safety.
      */
     std::vector<Request> m_pending_requests;
-
-    /**
-     * Active requests that are being processed.  The data structure used is a list for quick
-     * addition of new requests and also quick removal of requests that finish asynchronously.
-     *
-     * This data structure maintains ownership over the asynchronous requests until they are completed.
-     * Upon completion their ownership is moved back into the client via the IRequestCb::OnComplete().
-     */
-    std::list<Request> m_active_requests;
 
     std::thread m_background_thread; ///< The background thread spawned to drive the event loop.
 

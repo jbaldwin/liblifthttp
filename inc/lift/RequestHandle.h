@@ -10,7 +10,6 @@
 
 #include <string>
 #include <vector>
-#include <list>
 #include <chrono>
 
 namespace lift
@@ -173,12 +172,6 @@ private:
     std::string m_response_headers;             ///< The response headers.
     std::vector<Header> m_response_headers_idx; ///< Views into each header.
     std::string m_response_data;                ///< The response data if any.
-
-    /**
-     * If this Request is a part of an asynchronous event loop this is the position
-     * in the event loops internal list.
-     */
-    std::list<Request>::iterator m_active_requests_position;
 
     /**
      * Prepares the request to be performed.  This is called on a request

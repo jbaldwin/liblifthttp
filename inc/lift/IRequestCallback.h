@@ -9,10 +9,10 @@ namespace lift
  * Interface for the set of possible asynchronous request callbacks when
  * the request completes/times out/errors.
  */
-class IRequestCb
+class IRequestCallback
 {
 public:
-    virtual ~IRequestCb() = default;
+    virtual ~IRequestCallback() = default;
 
     /**
      * Request callback on completion.  The request will have either a success

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lift/RequestPool.h"
-#include "lift/IRequestCb.h"
+#include "lift/IRequestCallback.h"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -27,7 +27,7 @@ public:
      *                         and will release it upon destruction.
      */
     explicit EventLoop(
-        std::unique_ptr<IRequestCb> request_callback
+        std::unique_ptr<IRequestCallback> request_callback
     );
 
     ~EventLoop();
@@ -87,8 +87,8 @@ public:
      * @return Gets a borrowed reference to the callback functions.
      * @{
      */
-    auto GetRequestCallback() -> IRequestCb&;
-    auto GetRequestCallback() const -> const IRequestCb&;
+    auto GetRequestCallback() -> IRequestCallback&;
+    auto GetRequestCallback() const -> const IRequestCallback&;
     /** @} */
 
 private:
@@ -101,7 +101,7 @@ private:
     std::atomic<bool> m_is_running; ///< Set to true if the EventLoop is currently running.
     std::atomic<uint64_t> m_active_request_count; ///< The active number of requests running.
 
-    std::unique_ptr<IRequestCb> m_request_callback; ///< Callback function for on completion.
+    std::unique_ptr<IRequestCallback> m_request_callback; ///< Callback function for on completion.
 
     uv_loop_t* m_loop;          ///< The UV event loop to drive libcurl.
     uv_async_t m_async;         ///< The async trigger for injecting new requests into the event loop.

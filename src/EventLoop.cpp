@@ -103,7 +103,7 @@ auto requests_accept_async(
 ) -> void;
 
 EventLoop::EventLoop(
-    std::unique_ptr<IRequestCb> request_callback
+    std::unique_ptr<IRequestCallback> request_callback
 )
     : m_is_running(false),
       m_active_request_count(0),
@@ -201,12 +201,12 @@ auto EventLoop::AddRequest(
     uv_async_send(&m_async);
 }
 
-auto EventLoop::GetRequestCallback() -> IRequestCb&
+auto EventLoop::GetRequestCallback() -> IRequestCallback&
 {
     return *m_request_callback;
 }
 
-auto EventLoop::GetRequestCallback() const -> const IRequestCb&
+auto EventLoop::GetRequestCallback() const -> const IRequestCallback&
 {
     return *m_request_callback;
 }

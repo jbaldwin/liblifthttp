@@ -14,7 +14,7 @@ public:
     uint64_t m_request_id = 0;
 };
 
-class CompletedCtx : public lift::IRequestCb
+class CompletedCtx : public lift::IRequestCallback
 {
 public:
     auto OnComplete(lift::Request request) -> void override

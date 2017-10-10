@@ -7,7 +7,7 @@
 #include <chrono>
 #include <atomic>
 
-class CompletedCtx : public lift::IRequestCb
+class CompletedCtx : public lift::IRequestCallback
 {
 public:
     lift::EventLoop* m_event_loop;

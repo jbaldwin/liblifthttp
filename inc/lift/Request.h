@@ -10,6 +10,8 @@ namespace lift
 class RequestPool;
 class EventLoop;
 
+class EmptyUserData { };
+
 /**
  * This is a proxy object to automatically reclaim finished requests
  * into the RequestPool.  The user simply uses it like a std::unique_ptr

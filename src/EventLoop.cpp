@@ -106,6 +106,7 @@ EventLoop::EventLoop(
     std::unique_ptr<IRequestCb> request_callback
 )
     : m_is_running(false),
+      m_active_request_count(0),
       m_request_callback(std::move(request_callback)),
       m_loop(uv_loop_new()),
       m_cmh(curl_multi_init()),
@@ -135,7 +136,7 @@ EventLoop::EventLoop(
      */
     while(!IsRunning())
     {
-        std::this_thread::sleep_for(5ms);
+        std::this_thread::sleep_for(1ms);
     }
 }
 
@@ -149,6 +150,11 @@ EventLoop::~EventLoop()
 auto EventLoop::IsRunning() -> bool
 {
     return m_is_running;
+}
+
+auto EventLoop::GetActiveRequestCount() const -> uint64_t
+{
+    return m_active_request_count;
 }
 
 auto EventLoop::Stop() -> void
@@ -170,7 +176,7 @@ auto EventLoop::Stop() -> void
 
     while(!m_timeout_timer_closed && !m_async_closed)
     {
-        std::this_thread::sleep_for(5ms);
+        std::this_thread::sleep_for(1ms);
     }
     uv_stop(m_loop);
 
@@ -253,6 +259,7 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
             Request request(&m_request_pool, std::unique_ptr<RequestHandle>(raw_request_handle_ptr));
             request->setRequestStatus(easy_result);
             m_request_callback->OnComplete(std::move(request));
+            --m_active_request_count;
         }
     }
 }
@@ -403,6 +410,7 @@ auto requests_accept_async(
             curl_multi_add_handle(event_loop->m_cmh, raw_request_handle_ptr->m_curl_handle);
         }
 
+        event_loop->m_active_request_count += event_loop->m_pending_requests.size();
         event_loop->m_pending_requests.clear();
     }
 }

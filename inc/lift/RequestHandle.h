@@ -140,6 +140,13 @@ public:
      */
     auto Reset() -> void;
 
+    template<typename UserDataType>
+    auto SetUserData(
+        UserDataType* user_data
+    ) -> void;
+    template<typename UserDataType>
+    auto GetUserData() -> UserDataType*;
+
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
@@ -172,6 +179,8 @@ private:
     std::string m_response_headers;             ///< The response headers.
     std::vector<Header> m_response_headers_idx; ///< Views into each header.
     std::string m_response_data;                ///< The response data if any.
+
+    void* m_user_data;                          ///< The user data.
 
     /**
      * Prepares the request to be performed.  This is called on a request

@@ -43,6 +43,11 @@ public:
     auto IsRunning() -> bool;
 
     /**
+     * @return Gets the number of active HTTP requests currently running.
+     */
+    auto GetActiveRequestCount() const -> uint64_t;
+
+    /**
      * Stops the EventLoop and shutsdown all resources.
      */
     auto Stop() -> void;
@@ -94,6 +99,7 @@ private:
     RequestPool m_request_pool;
 
     std::atomic<bool> m_is_running; ///< Set to true if the EventLoop is currently running.
+    std::atomic<uint64_t> m_active_request_count; ///< The active number of requests running.
 
     std::unique_ptr<IRequestCb> m_request_callback; ///< Callback function for on completion.
 

@@ -68,6 +68,8 @@ auto RequestHandle::init() -> void
     m_response_headers.reserve(16'384);
     m_response_headers_idx.reserve(16);
     m_response_data.reserve(16'384);
+
+    m_user_data = nullptr;
 }
 
 auto RequestHandle::SetUrl(const std::string& url) -> bool

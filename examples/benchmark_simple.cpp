@@ -56,24 +56,22 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
-    std::vector<std::unique_ptr<lift::RequestPool>> pools;
     std::vector<std::unique_ptr<lift::EventLoop>> loops;
     for(uint64_t i = 0; i < threads; ++i)
     {
-        auto request_pool = std::make_unique<lift::RequestPool>();
         auto event_loop = std::make_unique<lift::EventLoop>(std::make_unique<CompletedCtx>());
+        auto& request_pool = event_loop->GetRequestPool();
         auto& completed_ctx = static_cast<CompletedCtx&>(event_loop->GetRequestCallback());
         completed_ctx.m_event_loop = event_loop.get();
 
         for(uint64_t j = 0; j < connections; ++j)
         {
-            auto request = request_pool->Produce(url, 1000ms);
+            auto request = request_pool.Produce(url, 1000ms);
             request->SetFollowRedirects(false);
             request->AddHeader("Connection", "Keep-Alive");
             event_loop->AddRequest(std::move(request));
         }
 
-        pools.emplace_back(std::move(request_pool));
         loops.emplace_back(std::move(event_loop));
     }
 

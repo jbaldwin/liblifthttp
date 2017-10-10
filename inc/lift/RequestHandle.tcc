@@ -21,4 +21,16 @@ auto RequestHandle::SetTimeout(
     return false;
 }
 
+template<typename UserDataType>
+auto RequestHandle::SetUserData(UserDataType* user_data) -> void
+{
+    m_user_data = static_cast<void*>(user_data);
+}
+
+template<typename UserDataType>
+auto RequestHandle::GetUserData() -> UserDataType*
+{
+    return static_cast<UserDataType*>(m_user_data);
+}
+
 } // lift

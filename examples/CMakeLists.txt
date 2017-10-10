@@ -39,8 +39,15 @@ add_executable(request_headers_simple ${REQUEST_HEADERS_SIMPLE_SOURCE_FILES})
 target_link_libraries(request_headers_simple PRIVATE lifthttp uv curl)
 
 ### benchmark_simple ###
-set(REQUEST_BENCHMARK_SIMPLE_SOURCE_FILES
-        examples/benchmark_simple.cpp
+set(BENCHMARK_SIMPLE_SOURCE_FILES
+    examples/benchmark_simple.cpp
 )
-add_executable(benchmark_simple ${REQUEST_BENCHMARK_SIMPLE_SOURCE_FILES})
+add_executable(benchmark_simple ${BENCHMARK_SIMPLE_SOURCE_FILES})
 target_link_libraries(benchmark_simple PRIVATE lifthttp uv curl)
+
+### user_data ###
+set(USER_DATA_SOURCE_FILES
+    examples/user_data.cpp
+)
+add_executable(user_data ${USER_DATA_SOURCE_FILES})
+target_link_libraries(user_data PRIVATE lifthttp uv curl)

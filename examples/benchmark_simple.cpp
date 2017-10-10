@@ -17,7 +17,7 @@ public:
 
     auto OnComplete(lift::Request request) -> void override
     {
-        if(request->GetStatus() == lift::RequestStatus::SUCCESS)
+        if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
         {
             ++m_success;
         }

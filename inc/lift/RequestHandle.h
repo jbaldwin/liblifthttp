@@ -116,6 +116,11 @@ public:
     auto Perform() -> bool;
 
     /**
+     * @return The HTTP response code.
+     */
+    auto GetResponseCode() const -> int64_t;
+
+    /**
      * @return The HTTP response headers.
      */
     auto GetResponseHeaders() const -> const std::vector<Header>&;
@@ -131,19 +136,35 @@ public:
     auto GetTotalTimeMilliseconds() const -> uint64_t;
 
     /**
-     * @return Gets the request error.
+     * The completion status is how the request ended up in the event loop.
+     * It might have completed successfully, or timed out, or had an SSL error, etc.
+     *
+     * This is not the HTTP status code returned by the remote server.
+     *
+     * @return Gets the request completion status.
      */
-    auto GetStatus() const -> RequestStatus;
+    auto GetCompletionStatus() const -> RequestStatus;
 
     /**
      * Resets the request to be re-used.  This will clear everything on the request.
      */
     auto Reset() -> void;
 
+    /**
+     * Sets a user provided data pointer.  The Request object in no way
+     * owns this data and is simply pass through to OnComplete().
+     * @tparam UserDataType The user data type.
+     * @param user_data The data pointer
+     */
     template<typename UserDataType>
     auto SetUserData(
         UserDataType* user_data
     ) -> void;
+
+    /**
+     * @tparam UserDataType The same user data type provided in SetUserData().
+     * @return Gets the user provided data if any.
+     */
     template<typename UserDataType>
     auto GetUserData() -> UserDataType*;
 
@@ -200,7 +221,7 @@ private:
      * Converts a CURLcode into a RequestStatus.
      * @param curl_code The CURLcode to convert.
      */
-    auto setRequestStatus(
+    auto setCompletionStatus(
         CURLcode curl_code
     ) -> void;
 

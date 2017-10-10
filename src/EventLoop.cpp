@@ -257,7 +257,7 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
              * OnComplete() callback.  Curl has kept the memory alive for us.
              */
             Request request(&m_request_pool, std::unique_ptr<RequestHandle>(raw_request_handle_ptr));
-            request->setRequestStatus(easy_result);
+            request->setCompletionStatus(easy_result);
             m_request_callback->OnComplete(std::move(request));
             --m_active_request_count;
         }

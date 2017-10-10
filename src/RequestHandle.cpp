@@ -218,8 +218,18 @@ auto RequestHandle::Perform() -> bool
 {
     prepareForPerform();
     auto curl_error_code = curl_easy_perform(m_curl_handle);
-    setRequestStatus(curl_error_code);
+    setCompletionStatus(curl_error_code);
     return (m_status_code == RequestStatus::SUCCESS);
+}
+
+auto RequestHandle::GetResponseCode() const -> int64_t
+{
+    long http_response_code = 0;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+    curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
+#pragma clang diagnostic pop
+    return http_response_code;
 }
 
 auto RequestHandle::GetResponseHeaders() const -> const std::vector<Header>&
@@ -242,7 +252,7 @@ auto RequestHandle::GetTotalTimeMilliseconds() const -> uint64_t
     return static_cast<uint64_t>(total_time * 1000);
 }
 
-auto RequestHandle::GetStatus() const -> RequestStatus
+auto RequestHandle::GetCompletionStatus() const -> RequestStatus
 {
     return m_status_code;
 }
@@ -305,7 +315,7 @@ auto RequestHandle::clearResponseBuffers() -> void
     m_response_data.clear();
 }
 
-auto RequestHandle::setRequestStatus(
+auto RequestHandle::setCompletionStatus(
     CURLcode curl_code
 ) -> void
 {

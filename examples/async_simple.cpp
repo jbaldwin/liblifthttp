@@ -22,7 +22,7 @@ public:
     auto OnComplete(lift::Request request) -> void override
     {
         m_completed--;
-        switch(request->GetStatus())
+        switch(request->GetCompletionStatus())
         {
             case lift::RequestStatus::SUCCESS:
                 std::cout
@@ -61,7 +61,7 @@ public:
             case lift::RequestStatus::BUILDING:
             case lift::RequestStatus::EXECUTING:
                 std::cout << "Request is in an invalid state: "
-                          << request_status2str(request->GetStatus()) << std::endl;
+                          << request_status2str(request->GetCompletionStatus()) << std::endl;
                 break;
         }
 

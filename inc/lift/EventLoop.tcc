@@ -2,7 +2,7 @@ namespace lift
 {
 
 template<typename Container>
-auto EventLoop::AddRequests(
+auto EventLoop::StartRequests(
     Container& requests
 ) -> void
 {

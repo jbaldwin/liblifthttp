@@ -113,6 +113,8 @@ EventLoop::EventLoop(
       m_async_closed(false),
       m_timeout_timer_closed(false)
 {
+    m_request_callback->m_event_loop = this;
+
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;
 
@@ -188,7 +190,7 @@ auto EventLoop::GetRequestPool() -> RequestPool&
     return m_request_pool;
 }
 
-auto EventLoop::AddRequest(
+auto EventLoop::StartRequest(
     Request request
 ) -> void
 {

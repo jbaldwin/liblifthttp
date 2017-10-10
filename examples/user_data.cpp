@@ -19,17 +19,8 @@ class CompletedCtx : public lift::IRequestCallback
 public:
     auto OnComplete(lift::Request request) -> void override
     {
-        std::cout << request->GetUrl() << std::endl;
-        UserData* user_data = request->GetUserData<UserData>();
-        if(user_data)
-        {
-            std::cout << "Request id " << user_data->m_request_id << " has completed." << std::endl;
-            delete user_data;
-        }
-        else
-        {
-            std::cout << "user data was nullptr" << std::endl;
-        }
+        std::unique_ptr<UserData> user_data(request->GetUserData<UserData>());
+        std::cout << "Request id " << user_data->m_request_id << " has completed: " << request->GetUrl() << std::endl;
     }
 };
 
@@ -39,19 +30,19 @@ int main(int argc, char* argv[])
     (void)argv;
     using namespace std::chrono_literals;
 
-    // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
     lift::EventLoop event_loop(std::make_unique<CompletedCtx>());
     auto& request_pool = event_loop.GetRequestPool();
     auto req1 = request_pool.Produce("http://www.example.com", 1000ms);
     req1->SetUserData(new UserData(1));
-    event_loop.AddRequest(std::move(req1));
+    event_loop.StartRequest(std::move(req1));
 
     auto req2 = request_pool.Produce("http://www.reddit.com", 1000ms);
     req2->SetUserData(new UserData(2));
-    event_loop.AddRequest(std::move(req2));
+    event_loop.StartRequest(std::move(req2));
 
+    // sleep for a bit so this thread doesn't grab the active request count too fast and just shutdown
     std::this_thread::sleep_for(500ms);
 
     while(event_loop.GetActiveRequestCount() > 0)

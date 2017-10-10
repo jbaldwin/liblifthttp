@@ -12,7 +12,7 @@ set(SOURCE_FILES
     inc/lift/Escape.h src/Escape.cpp
     inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
-        inc/lift/IRequestCallback.h
+    inc/lift/IRequestCallback.h src/IRequestCallback.cpp
     inc/lift/Lift.h src/Lift.cpp
     inc/lift/Method.h
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp

@@ -66,7 +66,7 @@ public:
      *                will have the IRequestCb called
      *                when this request completes/timesout/errors.
      */
-    auto AddRequest(
+    auto StartRequest(
         Request request
     ) -> void;
 
@@ -79,7 +79,7 @@ public:
      * @param requests The batch of requests to process.
      */
     template<typename Container>
-    auto AddRequests(
+    auto StartRequests(
         Container& requests
     ) -> void;
 

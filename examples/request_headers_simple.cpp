@@ -21,11 +21,6 @@ int main(int argc, char* argv[])
         std::cout << header.GetHeader() << std::endl;
     }
     std::cout << std::endl;
-    for(auto& header : request->GetRequestHeaders())
-    {
-        std::cout << header.GetName() << ": " << header.GetValue() << std::endl;
-    }
-    std::cout << std::endl;
 
     std::cout << "Requesting http://www.example.com" << std::endl;
     request->Perform();

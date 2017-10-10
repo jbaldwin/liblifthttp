@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
          * example intentionally has 'requests' go out of scope to further
          * demonstrate this.
          */
-        event_loop.AddRequests(requests);
+        event_loop.StartRequests(requests);
     }
 
     // Now wait for all the requests to finish before cleaning up.

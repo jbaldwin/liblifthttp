@@ -5,14 +5,26 @@
 namespace lift
 {
 
+class EventLoop;
+
 /**
  * Interface for the set of possible asynchronous request callbacks when
  * the request completes/times out/errors.
  */
 class IRequestCallback
 {
+    friend class EventLoop;
+
 public:
     virtual ~IRequestCallback() = default;
+
+    /**
+     * @return The EventLoop that owns this request callback structure.
+     * @{
+     */
+    auto GetEventLoop() -> EventLoop&;
+    auto GetEventLoop() const -> const EventLoop&;
+    /** @} */
 
     /**
      * Request callback on completion.  The request will have either a success
@@ -22,6 +34,9 @@ public:
     virtual auto OnComplete(
         Request request
     ) -> void = 0;
+
+private:
+    EventLoop* m_event_loop;
 };
 
 } // lift

@@ -24,7 +24,7 @@ set(SOURCE_FILES
     inc/lift/Header.h src/Header.cpp
     inc/lift/IRequestCallback.h src/IRequestCallback.cpp
     inc/lift/Lift.h src/Lift.cpp
-    inc/lift/Method.h
+    inc/lift/Http.h
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp
     inc/lift/Request.h src/Request.cpp
     inc/lift/RequestHandle.h inc/lift/RequestHandle.tcc src/RequestHandle.cpp

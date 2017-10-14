@@ -3,7 +3,7 @@
 #include "lift/Types.h"
 #include "lift/RequestStatus.h"
 #include "lift/Header.h"
-#include "lift/Method.h"
+#include "lift/Http.h"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -48,7 +48,14 @@ public:
      * @param http_method Sets the HTTP method for this request.
      */
     auto SetMethod(
-        Method http_method
+        http::Method http_method
+    ) -> void;
+
+    /**
+     * @param http_version Sets the HTTP version for this request.
+     */
+    auto SetVersion(
+        http::Version  http_version
     ) -> void;
 
     /**

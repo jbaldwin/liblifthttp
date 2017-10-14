@@ -106,34 +106,61 @@ auto RequestHandle::GetUrl() const -> StringView
 }
 
 auto RequestHandle::SetMethod(
-    Method http_method
+    http::Method http_method
 ) -> void
 {
     switch(http_method)
     {
-        case Method::GET:
+        case http::Method::GET:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
             break;
-        case Method::HEAD:
+        case http::Method::HEAD:
             curl_easy_setopt(m_curl_handle, CURLOPT_NOBODY, 1L);
             break;
-        case Method::POST:
+        case http::Method::POST:
             curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
             break;
-        case Method::PUT:
+        case http::Method::PUT:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PUT");
             break;
-        case Method::DELETE:
+        case http::Method::DELETE:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
             break;
-        case Method::CONNECT:
+        case http::Method::CONNECT:
             curl_easy_setopt(m_curl_handle, CURLOPT_CONNECT_ONLY, 1L);
             break;
-        case Method::OPTIONS:
+        case http::Method::OPTIONS:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "OPTIONS");
             break;
-        case Method::PATCH:
+        case http::Method::PATCH:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+            break;
+    }
+}
+
+auto RequestHandle::SetVersion(
+    http::Version http_version
+) -> void
+{
+    switch(http_version)
+    {
+        case http::Version ::USE_BEST:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
+            break;
+        case http::Version::V1_0:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+            break;
+        case http::Version::V1_1:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            break;
+        case http::Version::V2_0:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+            break;
+        case http::Version::V2_0_TLS:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
+            break;
+        case http::Version::V2_0_ONLY:
+            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
             break;
     }
 }

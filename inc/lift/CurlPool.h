@@ -22,7 +22,7 @@ namespace lift
 class CurlPool
 {
 public:
-    CurlPool() = default;
+    CurlPool();
     ~CurlPool(); ///< Required to call curl_easy_cleanup() on every handle.
 
     CurlPool(const CurlPool& copy) = delete;                                ///< No copying
@@ -47,7 +47,9 @@ public:
      *
      * @param curl_handle CURL* handle to return to the pool.
      */
-    auto Return(CURL* curl_handle) -> void;
+    auto Return(
+        CURL* curl_handle
+    ) -> void;
 
 private:
     std::mutex m_lock;                  ///< Used for thread safe calls.

@@ -36,7 +36,7 @@ public:
     ) -> void = 0;
 
 private:
-    EventLoop* m_event_loop;
+    EventLoop* m_event_loop = nullptr;
 };
 
 } // lift

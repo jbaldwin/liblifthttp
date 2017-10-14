@@ -5,7 +5,15 @@ namespace lift
 {
 
 QueryBuilder::QueryBuilder()
-    : m_port_int(0)
+    : m_converter(),
+      m_query(),
+      m_scheme(),
+      m_hostname(),
+      m_port_str(),
+      m_port_int(0),
+      m_path_parts(),
+      m_query_parameters(),
+      m_fragment()
 {
     m_query.reserve(2048);
 }

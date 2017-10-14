@@ -36,6 +36,6 @@ auto RequestPool::Produce(
 
         return Request(this, std::move(request_handle_ptr));
     }
-};
+}
 
 } // lift

@@ -240,8 +240,7 @@ private:
     ) -> size_t; ///< libcurl will call this function when data is received for the HTTP request.
 
     friend auto requests_accept_async(
-        uv_async_t* async,
-        int status
+        uv_async_t* async
     ) -> void; ///< libuv will call this function when the AddRequest() function is called.
 };
 

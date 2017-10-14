@@ -3,6 +3,13 @@
 namespace lift
 {
 
+CurlPool::CurlPool()
+    : m_lock(),
+      m_curl_handles()
+{
+
+}
+
 CurlPool::~CurlPool()
 {
     for(auto* curl_handle : m_curl_handles)

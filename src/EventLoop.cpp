@@ -19,6 +19,7 @@ public:
         curl_socket_t sock_fd
     )
         : m_event_loop(event_loop),
+          m_poll_handle(),
           m_sock_fd(sock_fd)
     {
         uv_poll_init_socket(uv_loop, &m_poll_handle, m_sock_fd);
@@ -87,8 +88,7 @@ auto uv_close_callback(
 ) -> void;
 
 auto on_uv_timeout_callback(
-    uv_timer_t* handle,
-    int status
+    uv_timer_t* handle
 ) -> void;
 
 auto on_uv_curl_perform_callback(
@@ -98,18 +98,23 @@ auto on_uv_curl_perform_callback(
 ) -> void;
 
 auto requests_accept_async(
-    uv_async_t* async,
-    int status
+    uv_async_t* async
 ) -> void;
 
 EventLoop::EventLoop(
     std::unique_ptr<IRequestCallback> request_callback
 )
-    : m_is_running(false),
+    : m_request_pool(),
+      m_is_running(false),
       m_active_request_count(0),
       m_request_callback(std::move(request_callback)),
       m_loop(uv_loop_new()),
+      m_async(),
+      m_timeout_timer(),
       m_cmh(curl_multi_init()),
+      m_pending_requests_lock(),
+      m_pending_requests(),
+      m_background_thread(),
       m_async_closed(false),
       m_timeout_timer_closed(false)
 {
@@ -121,13 +126,10 @@ EventLoop::EventLoop(
     uv_timer_init(m_loop, &m_timeout_timer);
     m_timeout_timer.data = this;
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETFUNCTION, curl_handle_socket_actions);
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA,     this);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION,  curl_start_timeout);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA,      this);
-#pragma clang diagnostic pop
 
     m_background_thread = std::thread([this] { run(); });
 
@@ -248,10 +250,7 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
             auto easy_result = message->data.result;
 
             RequestHandle* raw_request_handle_ptr = nullptr;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
-#pragma clang diagnostic pop
             curl_multi_remove_handle(m_cmh, easy_handle);
 
             /**
@@ -355,8 +354,7 @@ auto uv_close_callback(uv_handle_t* handle) -> void
 }
 
 auto on_uv_timeout_callback(
-    uv_timer_t* handle,
-    int /*status*/
+    uv_timer_t* handle
 ) -> void
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);
@@ -390,8 +388,7 @@ auto on_uv_curl_perform_callback(
 }
 
 auto requests_accept_async(
-    uv_async_t* handle,
-    int /*status*/
+    uv_async_t* handle
 ) -> void
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);

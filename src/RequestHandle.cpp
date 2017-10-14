@@ -29,8 +29,17 @@ RequestHandle::RequestHandle(
 )
     : m_curl_handle(curl_handle),
       m_curl_pool(curl_pool),
+      m_url(),
+      m_request_headers(),
+      m_request_headers_idx(),
       m_curl_request_headers(nullptr),
-      m_status_code(RequestStatus::BUILDING)
+      m_headers_commited(false),
+      m_request_data(),
+      m_status_code(RequestStatus::BUILDING),
+      m_response_headers(),
+      m_response_headers_idx(),
+      m_response_data(),
+      m_user_data(nullptr)
 {
     init();
     SetUrl(url);
@@ -49,8 +58,6 @@ RequestHandle::~RequestHandle()
 
 auto RequestHandle::init() -> void
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE,        this);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERFUNCTION, curl_write_header);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA,     this);
@@ -58,7 +65,6 @@ auto RequestHandle::init() -> void
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA,      this);
     curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL,       1l);
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1l);
-#pragma clang diagnostic pop
 
     // TODO make the buffer reservations configurable.
     m_request_headers.reserve(16'384);
@@ -79,8 +85,6 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
         return false;
     }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_URL, url.c_str());
     if(error_code == CURLE_OK)
     {
@@ -92,7 +96,7 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
             return true;
         }
     }
-#pragma clang diagnostic pop
+
     return false;
 }
 
@@ -105,8 +109,6 @@ auto RequestHandle::SetMethod(
     Method http_method
 ) -> void
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     switch(http_method)
     {
         case Method::GET:
@@ -134,7 +136,6 @@ auto RequestHandle::SetMethod(
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
             break;
     }
-#pragma clang diagnostic pop
 }
 
 auto RequestHandle::SetFollowRedirects(
@@ -142,10 +143,7 @@ auto RequestHandle::SetFollowRedirects(
 ) -> bool
 {
     long curl_value = (follow_redirects) ? 1L : 0L;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
-#pragma clang diagnostic pop
     return (error_code == CURLE_OK);
 }
 
@@ -202,11 +200,8 @@ auto RequestHandle::SetRequestData(
     // the lifetime of the request object.
     m_request_data = std::move(data);
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request_data.size()));
     curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS,    m_request_data.data());
-#pragma clang diagnostic pop
 }
 
 auto RequestHandle::GetRequestData() const -> const std::string&
@@ -225,10 +220,7 @@ auto RequestHandle::Perform() -> bool
 auto RequestHandle::GetResponseCode() const -> int64_t
 {
     long http_response_code = 0;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
-#pragma clang diagnostic pop
     return http_response_code;
 }
 
@@ -245,10 +237,7 @@ auto RequestHandle::GetResponseData() const -> const std::string&
 auto RequestHandle::GetTotalTimeMilliseconds() const -> uint64_t
 {
     double total_time = 0;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-#pragma clang diagnostic pop
     return static_cast<uint64_t>(total_time * 1000);
 }
 
@@ -297,11 +286,7 @@ auto RequestHandle::prepareForPerform() -> void
             );
         }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
-#pragma clang diagnostic pop
-
         m_headers_commited = true;
     }
 
@@ -319,8 +304,8 @@ auto RequestHandle::setCompletionStatus(
     CURLcode curl_code
 ) -> void
 {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-enum"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch-enum"
     switch(curl_code)
     {
         case CURLcode::CURLE_OK:
@@ -345,7 +330,7 @@ auto RequestHandle::setCompletionStatus(
             m_status_code = RequestStatus::ERROR;
             break;
     }
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 }
 
 auto curl_write_header(

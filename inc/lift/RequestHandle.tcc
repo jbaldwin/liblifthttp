@@ -12,10 +12,7 @@ auto RequestHandle::SetTimeout(
 
     if(timeout_ms > 0)
     {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
         auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout_ms));
-#pragma clang diagnostic pop
         return (error_code == CURLE_OK);
     }
     return false;

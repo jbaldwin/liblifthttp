@@ -4,7 +4,9 @@ namespace lift
 {
 
 RequestPool::RequestPool()
-    : m_curl_pool(std::make_unique<CurlPool>())
+    : m_lock(),
+      m_requests(),
+      m_curl_pool(std::make_unique<CurlPool>())
 {
 
 }

@@ -198,11 +198,9 @@ private:
      * jobs that have expired.
      *
      * @param handle The timer object trigger, this will always be m_timeout_timer.
-     * @param status Unused.
      */
     friend auto on_uv_timeout_callback(
-        uv_timer_t* handle,
-        int status
+        uv_timer_t* handle
     ) -> void;
 
     /**
@@ -227,11 +225,9 @@ private:
      * the EventLoop.
      *
      * @param async The async object trigger, this will always be m_async.
-     * @param status Unused.
      */
     friend auto requests_accept_async(
-        uv_async_t* async,
-        int status
+        uv_async_t* async
     ) -> void;
 };
 

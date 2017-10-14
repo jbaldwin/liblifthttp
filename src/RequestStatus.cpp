@@ -36,6 +36,7 @@ auto request_status2str(
         case RequestStatus::RESPONSE_EMPTY:
             return REQUEST_STATUS_RESPONSE_EMPTY;
         case RequestStatus::ERROR:
+        default:
             return REQUEST_STATUS_ERROR;
     }
 }

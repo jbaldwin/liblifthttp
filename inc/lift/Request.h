@@ -49,8 +49,7 @@ private:
     std::unique_ptr<RequestHandle> m_request_handle;    ///< The actual underlying request object.
 
     friend auto requests_accept_async(
-        uv_async_t* async,
-        int status
+        uv_async_t* async
     ) -> void; ///< Friend so it can release the m_request_handle appropriately.
 };
 

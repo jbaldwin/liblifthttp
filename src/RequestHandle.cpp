@@ -166,12 +166,14 @@ auto RequestHandle::SetVersion(
 }
 
 auto RequestHandle::SetFollowRedirects(
-    bool follow_redirects
+    bool follow_redirects,
+    int64_t max_redirects
 ) -> bool
 {
     long curl_value = (follow_redirects) ? 1L : 0L;
-    auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
-    return (error_code == CURLE_OK);
+    auto error_code1 = curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
+    auto error_code2 = curl_easy_setopt(m_curl_handle, CURLOPT_MAXREDIRS, static_cast<long>(max_redirects));
+    return (error_code1 == CURLE_OK && error_code2 == CURLE_OK);
 }
 
 auto RequestHandle::AddHeader(

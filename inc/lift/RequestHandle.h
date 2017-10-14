@@ -73,10 +73,12 @@ public:
      * Sets if this request should follow redirects.  By default following redirects is
      * enabled.
      * @param follow_redirects True to follow redirects, false to stop.
+     * @param max_redirects The maximum number of redirects to follow, -1 is infinite, 0 is none.
      * @return True if the follow redirects was set.
      */
     auto SetFollowRedirects(
-        bool follow_redirects
+        bool follow_redirects,
+        int64_t max_redirects = -1
     ) -> bool;
 
     /**

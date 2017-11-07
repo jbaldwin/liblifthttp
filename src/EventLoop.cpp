@@ -106,6 +106,7 @@ EventLoop::EventLoop(
 )
     : m_request_pool(),
       m_is_running(false),
+      m_is_stopping(false),
       m_active_request_count(0),
       m_request_callback(std::move(request_callback)),
       m_loop(uv_loop_new()),
@@ -114,6 +115,7 @@ EventLoop::EventLoop(
       m_cmh(curl_multi_init()),
       m_pending_requests_lock(),
       m_pending_requests(),
+      m_grabbed_requests(),
       m_background_thread(),
       m_async_closed(false),
       m_timeout_timer_closed(false)
@@ -146,9 +148,8 @@ EventLoop::EventLoop(
 
 EventLoop::~EventLoop()
 {
-    // Curl needs to be cleaned up first or the uv_loop close callbacks will fail.
     curl_multi_cleanup(m_cmh);
-    uv_loop_delete(m_loop);
+    uv_loop_close(m_loop);
 }
 
 auto EventLoop::IsRunning() -> bool
@@ -163,26 +164,17 @@ auto EventLoop::GetActiveRequestCount() const -> uint64_t
 
 auto EventLoop::Stop() -> void
 {
+    m_is_stopping = true;
     uv_timer_stop(&m_timeout_timer);
-
-    /**
-     * Close the timer and async handles.  The callback will mark each item
-     * as properly closed before stop is called on the loop.
-     */
     uv_close(reinterpret_cast<uv_handle_t*>(&m_timeout_timer), uv_close_callback);
     uv_close(reinterpret_cast<uv_handle_t*>(&m_async),         uv_close_callback);
-
-    /**
-     * Fake a request to the event loop so it will wake up if it is in a blocking wait.
-     * This is important or the uv_run() call can block indefinitely.
-     */
-    uv_async_send(&m_async);
+    uv_async_send(&m_async); // fake a request to make sure the loop wakes up
+    uv_stop(m_loop);
 
     while(!m_timeout_timer_closed && !m_async_closed)
     {
         std::this_thread::sleep_for(1ms);
     }
-    uv_stop(m_loop);
 
     m_background_thread.join();
 }
@@ -194,8 +186,13 @@ auto EventLoop::GetRequestPool() -> RequestPool&
 
 auto EventLoop::StartRequest(
     Request request
-) -> void
+) -> bool
 {
+    if(m_is_stopping)
+    {
+       return false;
+    }
+
     // We'll prepare now since it won't block the event loop thread.
     request->prepareForPerform();
     {
@@ -203,6 +200,8 @@ auto EventLoop::StartRequest(
         m_pending_requests.emplace_back(std::move(request));
     }
     uv_async_send(&m_async);
+
+    return true;
 }
 
 auto EventLoop::GetRequestCallback() -> IRequestCallback&
@@ -393,25 +392,35 @@ auto requests_accept_async(
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);
 
-    // Lock scope.
+    /**
+     * This lock must not have any "curl_*" functions called
+     * while it is held, curl has its own internal locks and
+     * it can cause a deadlock.  This means we intentionally swap
+     * vectors before working on them so we have exclusive access
+     * to the Request objects on the EventLoop thread.
+     */
     {
         std::lock_guard<std::mutex> guard(event_loop->m_pending_requests_lock);
-
-        for(auto& request : event_loop->m_pending_requests)
-        {
-            /**
-             * Drop the unique_ptr safety around the RequestHandle while it is being
-             * processed by curl.  When curl is finished completing the request
-             * it will be put back into a Request object for the client to use.
-             */
-            auto* raw_request_handle_ptr = request.m_request_handle.release();
-
-            curl_multi_add_handle(event_loop->m_cmh, raw_request_handle_ptr->m_curl_handle);
-        }
-
-        event_loop->m_active_request_count += event_loop->m_pending_requests.size();
-        event_loop->m_pending_requests.clear();
+        // swap so we can release the lock as quickly as possible
+        event_loop->m_grabbed_requests.swap(
+            event_loop->m_pending_requests
+        );
     }
+
+    for(auto& request : event_loop->m_grabbed_requests)
+    {
+        /**
+         * Drop the unique_ptr safety around the RequestHandle while it is being
+         * processed by curl.  When curl is finished completing the request
+         * it will be put back into a Request object for the client to use.
+         */
+        auto* raw_request_handle_ptr = request.m_request_handle.release();
+
+        curl_multi_add_handle(event_loop->m_cmh, raw_request_handle_ptr->m_curl_handle);
+    }
+
+    event_loop->m_active_request_count += event_loop->m_grabbed_requests.size();
+    event_loop->m_grabbed_requests.clear();
 }
 
 } // lift

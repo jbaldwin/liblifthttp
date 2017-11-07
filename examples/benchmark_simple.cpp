@@ -32,7 +32,10 @@ public:
         }
 
         // And request again!
-        GetEventLoop().StartRequest(std::move(request));
+        if(!GetEventLoop().StartRequest(std::move(request)))
+        {
+            std::cerr << "Event loop is no longer accepting requests.\n";
+        }
     }
 };
 

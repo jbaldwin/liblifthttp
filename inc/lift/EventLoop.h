@@ -68,7 +68,7 @@ public:
      */
     auto StartRequest(
         Request request
-    ) -> void;
+    ) -> bool;
 
     /**
      * Adds a batch of requests to process.
@@ -98,7 +98,8 @@ private:
      */
     RequestPool m_request_pool;
 
-    std::atomic<bool> m_is_running; ///< Set to true if the EventLoop is currently running.
+    std::atomic<bool> m_is_running;  ///< Set to true if the EventLoop is currently running.
+    std::atomic<bool> m_is_stopping; ///< Set to true if the EventLoop is currently shutting down.
     std::atomic<uint64_t> m_active_request_count; ///< The active number of requests running.
 
     std::unique_ptr<IRequestCallback> m_request_callback; ///< Callback function for on completion.
@@ -113,13 +114,18 @@ private:
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
      * m_pending_requests_lock to guarantee thread safety.
+     *
+     * Before the EventLoop begins working on the pending requests, it swaps
+     * the pending requests vector into the grabbed requests vector -- this is done
+     * because the pending requests lock could deadlock with internal curl locks!
      */
     std::vector<Request> m_pending_requests;
+    std::vector<Request> m_grabbed_requests; ///< Only accessible from within the EventLoop thread.
 
     std::thread m_background_thread; ///< The background thread spawned to drive the event loop.
 
-    bool m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
-    bool m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.
+    std::atomic<bool> m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
+    std::atomic<bool> m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.
 
     auto run() -> void; ///< The background thread runs from this function.
 

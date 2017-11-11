@@ -14,5 +14,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE lifthttp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     uv
-    curl
+    ${LIBSSL}
+    ${LIBCRYPTO}
+    ${LIBCURL}
+    ${LIBCARES}
+    z
+    dl
 )

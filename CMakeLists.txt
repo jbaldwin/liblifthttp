@@ -3,6 +3,13 @@ project(lifthttp CXX)
 
 message(${CMAKE_CXX_COMPILER_ID})
 
+set(LIBSSL "" CACHE STRING "User specified libsss static location.")
+set(LIBCRYPTO "" CACHE STRING "User specificed libcrypto static location.")
+set(LIBCURL "curl" CACHE STRING "User specified libcurl static location.")
+set(LIBCARES "" CACHE STRING "User specified libcares static location.")
+
+message("LIBCURL = ${LIBCURL}")
+
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
@@ -38,8 +45,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     uv
-    curl
+    ${LIBSSL}
+    ${LIBCRYPTO}
+    ${LIBCURL}
+    ${LIBCARES}
     pthread
+    z
+    dl
 )
 
 include(examples/CMakeLists.txt)

@@ -19,7 +19,7 @@ class CompletedCtx : public lift::IRequestCallback
 public:
     auto OnComplete(lift::Request request) -> void override
     {
-        std::unique_ptr<UserData> user_data(request->GetUserData<UserData>());
+        std::unique_ptr<UserData> user_data(static_cast<UserData*>(request->GetUserData()));
         std::cout << "Request id " << user_data->m_request_id << " has completed: " << request->GetUrl() << std::endl;
     }
 };

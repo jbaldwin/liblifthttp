@@ -64,9 +64,8 @@ public:
      * @param timeout The timeout for the request.
      * @return True if the timeout was set.
      */
-    template<typename Rep, typename Period>
     auto SetTimeout(
-        std::chrono::duration<Rep, Period> timeout
+        std::chrono::milliseconds timeout
     ) -> bool;
 
     /**
@@ -162,20 +161,16 @@ public:
     /**
      * Sets a user provided data pointer.  The Request object in no way
      * owns this data and is simply pass through to OnComplete().
-     * @tparam UserDataType The user data type.
      * @param user_data The data pointer
      */
-    template<typename UserDataType>
     auto SetUserData(
-        UserDataType* user_data
+        void* user_data
     ) -> void;
 
     /**
-     * @tparam UserDataType The same user data type provided in SetUserData().
      * @return Gets the user provided data if any.
      */
-    template<typename UserDataType>
-    auto GetUserData() -> UserDataType*;
+    auto GetUserData() -> void*;
 
 private:
     /**
@@ -254,5 +249,3 @@ private:
 };
 
 } // lift
-
-#include "lift/RequestHandle.tcc"

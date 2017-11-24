@@ -44,10 +44,9 @@ public:
      * @param timeout The timeout of the request.
      * @return A Request object setup for the URL + Timeout.
      */
-    template<typename Rep, typename Period>
     auto Produce(
         const std::string& url,
-        std::chrono::duration<Rep, Period> timeout
+        std::chrono::milliseconds timeout
     ) -> Request;
 
 private:
@@ -68,5 +67,3 @@ private:
 };
 
 } // lift
-
-#include "lift/RequestPool.tcc"

@@ -34,8 +34,8 @@ set(SOURCE_FILES
     inc/lift/Http.h
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp
     inc/lift/Request.h src/Request.cpp
-    inc/lift/RequestHandle.h inc/lift/RequestHandle.tcc src/RequestHandle.cpp
-    inc/lift/RequestPool.h inc/lift/RequestPool.tcc src/RequestPool.cpp
+    inc/lift/RequestHandle.h src/RequestHandle.cpp
+    inc/lift/RequestPool.h src/RequestPool.cpp
     inc/lift/RequestStatus.h src/RequestStatus.cpp
     inc/lift/Types.h
 )

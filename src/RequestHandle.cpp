@@ -165,6 +165,20 @@ auto RequestHandle::SetVersion(
     }
 }
 
+auto RequestHandle::SetTimeout(
+    std::chrono::milliseconds timeout
+) -> bool
+{
+    int64_t timeout_ms = timeout.count();
+
+    if(timeout_ms > 0)
+    {
+        auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout_ms));
+        return (error_code == CURLE_OK);
+    }
+    return false;
+}
+
 auto RequestHandle::SetFollowRedirects(
     bool follow_redirects,
     int64_t max_redirects
@@ -292,6 +306,16 @@ auto RequestHandle::Reset() -> void
     curl_easy_reset(m_curl_handle);
     init();
     m_status_code = RequestStatus::BUILDING;
+}
+
+auto RequestHandle::SetUserData(
+    void* user_data
+) -> void {
+    m_user_data = user_data;
+}
+
+auto RequestHandle::GetUserData() -> void* {
+    return m_user_data;
 }
 
 auto RequestHandle::prepareForPerform() -> void

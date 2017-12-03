@@ -16,7 +16,10 @@ namespace lift
 {
 
 class Request;
+class RequestPool;
 class CurlPool;
+
+typedef void(*OnCompleteHandler)(Request);
 
 class RequestHandle
 {
@@ -24,12 +27,20 @@ class RequestHandle
     friend class RequestPool;
 
 public:
+
     ~RequestHandle();
 
     RequestHandle(const RequestHandle&) = delete;                   ///< No copying
     RequestHandle(RequestHandle&&) = default;                       ///< Can move
     auto operator = (const RequestHandle&) = delete;                ///< No copy assign
     auto operator = (RequestHandle&&) -> RequestHandle& = default;  ///< Can move assign
+
+    /**
+     * @param on_complete_handler When this request completes this handle is called.
+     */
+    auto SetOnCompleteHandler(
+        OnCompleteHandler on_complete_handler
+    ) -> void;
 
     /**
      * @param url The URL of the HTTP request.
@@ -175,19 +186,26 @@ public:
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
-     * @param url         The url for the request.
-     * @param timeout     The timeout for the request in milliseconds.
-     * @param curl_handle The CURL* handle for this Request.
-     * @param curl_pool   The CurlPool to return the CURL* handle when this request destructs.
+     * @param url          The url for the request.
+     * @param timeout      The timeout for the request in milliseconds.
+     * @param request_pool The request pool that generated this handle.
+     * @param curl_handle  The CURL* handle for this Request.
+     * @param curl_pool    The CurlPool to return the CURL* handle when this request destructs.
      */
     explicit RequestHandle(
         const std::string& url,
         std::chrono::milliseconds timeout,
+        RequestPool& request_pool,
         CURL* curl_handle,
-        CurlPool& curl_pool
+        CurlPool& curl_pool,
+        OnCompleteHandler on_complete_handler = nullptr
     );
 
     auto init() -> void;
+
+    OnCompleteHandler m_on_complete_handler;    ///< The onComplete() handler.
+
+    RequestPool& m_request_pool;                ///< The request pool this request was produced from.
 
     CURL* m_curl_handle;                        ///< The curl handle for this request.
     CurlPool& m_curl_pool;                      ///< The curl handle pool.
@@ -228,6 +246,8 @@ private:
     auto setCompletionStatus(
         CURLcode curl_code
     ) -> void;
+
+    auto onComplete() -> void;
 
     friend auto curl_write_header(
         char* buffer,

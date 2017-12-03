@@ -24,10 +24,14 @@ auto curl_write_data(
 RequestHandle::RequestHandle(
     const std::string& url,
     std::chrono::milliseconds timeout_ms,
+    RequestPool& request_pool,
     CURL* curl_handle,
-    CurlPool& curl_pool
+    CurlPool& curl_pool,
+    OnCompleteHandler on_complete_handler
 )
-    : m_curl_handle(curl_handle),
+    : m_on_complete_handler(on_complete_handler),
+      m_request_pool(request_pool),
+      m_curl_handle(curl_handle),
       m_curl_pool(curl_pool),
       m_url(),
       m_request_headers(),
@@ -76,6 +80,12 @@ auto RequestHandle::init() -> void
     m_response_data.reserve(16'384);
 
     m_user_data = nullptr;
+}
+
+auto RequestHandle::SetOnCompleteHandler(
+    OnCompleteHandler on_complete_handler
+) -> void {
+    m_on_complete_handler = on_complete_handler;
 }
 
 auto RequestHandle::SetUrl(const std::string& url) -> bool
@@ -384,6 +394,11 @@ auto RequestHandle::setCompletionStatus(
             break;
     }
 #pragma GCC diagnostic pop
+}
+
+auto RequestHandle::onComplete() -> void {
+    Request request(&m_request_pool, std::unique_ptr<RequestHandle>(this));
+    m_on_complete_handler(std::move(request));
 }
 
 auto curl_write_header(

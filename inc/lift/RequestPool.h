@@ -27,7 +27,10 @@ public:
     auto operator = (RequestPool&&) -> RequestPool& = default;      ///< Can move assign
 
     /**
-     * Produces a new Request with inifinite timeout.
+     * Produces a new Request with infinite timeout.
+     *
+     * This produce method is best used for synchronous requests.
+     *
      * @param url The url of the Request.
      * @return A request object setup for the URL.
      */
@@ -36,9 +39,9 @@ public:
     ) -> Request;
 
     /**
-     * Produces a new Request.
+     * Produces a new Request with the specified timeout.
      *
-     * This function is thread safe.
+     * This produce method is best used for synchronous requests.
      *
      * @param url The url of the Request.
      * @param timeout The timeout of the request.
@@ -46,6 +49,22 @@ public:
      */
     auto Produce(
         const std::string& url,
+        std::chrono::milliseconds timeout
+    ) -> Request;
+
+    /**
+     * Produces a new Request.  This function is thread safe.
+     *
+     * This produce method is best used for asynchronous requests.
+     *
+     * @param url The url of the Request.
+     * @param on_complete_handler The on completion callback handler for this request.
+     * @param timeout The timeout of the request.
+     * @return A Request object setup for the URL + Timeout.
+     */
+    auto Produce(
+        const std::string& url,
+        OnCompleteHandler on_complete_handler,
         std::chrono::milliseconds timeout
     ) -> Request;
 

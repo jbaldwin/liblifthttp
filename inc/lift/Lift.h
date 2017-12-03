@@ -3,7 +3,6 @@
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
 #include "lift/RequestPool.h"
-#include "lift/IRequestCallback.h"
 #include "lift/EventLoop.h"
 #include "lift/QueryBuilder.h"
 

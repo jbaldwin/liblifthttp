@@ -14,30 +14,27 @@ static auto print_usage(
     std::cout << program_name << "<url> <duration_seconds> <connections> <threads>" << std::endl;
 }
 
-class CompletedCtx : public lift::IRequestCallback
+std::atomic<uint64_t> g_success{0};
+std::atomic<uint64_t> g_error{0};
+
+auto on_complete(lift::Request request) -> void
 {
-public:
-    uint64_t m_success = 0;
-    uint64_t m_error   = 0;
-
-    auto OnComplete(lift::Request request) -> void override
+    if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
     {
-        if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
-        {
-            ++m_success;
-        }
-        else
-        {
-            ++m_error;
-        }
-
-        // And request again!
-        if(!GetEventLoop().StartRequest(std::move(request)))
-        {
-            std::cerr << "Event loop is no longer accepting requests.\n";
-        }
+        ++g_success;
     }
-};
+    else
+    {
+        ++g_error;
+    }
+
+    // And request again!
+    auto* event_loop = static_cast<lift::EventLoop*>(request->GetUserData());
+    if(!event_loop->StartRequest(std::move(request)))
+    {
+        std::cerr << "Event loop is no longer accepting requests.\n";
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -60,13 +57,14 @@ int main(int argc, char* argv[])
     std::vector<std::unique_ptr<lift::EventLoop>> loops;
     for(uint64_t i = 0; i < threads; ++i)
     {
-        auto event_loop = std::make_unique<lift::EventLoop>(std::make_unique<CompletedCtx>());
+        auto event_loop = std::make_unique<lift::EventLoop>();
         auto& request_pool = event_loop->GetRequestPool();
 
         for(uint64_t j = 0; j < connections; ++j)
         {
-            auto request = request_pool.Produce(url, 1000ms);
+            auto request = request_pool.Produce(url, on_complete, 1000ms);
             request->SetFollowRedirects(false);
+            request->SetUserData(event_loop.get());
             request->AddHeader("Connection", "Keep-Alive");
             event_loop->StartRequest(std::move(request));
         }
@@ -77,24 +75,12 @@ int main(int argc, char* argv[])
     std::chrono::seconds seconds(duration_s);
     std::this_thread::sleep_for(seconds);
 
-    /**
-     * Loop over each event loop and aggregate totals.
-     */
-    uint64_t total_success = 0;
-    uint64_t total_error   = 0;
     for(auto& loop : loops)
     {
-        auto& completed_ctx = static_cast<CompletedCtx&>(loop->GetRequestCallback());
-
-        std::cout << completed_ctx.m_success << " " << completed_ctx.m_error << std::endl;
-
-        total_success += completed_ctx.m_success;
-        total_error = completed_ctx.m_error;
         loop->Stop();
     }
 
-    std::cout << "Totals:" << std::endl;
-    std::cout << total_success << " " << total_error << std::endl;
+    std::cout << "Total success:" << g_success << " total error:" << g_error << std::endl;
 
     lift::cleanup();
 

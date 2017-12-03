@@ -1,7 +1,6 @@
 #pragma once
 
 #include "lift/RequestPool.h"
-#include "lift/IRequestCallback.h"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -20,15 +19,9 @@ class EventLoop
 {
 public:
     /**
-     * Creates a new event loop with the given request completion callback.
-     * @param request_callback Callback used for when requests
-     *                         complete/error/timeout.  The EventLoop
-     *                         owns the lifetime of this callback object
-     *                         and will release it upon destruction.
+     * Creates a new lift event loop.
      */
-    explicit EventLoop(
-        std::unique_ptr<IRequestCallback> request_callback
-    );
+    EventLoop();
 
     ~EventLoop();
 
@@ -83,14 +76,6 @@ public:
         Container& requests
     ) -> void;
 
-    /**
-     * @return Gets a borrowed reference to the callback functions.
-     * @{
-     */
-    auto GetRequestCallback() -> IRequestCallback&;
-    auto GetRequestCallback() const -> const IRequestCallback&;
-    /** @} */
-
 private:
     /**
      * Each event loop gets its own private request pool for efficiency.
@@ -101,8 +86,6 @@ private:
     std::atomic<bool> m_is_running;  ///< Set to true if the EventLoop is currently running.
     std::atomic<bool> m_is_stopping; ///< Set to true if the EventLoop is currently shutting down.
     std::atomic<uint64_t> m_active_request_count; ///< The active number of requests running.
-
-    std::unique_ptr<IRequestCallback> m_request_callback; ///< Callback function for on completion.
 
     uv_loop_t* m_loop;          ///< The UV event loop to drive libcurl.
     uv_async_t m_async;         ///< The async trigger for injecting new requests into the event loop.

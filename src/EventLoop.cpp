@@ -101,14 +101,11 @@ auto requests_accept_async(
     uv_async_t* async
 ) -> void;
 
-EventLoop::EventLoop(
-    std::unique_ptr<IRequestCallback> request_callback
-)
+EventLoop::EventLoop()
     : m_request_pool(),
       m_is_running(false),
       m_is_stopping(false),
       m_active_request_count(0),
-      m_request_callback(std::move(request_callback)),
       m_loop(uv_loop_new()),
       m_async(),
       m_timeout_timer(),
@@ -120,8 +117,6 @@ EventLoop::EventLoop(
       m_async_closed(false),
       m_timeout_timer_closed(false)
 {
-    m_request_callback->m_event_loop = this;
-
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;
 
@@ -204,16 +199,6 @@ auto EventLoop::StartRequest(
     return true;
 }
 
-auto EventLoop::GetRequestCallback() -> IRequestCallback&
-{
-    return *m_request_callback;
-}
-
-auto EventLoop::GetRequestCallback() const -> const IRequestCallback&
-{
-    return *m_request_callback;
-}
-
 auto EventLoop::run() -> void
 {
     m_is_running = true;
@@ -252,13 +237,9 @@ auto EventLoop::checkActions(curl_socket_t socket, int event_bitmask) -> void
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            /**
-             * Encapsulate the RequestHandle into  Request proxy object for the client
-             * OnComplete() callback.  Curl has kept the memory alive for us.
-             */
-            Request request(&m_request_pool, std::unique_ptr<RequestHandle>(raw_request_handle_ptr));
-            request->setCompletionStatus(easy_result);
-            m_request_callback->OnComplete(std::move(request));
+            raw_request_handle_ptr->setCompletionStatus(easy_result);
+            raw_request_handle_ptr->onComplete();
+
             --m_active_request_count;
         }
     }

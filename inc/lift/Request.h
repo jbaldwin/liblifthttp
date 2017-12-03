@@ -20,6 +20,7 @@ class EmptyUserData { };
 class Request
 {
     friend class RequestPool;
+    friend class RequestHandle;
     friend class EventLoop;
 public:
 

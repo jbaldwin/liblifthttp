@@ -14,10 +14,10 @@ static auto print_usage(
     std::cout << program_name << "<url> <duration_seconds> <connections> <threads>" << std::endl;
 }
 
-std::atomic<uint64_t> g_success{0};
-std::atomic<uint64_t> g_error{0};
+static std::atomic<uint64_t> g_success{0};
+static std::atomic<uint64_t> g_error{0};
 
-auto on_complete(lift::Request request) -> void
+static auto on_complete(lift::Request request) -> void
 {
     if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
     {

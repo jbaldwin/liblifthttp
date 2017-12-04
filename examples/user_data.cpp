@@ -14,7 +14,7 @@ public:
     uint64_t m_request_id = 0;
 };
 
-auto on_complete(lift::Request request) -> void
+static auto on_complete(lift::Request request) -> void
 {
     std::unique_ptr<UserData> user_data(static_cast<UserData*>(request->GetUserData()));
     std::cout << "Request id " << user_data->m_request_id << " has completed: " << request->GetUrl() << std::endl;

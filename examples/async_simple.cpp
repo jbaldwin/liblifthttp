@@ -6,7 +6,7 @@
 #include <chrono>
 #include <atomic>
 
-auto on_complete(lift::Request request) -> void
+static auto on_complete(lift::Request request) -> void
 {
     if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
     {

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "lift/Types.h"
-
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <vector>
 
@@ -33,7 +32,7 @@ public:
      * @return QueryBuilder
      */
     auto SetScheme(
-        StringView scheme
+        std::string_view scheme
     ) -> QueryBuilder&;
 
     /**
@@ -44,7 +43,7 @@ public:
      * @return QueryBuilder
      */
     auto SetHostname(
-        StringView hostname
+        std::string_view hostname
     ) -> QueryBuilder&;
 
     /**
@@ -56,7 +55,7 @@ public:
      * @return QueryBuilder
      */
     auto SetPort(
-        StringView port
+        std::string_view port
     ) -> QueryBuilder&;
 
     /**
@@ -84,7 +83,7 @@ public:
      * @return QueryBuilder
      */
     auto AppendPathPart(
-        StringView path_part
+        std::string_view path_part
     ) -> QueryBuilder&;
 
     /**
@@ -99,8 +98,8 @@ public:
      * @return QueryBuilder
      */
     auto AppendPathPart(
-        StringView name,
-        StringView value
+        std::string_view name,
+        std::string_view value
     ) -> QueryBuilder&;
 
     /**
@@ -109,7 +108,7 @@ public:
      * @return QueryBuilder
      */
     auto SetFragment(
-        StringView fragment
+        std::string_view fragment
     ) -> QueryBuilder&;
 
     auto Build() -> std::string;
@@ -118,15 +117,15 @@ private:
     std::stringstream m_converter;  ///< Used to convert the m_port_int value.
     std::string m_query;            ///< A buffer for generating the url from its parts.
 
-    StringView m_scheme;            ///< The url scheme.
-    StringView m_hostname;          ///< The url hostname.
-    StringView m_port_str;          ///< The url port (as a string).
+    std::string_view m_scheme;            ///< The url scheme.
+    std::string_view m_hostname;          ///< The url hostname.
+    std::string_view m_port_str;          ///< The url port (as a string).
     uint16_t m_port_int;            ///< The url port (as an integer).
-    std::vector<StringView> m_path_parts;   ///< The path parts in order.
+    std::vector<std::string_view> m_path_parts;   ///< The path parts in order.
     std::vector<
-        std::pair<StringView, StringView>
+        std::pair<std::string_view, std::string_view>
     > m_query_parameters;           ///< The query paremeters (unescaped).
-    StringView m_fragment;          ///< The url fragment.
+    std::string_view m_fragment;          ///< The url fragment.
 
     auto reset() -> void;
 };

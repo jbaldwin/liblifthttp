@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/Types.h"
+#include <string_view>
 
 namespace lift
 {
@@ -13,18 +13,18 @@ public:
      * @param header_data The full header data to split into name/value pair.
      */
     explicit Header(
-        StringView header_data
+        std::string_view header_data
     );
 
     /**
      * @return The entire header, e.g. "Connection: Keep-Alive"
      */
-    auto GetHeader() const -> StringView;
+    auto GetHeader() const -> std::string_view;
 
     /**
      * @return A view into the header's name.
      */
-    auto GetName() const -> StringView;
+    auto GetName() const -> std::string_view;
 
     /**
      * @return True if this header has a value.
@@ -34,12 +34,12 @@ public:
     /**
      * @return A view into the header's value or null if it doesn't have a value.
      */
-    auto GetValue() const -> StringView;
+    auto GetValue() const -> std::string_view;
 
 private:
-    StringView m_header; ///< The full header data.
-    StringView m_name;        ///< The header's name.
-    StringView m_value;       ///< The header's value if it has one.
+    std::string_view m_header; ///< The full header data.
+    std::string_view m_name;        ///< The header's name.
+    std::string_view m_value;       ///< The header's value if it has one.
 };
 
 } // lift

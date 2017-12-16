@@ -2,11 +2,13 @@
 
 #include <curl/curl.h>
 
+#include <string>
+
 namespace lift
 {
 
 auto escape(
-    StringView data
+    std::string_view data
 ) -> std::string
 {
     char* escaped_data = curl_escape(
@@ -16,7 +18,7 @@ auto escape(
 
     if(escaped_data != nullptr)
     {
-        auto value = std::string(escaped_data);
+        std::string value(escaped_data);
         curl_free(escaped_data);
         return value;
     }
@@ -25,7 +27,7 @@ auto escape(
 }
 
 auto unescape(
-    StringView data
+    std::string_view data
 ) -> std::string
 {
     char* decoded_data = curl_unescape(
@@ -35,7 +37,7 @@ auto unescape(
 
     if(decoded_data != nullptr)
     {
-        auto value = std::string(decoded_data);
+        std::string value(decoded_data);
         curl_free(decoded_data);
         return value;
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/Types.h"
+#include <string_view>
 
 namespace lift
 {
@@ -10,7 +10,7 @@ namespace lift
  * @return An HTTP escaped representation of data.
  */
 auto escape(
-    StringView data
+    std::string_view data
 ) -> std::string;
 
 /**
@@ -18,7 +18,7 @@ auto escape(
  * @return An HTTP unescaped representation of the data.
  */
 auto unescape(
-    StringView data
+    std::string_view data
 ) -> std::string;
 
 } // lift

@@ -37,7 +37,7 @@ RequestHandle::RequestHandle(
       m_request_headers(),
       m_request_headers_idx(),
       m_curl_request_headers(nullptr),
-      m_headers_commited(false),
+      m_headers_committed(false),
       m_request_data(),
       m_status_code(RequestStatus::BUILDING),
       m_response_headers(),
@@ -73,7 +73,7 @@ auto RequestHandle::init() -> void
     // TODO make the buffer reservations configurable.
     m_request_headers.reserve(16'384);
     m_request_headers_idx.reserve(16);
-    m_headers_commited = false;
+    m_headers_committed = false;
 
     m_response_headers.reserve(16'384);
     m_response_headers_idx.reserve(16);
@@ -102,7 +102,7 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
         if(curl_url)
         {
-            m_url = StringView(curl_url, std::strlen(curl_url));
+            m_url = std::string_view(curl_url, std::strlen(curl_url));
             return true;
         }
     }
@@ -110,7 +110,7 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
     return false;
 }
 
-auto RequestHandle::GetUrl() const -> StringView
+auto RequestHandle::GetUrl() const -> std::string_view
 {
     return m_url;
 }
@@ -201,18 +201,18 @@ auto RequestHandle::SetFollowRedirects(
 }
 
 auto RequestHandle::AddHeader(
-    StringView name
+    std::string_view name
 ) -> void
 {
-    AddHeader(name, StringView());
+    AddHeader(name, std::string_view());
 }
 
 auto RequestHandle::AddHeader(
-    StringView name,
-    StringView value
+    std::string_view name,
+    std::string_view value
 ) -> void
 {
-    m_headers_commited = false; // A new header was added, they need to be committed again.
+    m_headers_committed = false; // A new header was added, they need to be committed again.
     size_t capacity = m_request_headers.capacity();
     size_t header_len = name.length() + value.length() + 3; //": \0"
     size_t total_len = m_request_headers.size() + header_len;
@@ -235,7 +235,7 @@ auto RequestHandle::AddHeader(
     }
     m_request_headers.append("\0"); // curl expects null byte
 
-    StringView full_header(start, header_len - 1); // subtract off the null byte
+    std::string_view full_header(start, header_len - 1); // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);
 }
 
@@ -301,7 +301,7 @@ auto RequestHandle::GetCompletionStatus() const -> RequestStatus
 
 auto RequestHandle::Reset() -> void
 {
-    m_url = StringView();
+    m_url = std::string_view();
     m_request_headers.clear();
     m_request_headers_idx.clear();
     if(m_curl_request_headers)
@@ -331,7 +331,7 @@ auto RequestHandle::GetUserData() -> void* {
 auto RequestHandle::prepareForPerform() -> void
 {
     clearResponseBuffers();
-    if(!m_headers_commited && !m_request_headers_idx.empty())
+    if(!m_headers_committed && !m_request_headers_idx.empty())
     {
         // Its possible the headers have been previous committed -- this will re-commit them all
         // in the event additional headers have been added between requests.
@@ -350,7 +350,7 @@ auto RequestHandle::prepareForPerform() -> void
         }
 
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
-        m_headers_commited = true;
+        m_headers_committed = true;
     }
 
     m_status_code = RequestStatus::EXECUTING;
@@ -411,7 +411,7 @@ auto curl_write_header(
     auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
     size_t data_length = size * nitems;
 
-    StringView data_view(buffer, data_length);
+    std::string_view data_view(buffer, data_length);
 
     if(data_view.empty())
     {
@@ -461,7 +461,7 @@ auto curl_write_header(
     // Calculate and append the Header view object.
     const char* start = raw_request_ptr->m_response_headers.c_str();
     auto total_length = raw_request_ptr->m_response_headers.length();
-    StringView request_data_view((start + total_length) - data_view.length(), data_view.length());
+    std::string_view request_data_view((start + total_length) - data_view.length(), data_view.length());
     raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
 
     return data_length;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "lift/Types.h"
 #include "lift/RequestStatus.h"
 #include "lift/Header.h"
 #include "lift/Http.h"
@@ -9,6 +8,7 @@
 #include <uv.h>
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <chrono>
 
@@ -53,7 +53,7 @@ public:
     /**
      * @return The currently set URL for this HTTP request.
      */
-    auto GetUrl() const -> StringView;
+    auto GetUrl() const -> std::string_view;
 
     /**
      * @param http_method Sets the HTTP method for this request.
@@ -96,7 +96,7 @@ public:
      * @param name The name of the header, e.g. 'Accept'.
      */
     auto AddHeader(
-        StringView name
+        std::string_view name
     ) -> void;
 
     /**
@@ -105,8 +105,8 @@ public:
      * @param value The value of the header, e.g. 'Keep-Alive'.
      */
     auto AddHeader(
-        StringView name,
-        StringView value
+        std::string_view name,
+        std::string_view value
     ) -> void;
 
     /**
@@ -210,11 +210,11 @@ private:
     CURL* m_curl_handle;                        ///< The curl handle for this request.
     CurlPool& m_curl_pool;                      ///< The curl handle pool.
 
-    StringView m_url;                           ///< A view into the curl url.
+    std::string_view m_url;                     ///< A view into the curl url.
     std::string m_request_headers;              ///< The request headers.
     std::vector<Header> m_request_headers_idx;  ///< The request headers index.
     curl_slist* m_curl_request_headers;         ///< The curl request headers.
-    bool m_headers_commited;                    ///< Have the headers been commited into CURL?
+    bool m_headers_committed;                   ///< Have the headers been committed into CURL?
     std::string m_request_data;                 ///< The request data if any.
 
     RequestStatus m_status_code;                ///< The status of this HTTP request.

@@ -19,7 +19,7 @@ QueryBuilder::QueryBuilder()
 }
 
 auto QueryBuilder::SetScheme(
-    StringView scheme
+    std::string_view scheme
 ) -> QueryBuilder&
 {
     m_scheme = scheme;
@@ -27,7 +27,7 @@ auto QueryBuilder::SetScheme(
 }
 
 auto QueryBuilder::SetHostname(
-    StringView hostname
+    std::string_view hostname
 ) -> QueryBuilder&
 {
     m_hostname = hostname;
@@ -35,7 +35,7 @@ auto QueryBuilder::SetHostname(
 }
 
 auto QueryBuilder::SetPort(
-    StringView port
+    std::string_view port
 ) -> QueryBuilder&
 {
     m_port_str = port;
@@ -51,7 +51,7 @@ auto QueryBuilder::SetPort(
 }
 
 auto QueryBuilder::AppendPathPart(
-    StringView path_part
+    std::string_view path_part
 ) -> QueryBuilder&
 {
     m_path_parts.emplace_back(path_part);
@@ -59,8 +59,8 @@ auto QueryBuilder::AppendPathPart(
 }
 
 auto QueryBuilder::AppendPathPart(
-    StringView name,
-    StringView value
+    std::string_view name,
+    std::string_view value
 ) -> QueryBuilder&
 {
     m_query_parameters.emplace_back(name, value);
@@ -68,7 +68,7 @@ auto QueryBuilder::AppendPathPart(
 }
 
 auto QueryBuilder::SetFragment(
-    StringView fragment
+    std::string_view fragment
 ) -> QueryBuilder&
 {
     m_fragment = fragment;
@@ -145,13 +145,13 @@ auto QueryBuilder::Build() -> std::string
 auto QueryBuilder::reset() -> void
 {
     m_query.clear();
-    m_scheme = StringView();
-    m_hostname = StringView();
-    m_port_str = StringView();
+    m_scheme = std::string_view();
+    m_hostname = std::string_view();
+    m_port_str = std::string_view();
     m_port_int = 0;
     m_path_parts.clear();
     m_query_parameters.clear();
-    m_fragment = StringView();
+    m_fragment = std::string_view();
 }
 
 } // lift

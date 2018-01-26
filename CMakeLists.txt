@@ -8,7 +8,10 @@ set(LIBCRYPTO "" CACHE STRING "User specificed libcrypto static location.")
 set(LIBCURL "curl" CACHE STRING "User specified libcurl static location.")
 set(LIBCARES "" CACHE STRING "User specified libcares static location.")
 
+message("LIBSSL = ${LIBSSL}")
+message("LIBCRYPTO = ${LIBCRYPTO}")
 message("LIBCURL = ${LIBCURL}")
+message("LIBCARES = ${LIBCARES}")
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
@@ -23,6 +26,8 @@ ENDIF()
 set(CMAKE_CXX_FLAGS "-std=c++17 -Wall -Wextra -Weffc++ -Werror -Wpedantic -pedantic-errors -MD ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -gdwarf-2 -D_GLIBCXX_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
+
+message("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}")
 
 set(SOURCE_FILES
     inc/lift/CurlPool.h src/CurlPool.cpp
@@ -42,11 +47,8 @@ add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    -Wl,-\( ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,-\)
     uv
-    ${LIBSSL}
-    ${LIBCRYPTO}
-    ${LIBCURL}
-    ${LIBCARES}
     pthread
     z
     dl

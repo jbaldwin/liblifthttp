@@ -30,6 +30,9 @@ static auto on_complete(lift::Request request) -> void
         case lift::RequestStatus::RESPONSE_EMPTY:
             std::cout << "No response received: " << request->GetUrl() << std::endl;
             break;
+        case lift::RequestStatus::DOWNLOAD_ERROR:
+            std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
+            break;
         case lift::RequestStatus::ERROR:
             std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
             break;

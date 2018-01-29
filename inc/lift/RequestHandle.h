@@ -81,13 +81,16 @@ public:
 
     /**
      * Sets the maximum number of bytes of data to write.
-     * (The number of bytes downloaded may be greater than the set amount,
+     *
+     * To download a full file, set max_download_bytes to -1.
+     *
+     * The number of bytes downloaded may be greater than the set amount,
      * but the number of bytes written for the response's data will not
-     * exceed this amount.)
-     * @param max_bytes     The maximum number of bytes to be written for this request.
+     * exceed this amount.
+     * @param max_download_bytes     The maximum number of bytes to be written for this request.
      */
-    auto SetMaxBytes(
-        size_t max_bytes
+    auto SetMaxDownloadBytes(
+        ssize_t max_download_bytes
     ) -> void;
 
     /**
@@ -194,23 +197,6 @@ public:
      */
     auto GetUserData() -> void*;
 
-    /**
-     * Set to true if the maximum number of bytes has been written.
-     * @param max_bytes_written     Boolean indicating if the max number of bytes has been written.
-     */
-    auto SetCompletedWritingMaxBytes(bool max_bytes_written) -> void;
-
-    /**
-     * Returns true if the maximum number of bytes were written
-     * @return Boolean indicating if the max number of bytes has been written.
-     */
-    auto GetCompletedWritingMaxBytes() -> bool;
-
-    /**
-     * Returns total number of bytes downloaded
-     * @return size_t indicating total number of bytes received before ending request
-     */
-    auto GetTotalBytesReceived() -> size_t;
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
@@ -219,6 +205,8 @@ private:
      * @param request_pool The request pool that generated this handle.
      * @param curl_handle  The CURL* handle for this Request.
      * @param curl_pool    The CurlPool to return the CURL* handle when this request destructs.
+     * @param on_complete_handler   Function to be called when the CURL request finishes.
+     * @param max_download_bytes    The maximum number of bytes to download, if -1, will download entire file.
      */
     explicit RequestHandle(
         const std::string& url,
@@ -227,7 +215,7 @@ private:
         CURL* curl_handle,
         CurlPool& curl_pool,
         OnCompleteHandler on_complete_handler = nullptr,
-        size_t max_bytes = 0
+        ssize_t max_download_bytes = -1
     );
 
     auto init() -> void;
@@ -254,10 +242,8 @@ private:
 
     void* m_user_data;                          ///< The user data.
 
-    size_t m_max_bytes;                         ///< Maximum number of bytes to be written.
-    size_t m_bytes_left_to_write;                ///< Difference between maximum bytes to write and amount written
-    bool m_wrote_max_bytes;                     ///< True if max number of bytes have been written
-    size_t m_total_bytes_received;              ///< Number of bytes received for request
+    ssize_t m_max_download_bytes;               ///< Maximum number of bytes to be written.
+    ssize_t m_bytes_written;                    ///< Number of bytes that have been written so far.
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -283,6 +269,12 @@ private:
 
     auto onComplete() -> void;
 
+    /**
+     * Helper function to find how many bytes are left to be downloaded for a request
+     * @return ssize_t found by subtracting total number of downloaded bytes from max_download_bytes
+     */
+    auto getRemainingDownloadBytes() -> ssize_t;
+
     friend auto curl_write_header(
         char* buffer,
         size_t size,
@@ -301,16 +293,6 @@ private:
         uv_async_t* async
     ) -> void; ///< libuv will call this function when the AddRequest() function is called.
 
-    friend auto curl_xfer_info(
-        void *p
-    ) -> int;
-
-    friend auto curl_write_partial_data(
-        void* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr
-    ) -> size_t;
 };
 
 } // lift

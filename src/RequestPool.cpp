@@ -40,46 +40,8 @@ auto RequestPool::Produce(
 auto RequestPool::Produce(
     const std::string& url,
     OnCompleteHandler on_complete_handler,
-    std::chrono::milliseconds timeout
-) -> Request
-{
-    m_lock.lock();
-    if(m_requests.empty())
-    {
-        m_lock.unlock();
-
-        // Cannot use std::make_unique here since RequestHandle ctor is private friend.
-        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
-            new RequestHandle(
-                url,
-                timeout,
-                *this,
-                m_curl_pool->Produce(),
-                *m_curl_pool,
-                on_complete_handler
-            )
-        );
-
-        return Request(this, std::move(request_handle_ptr));
-    }
-    else
-    {
-        auto request_handle_ptr = std::move(m_requests.back());
-        m_requests.pop_back();
-        m_lock.unlock();
-
-        request_handle_ptr->SetOnCompleteHandler(on_complete_handler);
-        request_handle_ptr->SetUrl(url);
-        request_handle_ptr->SetTimeout(timeout);
-
-        return Request(this, std::move(request_handle_ptr));
-    }
-}
-auto RequestPool::Produce(
-    const std::string& url,
-    OnCompleteHandler on_complete_handler,
     std::chrono::milliseconds timeout,
-    size_t max_bytes
+    ssize_t max_download_bytes
 ) -> Request
 {
     m_lock.lock();
@@ -97,7 +59,7 @@ auto RequestPool::Produce(
                 m_curl_pool->Produce(),
                 *m_curl_pool,
                 on_complete_handler,
-                max_bytes
+                max_download_bytes
             )
         );
 
@@ -112,7 +74,7 @@ auto RequestPool::Produce(
         request_handle_ptr->SetOnCompleteHandler(on_complete_handler);
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
-        request_handle_ptr->SetMaxBytes(max_bytes);
+        request_handle_ptr->SetMaxDownloadBytes(max_download_bytes);
 
         return Request(this, std::move(request_handle_ptr));
     }

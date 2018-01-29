@@ -19,7 +19,8 @@ enum class RequestStatus
     TIMEOUT,            ///< The request timed out.
     RESPONSE_EMPTY,     ///< The request has an empty response (socket severed).
 
-    ERROR               ///< The request had an error and failed.
+    ERROR,              ///< The request had an error and failed.
+    DOWNLOAD_ERROR      ///< The request had an error in the CURL write callback.
 };
 
 /**

@@ -80,6 +80,17 @@ public:
     ) -> bool;
 
     /**
+     * Sets the maximum number of bytes of data to write.
+     * (The number of bytes downloaded may be greater than the set amount,
+     * but the number of bytes written for the response's data will not
+     * exceed this amount.)
+     * @param max_bytes     The maximum number of bytes to be written for this request.
+     */
+    auto SetMaxBytes(
+        size_t max_bytes
+    ) -> void;
+
+    /**
      * Sets if this request should follow redirects.  By default following redirects is
      * enabled.
      * @param follow_redirects True to follow redirects, false to stop.
@@ -183,6 +194,23 @@ public:
      */
     auto GetUserData() -> void*;
 
+    /**
+     * Set to true if the maximum number of bytes has been written.
+     * @param max_bytes_written     Boolean indicating if the max number of bytes has been written.
+     */
+    auto SetCompletedWritingMaxBytes(bool max_bytes_written) -> void;
+
+    /**
+     * Returns true if the maximum number of bytes were written
+     * @return Boolean indicating if the max number of bytes has been written.
+     */
+    auto GetCompletedWritingMaxBytes() -> bool;
+
+    /**
+     * Returns total number of bytes downloaded
+     * @return size_t indicating total number of bytes received before ending request
+     */
+    auto GetTotalBytesReceived() -> size_t;
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
@@ -198,7 +226,8 @@ private:
         RequestPool& request_pool,
         CURL* curl_handle,
         CurlPool& curl_pool,
-        OnCompleteHandler on_complete_handler = nullptr
+        OnCompleteHandler on_complete_handler = nullptr,
+        size_t max_bytes = 0
     );
 
     auto init() -> void;
@@ -224,6 +253,11 @@ private:
     std::string m_response_data;                ///< The response data if any.
 
     void* m_user_data;                          ///< The user data.
+
+    size_t m_max_bytes;                         ///< Maximum number of bytes to be written.
+    size_t m_bytes_left_to_write;                ///< Difference between maximum bytes to write and amount written
+    bool m_wrote_max_bytes;                     ///< True if max number of bytes have been written
+    size_t m_total_bytes_received;              ///< Number of bytes received for request
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -266,6 +300,17 @@ private:
     friend auto requests_accept_async(
         uv_async_t* async
     ) -> void; ///< libuv will call this function when the AddRequest() function is called.
+
+    friend auto curl_xfer_info(
+        void *p
+    ) -> int;
+
+    friend auto curl_write_partial_data(
+        void* buffer,
+        size_t size,
+        size_t nitems,
+        void* user_ptr
+    ) -> size_t;
 };
 
 } // lift

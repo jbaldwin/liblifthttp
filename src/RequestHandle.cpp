@@ -6,17 +6,6 @@
 
 namespace lift
 {
-auto curl_xfer_info(
-    void *p
-) -> int;
-
-auto curl_write_partial_data(
-    void* buffer,
-    size_t size,
-    size_t nitems,
-    void* user_ptr
-) -> size_t;
-
 auto curl_write_header(
     char* buffer,
     size_t size,
@@ -38,7 +27,7 @@ RequestHandle::RequestHandle(
     CURL* curl_handle,
     CurlPool& curl_pool,
     OnCompleteHandler on_complete_handler,
-    size_t max_bytes
+    ssize_t max_download_bytes
 )
     : m_on_complete_handler(on_complete_handler),
       m_request_pool(request_pool),
@@ -55,10 +44,8 @@ RequestHandle::RequestHandle(
       m_response_headers_idx(),
       m_response_data(),
       m_user_data(nullptr),
-      m_max_bytes(max_bytes),
-      m_bytes_left_to_write(max_bytes),
-      m_wrote_max_bytes(false),
-      m_total_bytes_received(0)
+      m_max_download_bytes(max_download_bytes),
+      m_bytes_written(0)
 {
     init();
     SetUrl(url);
@@ -80,35 +67,12 @@ auto RequestHandle::init() -> void
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE,        this);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERFUNCTION, curl_write_header);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA,     this);
+    curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION,  curl_write_data);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA,      this);
     curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL,       1l);
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1l);
 
-    /**
-     * If m_max_bytes is set, then we need to set the XFERINFOFUNCTION and use
-     * the partial write function. Otherwise, use the normal write callback.
-     *
-     * Older versions of cURL don't have XFERINFOFUNCTION, so PROGRESSFUNCTION
-     * must be used in those cases. For versions that do support it, it will
-     * be preferentially used when both are set.
-     * https://curl.haxx.se/libcurl/c/progressfunc.html
-     **/
-    if (m_max_bytes)
-    {
-
-        curl_easy_setopt(m_curl_handle, CURLOPT_PROGRESSFUNCTION, curl_xfer_info);
-        curl_easy_setopt(m_curl_handle, CURLOPT_PROGRESSDATA, &m_curl_handle);
-#if LIBCURL_VERSION_NUM >= 0x072000
-        curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFOFUNCTION, curl_xfer_info);
-        curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFODATA, &m_curl_handle);
-#endif
-        curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 0L);
-        curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION,  curl_write_partial_data);
-    }
-    else
-    {
-        curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION, curl_write_data);
-    }
+    SetMaxDownloadBytes(m_max_download_bytes);
 
     // TODO make the buffer reservations configurable.
     m_request_headers.reserve(16'384);
@@ -215,9 +179,10 @@ auto RequestHandle::SetVersion(
     }
 }
 
-auto RequestHandle::SetMaxBytes(size_t max_bytes) -> void
+auto RequestHandle::SetMaxDownloadBytes(ssize_t max_download_bytes) -> void
 {
-    m_max_bytes = max_bytes;
+    m_max_download_bytes = max_download_bytes;
+    m_bytes_written = 0;
 }
 
 auto RequestHandle::SetTimeout(
@@ -361,6 +326,9 @@ auto RequestHandle::Reset() -> void
     curl_easy_reset(m_curl_handle);
     init();
     m_status_code = RequestStatus::BUILDING;
+
+    m_max_download_bytes = -1; // Set max download bytes to default to download entire file
+    m_bytes_written = 0;
 }
 
 auto RequestHandle::SetUserData(
@@ -371,16 +339,6 @@ auto RequestHandle::SetUserData(
 
 auto RequestHandle::GetUserData() -> void* {
     return m_user_data;
-}
-
-auto RequestHandle::SetCompletedWritingMaxBytes(bool max_bytes_written) -> void
-{
-    m_wrote_max_bytes = max_bytes_written;
-}
-
-auto RequestHandle::GetCompletedWritingMaxBytes() -> bool
-{
-    return m_wrote_max_bytes;
 }
 
 auto RequestHandle::prepareForPerform() -> void
@@ -447,15 +405,12 @@ auto RequestHandle::setCompletionStatus(
             break;
         case CURLcode::CURLE_WRITE_ERROR:
             /**
-             * If there is a cURL write error, but the maximum number of bytes
-             * has been written, then we intentionally aborted, so let's set
-             * this to success. Otherwise, it's a legitimate error.
+             * If there is a cURL write error, but the maximum number of bytes has been written,
+             * then we intentionally aborted, so let's set this to success.
+             * Otherwise, there was an error in the CURL write callback.
              */
-            if (GetCompletedWritingMaxBytes()) {
-                m_status_code = RequestStatus::SUCCESS;
-            } else {
-                m_status_code = RequestStatus::ERROR;
-            }
+            m_status_code = (getRemainingDownloadBytes() == 0)
+                ? RequestStatus::SUCCESS : RequestStatus::DOWNLOAD_ERROR;
             break;
         default:
             m_status_code = RequestStatus::ERROR;
@@ -469,9 +424,9 @@ auto RequestHandle::onComplete() -> void {
     m_on_complete_handler(std::move(request));
 }
 
-auto RequestHandle::GetTotalBytesReceived() -> size_t
+auto RequestHandle::getRemainingDownloadBytes() -> ssize_t
 {
-    return m_total_bytes_received;
+    return m_max_download_bytes - m_bytes_written;
 }
 
 auto curl_write_header(
@@ -549,66 +504,41 @@ auto curl_write_data(
 {
     auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
     size_t data_length = size * nitems;
+
+    // If m_max_download_bytes is greater than -1, we are performing partial download.
+    if (raw_request_ptr->m_max_download_bytes > -1)
+    {
+        auto bytes_left_to_write = raw_request_ptr->getRemainingDownloadBytes();
+
+        /**
+         * If the max number of bytes left to write is less than the
+         * data_length of the current frame, just set that as the data_length
+         * when appending to the request's data string.
+         * This will also cause the download to stop, since CURL aborts
+         * when the length returned from the write callback does match the
+         * length (size * nitems) passed in.
+         **/
+        if (bytes_left_to_write > -1)
+        {
+            auto ubytes_left_to_write = static_cast<size_t>(bytes_left_to_write);
+
+            if (ubytes_left_to_write < data_length)
+            {
+                data_length = ubytes_left_to_write;
+            }
+        }
+        else
+        {
+            /**
+             * bytes_left_to_write should never be negative, but if it is,
+             * stop this request, because something is wrong.
+             */
+            data_length = 0;
+        }
+    }
+
     raw_request_ptr->m_response_data.append(static_cast<const char*>(buffer), data_length);
-    return data_length;
-}
-
-auto curl_xfer_info(
-    void *p
-) -> int
-{
-    auto* raw_request_ptr = static_cast<RequestHandle*>(p);
-
-    /**
-     * If WroteMaxBytes is true, we can terminate this request.
-     * Returning 1 will cause the cURL request to be aborted.
-     * (Note: This will result in the CURLcode returning as an error.
-     *  This is handled in setCompletionStatus.)
-     **/
-    if (raw_request_ptr->GetCompletedWritingMaxBytes())
-    {
-        return 1;
-    }
-
-    // Returning 0 will result in cURL request continuing normally.
-    return 0;
-}
-
-auto curl_write_partial_data(
-    void* buffer,
-    size_t size,
-    size_t nitems,
-    void* user_ptr
-) -> size_t
-{
-    auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
-    size_t data_length = size * nitems;
-
-    // Keep track of total number of bytes received
-    raw_request_ptr->m_total_bytes_received += data_length;
-
-    /**
-     * If the max number of bytes left to write is less than the
-     * data_length of the current frame, just that as the data_length
-     * when appending to the request's data string.
-     **/
-    if (raw_request_ptr->m_bytes_left_to_write < data_length)
-    {
-        data_length = raw_request_ptr->m_bytes_left_to_write;
-    }
-
-    raw_request_ptr->m_response_data.append(
-        static_cast<const char*>(buffer),
-        data_length
-    );
-
-    raw_request_ptr->m_bytes_left_to_write -= data_length;
-
-    // If bytes left to be written is 0, we're done with this connection.
-    if (raw_request_ptr->m_bytes_left_to_write <= 0)
-    {
-        raw_request_ptr->SetCompletedWritingMaxBytes(true);
-    }
+    raw_request_ptr->m_bytes_written += data_length;
 
     return data_length;
 }

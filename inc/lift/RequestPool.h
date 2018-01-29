@@ -68,6 +68,12 @@ public:
         std::chrono::milliseconds timeout
     ) -> Request;
 
+    auto Produce(
+        const std::string& url,
+        OnCompleteHandler on_complete_handler,
+        std::chrono::milliseconds timeout,
+        size_t max_bytes
+    ) -> Request;
 private:
     std::mutex m_lock;                                      ///< Used for thread safe calls.
     std::deque<std::unique_ptr<RequestHandle>> m_requests;  ///< Pool of un-used Request handles.

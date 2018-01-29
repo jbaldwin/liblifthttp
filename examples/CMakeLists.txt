@@ -17,6 +17,13 @@ set(ASYNC_SIMPLE_SOURCE_FILES
 add_executable(async_simple ${ASYNC_SIMPLE_SOURCE_FILES})
 target_link_libraries(async_simple PRIVATE lifthttp -Wl,-\( ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,-\) uv pthread z dl)
 
+### async_simple_max_bytes ###
+set(ASYNC_SIMPLE_SOURCE_FILES
+    examples/async_simple_max_bytes.cpp
+)
+add_executable(async_simple_max_bytes ${ASYNC_SIMPLE_SOURCE_FILES})
+target_link_libraries(async_simple_max_bytes PRIVATE lifthttp -Wl,-\( ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,-\) uv pthread z dl)
+
 ### async_batch_requests ###
 set(ASYNC_BATCH_REQUESTS_SOURCE_FILES
         examples/async_batch_requests.cpp

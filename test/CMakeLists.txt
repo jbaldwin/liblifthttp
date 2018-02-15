@@ -13,7 +13,7 @@ add_test(${PROJECT_NAME} ${EXECUTABLE_OUTPUT_PATH}/${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} PRIVATE lifthttp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    -Wl,-\( ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,-\)
+    -Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group
     uv
     pthread
     z

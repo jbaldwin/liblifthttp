@@ -40,8 +40,7 @@ auto RequestPool::Produce(
 auto RequestPool::Produce(
     const std::string& url,
     OnCompleteHandler on_complete_handler,
-    std::chrono::milliseconds timeout,
-    ssize_t max_download_bytes
+    std::chrono::milliseconds timeout
 ) -> Request
 {
     m_lock.lock();
@@ -58,8 +57,7 @@ auto RequestPool::Produce(
                 *this,
                 m_curl_pool->Produce(),
                 *m_curl_pool,
-                on_complete_handler,
-                max_download_bytes
+                on_complete_handler
             )
         );
 
@@ -74,7 +72,6 @@ auto RequestPool::Produce(
         request_handle_ptr->SetOnCompleteHandler(on_complete_handler);
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
-        request_handle_ptr->SetMaxDownloadBytes(max_download_bytes);
 
         return Request(this, std::move(request_handle_ptr));
     }

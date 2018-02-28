@@ -60,14 +60,12 @@ public:
      * @param url The url of the Request.
      * @param on_complete_handler The on completion callback handler for this request.
      * @param timeout The timeout of the request.
-     * @param max_download_bytes The maximum number of bytes to download (-1 means download everything).
      * @return A Request object setup for the URL + Timeout.
      */
     auto Produce(
         const std::string& url,
         OnCompleteHandler on_complete_handler,
-        std::chrono::milliseconds timeout,
-        ssize_t max_download_bytes = -1
+        std::chrono::milliseconds timeout
     ) -> Request;
 
 private:

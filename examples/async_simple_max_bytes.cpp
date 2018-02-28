@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
     {
         std::cout << "Requesting " << url << " to download max byes of : " << bytes_to_download << std::endl;
 
-        lift::Request request = request_pool.Produce(url, on_complete, 0ms, bytes_to_download);
+        lift::Request request = request_pool.Produce(url, on_complete, 0ms);
+        request->SetMaxDownloadBytes(bytes_to_download);
         event_loop.StartRequest(std::move(request));
         timeout += 550ms;
         bytes_to_download += 1000;

@@ -40,7 +40,7 @@ static auto on_complete(lift::Request request) -> void
         case lift::RequestStatus::EXECUTING:
             std::cout
                 << "Request is in an invalid state: "
-                << request_status2str(request->GetCompletionStatus()) << std::endl;
+                << to_string(request->GetCompletionStatus()) << std::endl;
             break;
     }
 }

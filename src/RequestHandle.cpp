@@ -304,6 +304,13 @@ auto RequestHandle::GetTotalTimeMilliseconds() const -> uint64_t
     return static_cast<uint64_t>(total_time * 1000);
 }
 
+auto RequestHandle::GetTotalTime() const -> std::chrono::milliseconds
+{
+    double total_time = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
+    return std::chrono::milliseconds(static_cast<int64_t>(total_time * 1000));
+}
+
 auto RequestHandle::GetCompletionStatus() const -> RequestStatus
 {
     return m_status_code;

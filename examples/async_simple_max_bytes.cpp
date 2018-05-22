@@ -12,7 +12,7 @@ static auto on_complete(lift::Request request) -> void
     {
         std::cout
             << "Completed " << request->GetUrl()
-            << " in " << request->GetTotalTimeMilliseconds() << " ms with a "
+            << " in " << request->GetTotalTime().count() << " ms with a "
             << "result length of " << request->GetResponseData().length() << std::endl << std::endl;
     }
     else

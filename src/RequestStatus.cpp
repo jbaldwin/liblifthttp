@@ -18,6 +18,11 @@ auto request_status2str(
     RequestStatus request_status
 ) -> const std::string&
 {
+    return to_string(request_status);
+}
+
+auto to_string(RequestStatus request_status) -> const std::string&
+{
     switch(request_status)
     {
         case RequestStatus::BUILDING:

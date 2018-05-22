@@ -18,7 +18,7 @@ static auto on_complete(lift::Request request) -> void
     {
         std::cout
             << "Error: " << request->GetUrl() << " : "
-            << lift::request_status2str(request->GetCompletionStatus()) << std::endl;
+            << lift::to_string(request->GetCompletionStatus()) << std::endl;
     }
 
     /**

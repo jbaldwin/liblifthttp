@@ -164,9 +164,16 @@ public:
     auto GetResponseData() const -> const std::string&;
 
     /**
+     * @deprecated use GetTotalTime() -> std::chrono::millisconds
      * @return The total HTTP request time in milliseconds.
      */
+    [[deprecated]]
     auto GetTotalTimeMilliseconds() const -> uint64_t;
+
+    /**
+     * @return The total HTTP request time in milliseconds.
+     */
+    auto GetTotalTime() const -> std::chrono::milliseconds;
 
     /**
      * The completion status is how the request ended up in the event loop.

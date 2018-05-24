@@ -55,4 +55,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 include(examples/CMakeLists.txt)
-include(test/CMakeLists.txt)

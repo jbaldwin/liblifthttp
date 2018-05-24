@@ -39,7 +39,7 @@ auto RequestPool::Produce(
 
 auto RequestPool::Produce(
     const std::string& url,
-    OnCompleteHandler on_complete_handler,
+    std::function<void(Request)> on_complete_handler,
     std::chrono::milliseconds timeout
 ) -> Request
 {
@@ -57,7 +57,7 @@ auto RequestPool::Produce(
                 *this,
                 m_curl_pool->Produce(),
                 *m_curl_pool,
-                on_complete_handler
+                std::move(on_complete_handler)
             )
         );
 
@@ -69,7 +69,7 @@ auto RequestPool::Produce(
         m_requests.pop_back();
         m_lock.unlock();
 
-        request_handle_ptr->SetOnCompleteHandler(on_complete_handler);
+        request_handle_ptr->SetOnCompleteHandler(std::move(on_complete_handler));
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
 

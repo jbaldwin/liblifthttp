@@ -3,7 +3,7 @@ namespace lift
 
 template<typename Container>
 auto EventLoop::StartRequests(
-    Container& requests
+    Container requests
 ) -> void
 {
     // We'll prepare now since it won't block the event loop thread.

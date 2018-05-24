@@ -7,6 +7,7 @@
 #include <memory>
 #include <chrono>
 #include <mutex>
+#include <functional>
 
 namespace lift
 {
@@ -64,7 +65,7 @@ public:
      */
     auto Produce(
         const std::string& url,
-        OnCompleteHandler on_complete_handler,
+        std::function<void(Request)> on_complete_handler,
         std::chrono::milliseconds timeout
     ) -> Request;
 

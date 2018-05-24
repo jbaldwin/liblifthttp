@@ -26,10 +26,10 @@ RequestHandle::RequestHandle(
     RequestPool& request_pool,
     CURL* curl_handle,
     CurlPool& curl_pool,
-    OnCompleteHandler on_complete_handler,
+    std::function<void(Request)> on_complete_handler,
     ssize_t max_download_bytes
 )
-    : m_on_complete_handler(on_complete_handler),
+    : m_on_complete_handler(std::move(on_complete_handler)),
       m_request_pool(request_pool),
       m_curl_handle(curl_handle),
       m_curl_pool(curl_pool),
@@ -87,9 +87,9 @@ auto RequestHandle::init() -> void
 }
 
 auto RequestHandle::SetOnCompleteHandler(
-    OnCompleteHandler on_complete_handler
+    std::function<void(Request)> on_complete_handler
 ) -> void {
-    m_on_complete_handler = on_complete_handler;
+    m_on_complete_handler = std::move(on_complete_handler);
 }
 
 auto RequestHandle::SetUrl(const std::string& url) -> bool

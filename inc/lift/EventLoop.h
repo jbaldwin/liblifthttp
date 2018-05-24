@@ -64,7 +64,8 @@ public:
     ) -> bool;
 
     /**
-     * Adds a batch of requests to process.
+     * Adds a batch of requests to process.  The requests in the container will be moved
+     * out of the container and into the EventLoop.
      *
      * This function is thread safe.
      *
@@ -73,7 +74,7 @@ public:
      */
     template<typename Container>
     auto StartRequests(
-        Container& requests
+        Container requests
     ) -> void;
 
 private:

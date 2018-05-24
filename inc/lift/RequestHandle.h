@@ -11,6 +11,7 @@
 #include <string_view>
 #include <vector>
 #include <chrono>
+#include <functional>
 
 namespace lift
 {
@@ -18,8 +19,6 @@ namespace lift
 class Request;
 class RequestPool;
 class CurlPool;
-
-typedef void(*OnCompleteHandler)(Request);
 
 class RequestHandle
 {
@@ -39,7 +38,7 @@ public:
      * @param on_complete_handler When this request completes this handle is called.
      */
     auto SetOnCompleteHandler(
-        OnCompleteHandler on_complete_handler
+        std::function<void(Request)> on_complete_handler
     ) -> void;
 
     /**
@@ -194,14 +193,18 @@ public:
      * Sets a user provided data pointer.  The Request object in no way
      * owns this data and is simply pass through to OnComplete().
      * @param user_data The data pointer
+     * @deprecated Use std::bind or lambda captures with the OnCompleteCallback std::function.
      */
+    [[deprecated]]
     auto SetUserData(
         void* user_data
     ) -> void;
 
     /**
      * @return Gets the user provided data if any.
+     * @deprecated Use std::bind or lambda captures with the OnCompleteCallback std::function.
      */
+    [[deprecated]]
     auto GetUserData() -> void*;
 
 private:
@@ -221,13 +224,13 @@ private:
         RequestPool& request_pool,
         CURL* curl_handle,
         CurlPool& curl_pool,
-        OnCompleteHandler on_complete_handler = nullptr,
+        std::function<void(Request)> on_complete_handler = nullptr,
         ssize_t max_download_bytes = -1
     );
 
     auto init() -> void;
 
-    OnCompleteHandler m_on_complete_handler;    ///< The onComplete() handler.
+    std::function<void(Request)> m_on_complete_handler;    ///< The onComplete() handler for asynchronous requests.
 
     RequestPool& m_request_pool;                ///< The request pool this request was produced from.
 

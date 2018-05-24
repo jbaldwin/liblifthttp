@@ -17,7 +17,7 @@ static auto print_usage(
 static std::atomic<uint64_t> g_success{0};
 static std::atomic<uint64_t> g_error{0};
 
-static auto on_complete(lift::Request request) -> void
+static auto on_complete(lift::Request request, lift::EventLoop& event_loop) -> void
 {
     if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
     {
@@ -29,8 +29,7 @@ static auto on_complete(lift::Request request) -> void
     }
 
     // And request again!
-    auto* event_loop = static_cast<lift::EventLoop*>(request->GetUserData());
-    if(!event_loop->StartRequest(std::move(request)))
+    if(!event_loop.StartRequest(std::move(request)))
     {
         std::cerr << "Event loop is no longer accepting requests.\n";
     }
@@ -57,19 +56,36 @@ int main(int argc, char* argv[])
     std::vector<std::unique_ptr<lift::EventLoop>> loops;
     for(uint64_t i = 0; i < threads; ++i)
     {
-        auto event_loop = std::make_unique<lift::EventLoop>();
-        auto& request_pool = event_loop->GetRequestPool();
+        auto event_loop_ptr = std::make_unique<lift::EventLoop>();
+        auto& request_pool = event_loop_ptr->GetRequestPool();
 
         for(uint64_t j = 0; j < connections; ++j)
         {
-            auto request = request_pool.Produce(url, on_complete, 1000ms);
+            auto& event_loop = *event_loop_ptr;
+
+            /**
+             * An example using std::bind().
+             */
+            //using namespace std::placeholders;
+            //auto callback = std::bind(on_complete, _1, std::ref(event_loop));
+            //auto request = request_pool.Produce(url, std::move(callback), 1000ms);
+
+            /**
+             * An example using a lambda.
+             */
+            auto request = request_pool.Produce(
+                url,
+                [&event_loop](lift::Request r) {
+                    on_complete(std::move(r), event_loop);
+                },
+                1s
+            );
             request->SetFollowRedirects(false);
-            request->SetUserData(event_loop.get());
             request->AddHeader("Connection", "Keep-Alive");
-            event_loop->StartRequest(std::move(request));
+            event_loop_ptr->StartRequest(std::move(request));
         }
 
-        loops.emplace_back(std::move(event_loop));
+        loops.emplace_back(std::move(event_loop_ptr));
     }
 
     std::chrono::seconds seconds(duration_s);

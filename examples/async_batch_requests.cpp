@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
          * example intentionally has 'requests' go out of scope to further
          * demonstrate this.
          */
-        event_loop.StartRequests(requests);
+        event_loop.StartRequests(std::move(requests));
     }
 
     std::this_thread::sleep_for(100ms); // just to be sure still gets kicked off

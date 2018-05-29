@@ -1,33 +1,56 @@
 cmake_minimum_required(VERSION 2.8)
 project(lifthttp CXX)
 
-message(${CMAKE_CXX_COMPILER_ID})
+# Create a Debug/lib or Release/lib output directory.
+set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
 
-set(LIBSSL "" CACHE STRING "User specified libsss static location.")
-set(LIBCRYPTO "" CACHE STRING "User specificed libcrypto static location.")
-set(LIBCURL "curl" CACHE STRING "User specified libcurl static location.")
-set(LIBCARES "" CACHE STRING "User specified libcares static location.")
+# Custom locations for libcurl dependencies.
+if(NOT "$ENV{CURL_INCLUDE}" STREQUAL "")
+    set(LIFT_CURL_INCLUDE "$ENV{CURL_INCLUDE}")
+endif()
+
+if(NOT "$ENV{LIBSSL}" STREQUAL "")
+    set(LIBSSL $ENV{LIBSSL})
+else()
+    set(LIBSSL "" CACHE STRING "User specified libsss static location.")
+endif()
+
+if(NOT "$ENV{LIBCRYPTO}" STREQUAL "")
+    set(LIBCRYPTO $ENV{LIBCRYPTO})
+else()
+    set(LIBCRYPTO "" CACHE STRING "User specificed libcrypto static location.")
+endif()
+
+if(NOT "$ENV{LIBCURL}" STREQUAL "")
+    set(LIBCURL $ENV{LIBCURL})
+else()
+    set(LIBCURL "curl" CACHE STRING "User specified libcurl static location.")
+endif()
+
+if(NOT "$ENV{LIBCARES}" STREQUAL "")
+    set(LIBCARES $ENV{LIBCARES})
+else()
+    set(LIBCARES "" CACHE STRING "User specified libcares static location.")
+endif()
+
+option(D_GLIBCXX_DEBUG "Use D_GLIBCXX_DEBUG when building Debug" ON)
 
 message("LIBSSL = ${LIBSSL}")
 message("LIBCRYPTO = ${LIBCRYPTO}")
 message("LIBCURL = ${LIBCURL}")
 message("LIBCARES = ${LIBCARES}")
+message("D_GLIBCXX_DEBUG=${D_GLIBCXX_DEBUG}")
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
+set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
+    uv
+    pthread
+    z
+    dl
+)
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-ELSEIF(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-weak-vtables -Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-exit-time-destructors -Wno-global-constructors -Wno-error=deprecated-declarations -Wno-disabled-macro-expansion -Wno-covered-switch-default -fcolor-diagnostics -ferror-limit=128")
-ELSE()
-    message(FATAL_ERROR "Unsupported compiler ${CMAKE_CXX_COMPILER}")
-ENDIF()
-
-set(CMAKE_CXX_FLAGS "-std=c++17 -Wall -Wextra -Weffc++ -Werror -Wpedantic -pedantic-errors -MD ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -gdwarf-2 -D_GLIBCXX_DEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -gdwarf-2")
-
-message("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}")
+set(LIFT_CURL_LIBRARY_DEPENDENCIES
+    -Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group
+)
 
 set(SOURCE_FILES
     inc/lift/CurlPool.h src/CurlPool.cpp
@@ -44,14 +67,73 @@ set(SOURCE_FILES
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    -Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group
-    uv
-    pthread
-    z
-    dl
+    ${LIFT_CURL_LIBRARY_DEPENDENCIES}
+    ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES}
 )
+
+target_compile_options(
+    ${PROJECT_NAME} PRIVATE
+    -Wall
+    -Wextra
+    -Weffc++
+    -Werror
+    -Wpedantic
+    -pedantic-errors
+)
+
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+    target_compile_options(
+        ${PROJECT_NAME} PRIVATE
+        -Wno-unknown-pragmas
+    )
+endif()
+
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    target_compile_options(
+        ${PROJECT_NAME} PRIVATE
+        -Weverything
+        -Wno-c++98-compat
+        -Wno-c++98-compat-pedantic
+        -Wno-padded
+        -Wno-weak-vtables
+        -Wno-gnu-anonymous-struct
+        -Wno-nested-anon-types
+        -Wno-exit-time-destructors
+        -Wno-global-constructors
+        -Wno-error=deprecated-declarations
+        -Wno-disabled-macro-expansion
+        -Wno-covered-switch-default
+        -fcolor-diagnostics
+        -ferror-limit=128
+    )
+endif()
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    target_compile_options(
+        ${PROJECT_NAME} PRIVATE
+        -O0
+        -g
+        -gdwarf-2
+    )
+    if(D_GLIBCXX_DEBUG)
+        message("D_GLIBCXX_DEBUG is ON")
+        target_compile_options(${PROJECT_NAME} PRIVATE -D_GLIBCXX_DEBUG)
+    else()
+        message("D_GLIBCXX_DEBUG is OFF")
+    endif()
+
+else() # "Release"
+    target_compile_options(
+        ${PROJECT_NAME} PRIVATE
+        -O2
+        -g
+        -gdwarf-2
+    )
+endif()
 
 include(examples/CMakeLists.txt)

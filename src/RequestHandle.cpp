@@ -235,7 +235,7 @@ auto RequestHandle::AddHeader(
         m_request_headers.reserve(capacity);
     }
 
-    const char* start = m_request_headers.data() + m_request_headers.size();
+    const char* start = m_request_headers.data() + m_request_headers.length();
 
     m_request_headers.append(name.data(), name.length());
     m_request_headers.append(": ");
@@ -243,7 +243,7 @@ auto RequestHandle::AddHeader(
     {
         m_request_headers.append(value.data(), value.length());
     }
-    m_request_headers.append("\0"); // curl expects null byte
+    m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
 
     std::string_view full_header(start, header_len - 1); // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);

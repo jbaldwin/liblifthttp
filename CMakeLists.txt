@@ -35,7 +35,7 @@ set(SOURCE_FILES
     inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
     inc/lift/Lift.h src/Lift.cpp
-    inc/lift/Http.h
+    inc/lift/Http.h src/Http.cpp
     inc/lift/QueryBuilder.h src/QueryBuilder.cpp
     inc/lift/Request.h src/Request.cpp
     inc/lift/RequestHandle.h src/RequestHandle.cpp

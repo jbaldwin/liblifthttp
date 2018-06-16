@@ -148,9 +148,16 @@ public:
     auto Perform() -> bool;
 
     /**
+     * @deprecated see GetResponseStatusCode
      * @return The HTTP response code.
      */
+    [[deprecated]]
     auto GetResponseCode() const -> int64_t;
+
+    /**
+     * @return The HTTP response status code.
+     */
+    auto GetResponseStatusCode() const -> http::StatusCode;
 
     /**
      * @return The HTTP response headers.

@@ -287,6 +287,13 @@ auto RequestHandle::GetResponseCode() const -> int64_t
     return http_response_code;
 }
 
+auto RequestHandle::GetResponseStatusCode() const -> http::StatusCode
+{
+    long http_response_code = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
+    return http::to_enum(static_cast<uint32_t>(http_response_code));
+}
+
 auto RequestHandle::GetResponseHeaders() const -> const std::vector<Header>&
 {
     return m_response_headers_idx;

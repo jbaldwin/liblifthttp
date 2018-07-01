@@ -14,11 +14,19 @@ auto escape(
 ) -> std::string;
 
 /**
- * @param data Data to HTTP unescape.
+ * @param escaped_data Data to HTTP unescape recursively until it has nothing left to unescape.
+ * @return An HTTP unescaped representation of the data.
+ */
+auto unescape_recurse(
+    std::string escaped_data
+) -> std::string;
+
+/**
+ * @param escaped_data Data to HTTP unescape.
  * @return An HTTP unescaped representation of the data.
  */
 auto unescape(
-    std::string_view data
+    std::string_view escaped_data
 ) -> std::string;
 
 } // lift

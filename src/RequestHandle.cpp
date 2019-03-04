@@ -39,6 +39,7 @@ RequestHandle::RequestHandle(
       m_curl_request_headers(nullptr),
       m_headers_committed(false),
       m_request_data(),
+      m_mime_handle(nullptr),
       m_status_code(RequestStatus::BUILDING),
       m_response_headers(),
       m_response_headers_idx(),
@@ -258,6 +259,11 @@ auto RequestHandle::SetRequestData(
     std::string data
 ) -> void
 {
+    if (m_mime_handle)
+    {
+        throw std::logic_error("Cannot SetRequestData on RequestHandle after using AddMimeField");
+    }
+
     // libcurl expects the data lifetime to be longer
     // than the request so require it to be moved into
     // the lifetime of the request object.
@@ -272,19 +278,53 @@ auto RequestHandle::GetRequestData() const -> const std::string&
     return m_request_data;
 }
 
+auto RequestHandle::AddMimeField(const std::string& field_name, const std::string& field_value) -> void
+{
+    if (!m_request_data.empty())
+    {
+        throw std::logic_error("Cannot AddMimeField on RequestHandle after using SetRequestData");
+    }
+
+    if (m_mime_handle == nullptr)
+    {
+        m_mime_handle = curl_mime_init(m_curl_handle);   
+    }
+
+    auto* field = curl_mime_addpart(m_mime_handle);
+
+    curl_mime_name(field, field_name.data());
+    curl_mime_data(field, field_value.data(), field_value.size());
+}
+
+auto RequestHandle::AddMimeField(const std::string& field_name, const std::filesystem::path& field_filepath) -> void
+{
+    if (!m_request_data.empty())
+    {
+        throw std::logic_error("Cannot AddMimeField on RequestHandle after using SetRequestData");
+    }
+
+    if (!std::filesystem::exists(field_filepath))
+    {
+        throw std::runtime_error("Filepath for AddMimeField doesn't exist");
+    }
+
+    if (m_mime_handle == nullptr)
+    {
+        m_mime_handle = curl_mime_init(m_curl_handle);   
+    }
+
+    auto* field = curl_mime_addpart(m_mime_handle);
+
+    curl_mime_filename(field, field_name.data());
+    curl_mime_filedata(field, field_filepath.c_str());
+}
+
 auto RequestHandle::Perform() -> bool
 {
     prepareForPerform();
     auto curl_error_code = curl_easy_perform(m_curl_handle);
     setCompletionStatus(curl_error_code);
     return (m_status_code == RequestStatus::SUCCESS);
-}
-
-auto RequestHandle::GetResponseCode() const -> int64_t
-{
-    long http_response_code = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
-    return http_response_code;
 }
 
 auto RequestHandle::GetResponseStatusCode() const -> http::StatusCode
@@ -302,13 +342,6 @@ auto RequestHandle::GetResponseHeaders() const -> const std::vector<Header>&
 auto RequestHandle::GetResponseData() const -> const std::string&
 {
     return m_response_data;
-}
-
-auto RequestHandle::GetTotalTimeMilliseconds() const -> uint64_t
-{
-    double total_time = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    return static_cast<uint64_t>(total_time * 1000);
 }
 
 auto RequestHandle::GetTotalTime() const -> std::chrono::milliseconds
@@ -334,6 +367,12 @@ auto RequestHandle::Reset() -> void
         m_curl_request_headers = nullptr;
     }
     m_request_data = std::string(); // replace since this buffer is 'moved' into the Request.
+    
+    if (m_mime_handle)
+    {
+        curl_mime_free(m_mime_handle);
+        m_mime_handle = nullptr;
+    }
 
     clearResponseBuffers();
 
@@ -343,16 +382,6 @@ auto RequestHandle::Reset() -> void
 
     m_max_download_bytes = -1; // Set max download bytes to default to download entire file
     m_bytes_written = 0;
-}
-
-auto RequestHandle::SetUserData(
-    void* user_data
-) -> void {
-    m_user_data = user_data;
-}
-
-auto RequestHandle::GetUserData() -> void* {
-    return m_user_data;
 }
 
 auto RequestHandle::prepareForPerform() -> void
@@ -378,6 +407,11 @@ auto RequestHandle::prepareForPerform() -> void
 
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
         m_headers_committed = true;
+    }
+
+    if (m_mime_handle)
+    {
+        curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, m_mime_handle);
     }
 
     m_status_code = RequestStatus::EXECUTING;

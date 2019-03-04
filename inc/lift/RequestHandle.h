@@ -1,21 +1,21 @@
 #pragma once
 
-#include "lift/RequestStatus.h"
 #include "lift/Header.h"
 #include "lift/Http.h"
+#include "lift/RequestStatus.h"
 
 #include <curl/curl.h>
 #include <uv.h>
 
+#include <chrono>
+#include <filesystem>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <chrono>
-#include <functional>
 
 namespace lift
 {
-
 class Request;
 class RequestPool;
 class CurlPool;
@@ -26,28 +26,23 @@ class RequestHandle
     friend class RequestPool;
 
 public:
-
     ~RequestHandle();
 
-    RequestHandle(const RequestHandle&) = delete;                   ///< No copying
-    RequestHandle(RequestHandle&&) = default;                       ///< Can move
-    auto operator = (const RequestHandle&) = delete;                ///< No copy assign
-    auto operator = (RequestHandle&&) -> RequestHandle& = default;  ///< Can move assign
+    RequestHandle(const RequestHandle&) = delete;                 ///< No copying
+    RequestHandle(RequestHandle&&)      = default;                ///< Can move
+    auto operator=(const RequestHandle&) = delete;                ///< No copy assign
+    auto operator=(RequestHandle &&) -> RequestHandle& = default; ///< Can move assign
 
     /**
      * @param on_complete_handler When this request completes this handle is called.
      */
-    auto SetOnCompleteHandler(
-        std::function<void(Request)> on_complete_handler
-    ) -> void;
+    auto SetOnCompleteHandler(std::function<void(Request)> on_complete_handler) -> void;
 
     /**
      * @param url The URL of the HTTP request.
      * @return True if the url was set.
      */
-    auto SetUrl(
-        const std::string& url
-    ) -> bool;
+    auto SetUrl(const std::string& url) -> bool;
 
     /**
      * @return The currently set URL for this HTTP request.
@@ -57,16 +52,12 @@ public:
     /**
      * @param http_method Sets the HTTP method for this request.
      */
-    auto SetMethod(
-        http::Method http_method
-    ) -> void;
+    auto SetMethod(http::Method http_method) -> void;
 
     /**
      * @param http_version Sets the HTTP version for this request.
      */
-    auto SetVersion(
-        http::Version  http_version
-    ) -> void;
+    auto SetVersion(http::Version http_version) -> void;
 
     /**
      * Sets the timeout for this HTTP request.  This should be set before Perform() is called
@@ -74,9 +65,7 @@ public:
      * @param timeout The timeout for the request.
      * @return True if the timeout was set.
      */
-    auto SetTimeout(
-        std::chrono::milliseconds timeout
-    ) -> bool;
+    auto SetTimeout(std::chrono::milliseconds timeout) -> bool;
 
     /**
      * Sets the maximum number of bytes of data to write.
@@ -88,9 +77,7 @@ public:
      * exceed this amount.
      * @param max_download_bytes     The maximum number of bytes to be written for this request.
      */
-    auto SetMaxDownloadBytes(
-        ssize_t max_download_bytes
-    ) -> void;
+    auto SetMaxDownloadBytes(ssize_t max_download_bytes) -> void;
 
     /**
      * Sets if this request should follow redirects.  By default following redirects is
@@ -99,28 +86,20 @@ public:
      * @param max_redirects The maximum number of redirects to follow, -1 is infinite, 0 is none.
      * @return True if the follow redirects was set.
      */
-    auto SetFollowRedirects(
-        bool follow_redirects,
-        int64_t max_redirects = -1
-    ) -> bool;
+    auto SetFollowRedirects(bool follow_redirects, int64_t max_redirects = -1) -> bool;
 
     /**
      * Adds a request header with an empty value.
      * @param name The name of the header, e.g. 'Accept'.
      */
-    auto AddHeader(
-        std::string_view name
-    ) -> void;
+    auto AddHeader(std::string_view name) -> void;
 
     /**
      * Adds a request header with its value.
      * @param name The name of the header, e.g. 'Connection'.
      * @param value The value of the header, e.g. 'Keep-Alive'.
      */
-    auto AddHeader(
-        std::string_view name,
-        std::string_view value
-    ) -> void;
+    auto AddHeader(std::string_view name, std::string_view value) -> void;
 
     /**
      * @return The list of headers applied to this request.
@@ -130,11 +109,15 @@ public:
     /**
      * Sets the request to HTTP POST and the body of the request
      * to the provided data.
+     *
+     * NOTE: this is mutually exclusive with using AddMimeField or AddMimeFileField,
+     * as you cannot include traditional POST data in a mime-type form submission.
+     *
      * @param data The request data to send in the HTTP POST.
+     * 
+     * @throws std::logic_error If called after using AddMimeField or AddMimeFileField
      */
-    auto SetRequestData(
-        std::string data
-    ) -> void;
+    auto SetRequestData(std::string data) -> void;
 
     /**
      * @return The request data.  If never set an empty string is returned.
@@ -142,17 +125,44 @@ public:
     auto GetRequestData() const -> const std::string&;
 
     /**
+     * Adds an additional mime field to the request. This is only valid for POST
+     * requests, and for submitting HTML form-like data
+     *
+     * NOTE: this is mutually exclusive with using SetRequestData, as you cannot
+     * include traditional POST data in a mime-type form submission.
+     *
+     * @param field_name The name of the form field.
+     * @param field_value The value for the form field.
+     * 
+     * @throws std::logic_error If called after using SetRequestData.
+     */
+    auto AddMimeField(const std::string& field_name, const std::string& field_value) -> void;
+
+    /**
+     * Adds an additional mime field (as a file) to the request. This is only valid
+     * for POST requests, and for submitting HTML form-like data
+     *
+     * NOTE: this is mutually exclusive with using SetRequestData, as you cannot
+     * include traditional POST data in a mime-type form submission.
+     *
+     * @param field_name The name of the form field, this will be the filename as received
+     * by the other side.
+     * @param field_filepath The path value for the form field, a file path of the file to treat
+     * as a form file upload. This file must exist and be readable when this Request is
+     * actually performed (e.g. the file data is streamed on demand, and isn't loaded
+     * when this function is called). This path is only used on the request-side to read
+     * the data, the field_name .
+     * 
+     * @throws std::logic_error If called after using SetRequestData.
+     * @throws std::runtime_error If the file from `field_filepath` doesn't exist.
+     */
+    auto AddMimeField(const std::string& field_name, const std::filesystem::path& field_filepath) -> void;
+
+    /**
      * Performs the HTTP request synchronously.  This call will block the calling thread.
      * @return True if the request was successful.
      */
     auto Perform() -> bool;
-
-    /**
-     * @deprecated see GetResponseStatusCode
-     * @return The HTTP response code.
-     */
-    [[deprecated]]
-    auto GetResponseCode() const -> int64_t;
 
     /**
      * @return The HTTP response status code.
@@ -168,13 +178,6 @@ public:
      * @return The HTTP download payload.
      */
     auto GetResponseData() const -> const std::string&;
-
-    /**
-     * @deprecated use GetTotalTime() -> std::chrono::millisconds
-     * @return The total HTTP request time in milliseconds.
-     */
-    [[deprecated]]
-    auto GetTotalTimeMilliseconds() const -> uint64_t;
 
     /**
      * @return The total HTTP request time in milliseconds.
@@ -196,24 +199,6 @@ public:
      */
     auto Reset() -> void;
 
-    /**
-     * Sets a user provided data pointer.  The Request object in no way
-     * owns this data and is simply pass through to OnComplete().
-     * @param user_data The data pointer
-     * @deprecated Use std::bind or lambda captures with the OnCompleteCallback std::function.
-     */
-    [[deprecated]]
-    auto SetUserData(
-        void* user_data
-    ) -> void;
-
-    /**
-     * @return Gets the user provided data if any.
-     * @deprecated Use std::bind or lambda captures with the OnCompleteCallback std::function.
-     */
-    [[deprecated]]
-    auto GetUserData() -> void*;
-
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
@@ -226,41 +211,42 @@ private:
      * @param max_download_bytes    The maximum number of bytes to download, if -1, will download entire file.
      */
     explicit RequestHandle(
-        const std::string& url,
-        std::chrono::milliseconds timeout,
-        RequestPool& request_pool,
-        CURL* curl_handle,
-        CurlPool& curl_pool,
+        const std::string&           url,
+        std::chrono::milliseconds    timeout,
+        RequestPool&                 request_pool,
+        CURL*                        curl_handle,
+        CurlPool&                    curl_pool,
         std::function<void(Request)> on_complete_handler = nullptr,
-        ssize_t max_download_bytes = -1
-    );
+        ssize_t                      max_download_bytes  = -1);
 
     auto init() -> void;
 
-    std::function<void(Request)> m_on_complete_handler;    ///< The onComplete() handler for asynchronous requests.
+    std::function<void(Request)> m_on_complete_handler; ///< The onComplete() handler for asynchronous requests.
 
-    RequestPool& m_request_pool;                ///< The request pool this request was produced from.
+    RequestPool& m_request_pool; ///< The request pool this request was produced from.
 
-    CURL* m_curl_handle;                        ///< The curl handle for this request.
-    CurlPool& m_curl_pool;                      ///< The curl handle pool.
+    CURL*     m_curl_handle; ///< The curl handle for this request.
+    CurlPool& m_curl_pool;   ///< The curl handle pool.
 
-    std::string_view m_url;                     ///< A view into the curl url.
-    std::string m_request_headers;              ///< The request headers.
+    std::string_view    m_url;                  ///< A view into the curl url.
+    std::string         m_request_headers;      ///< The request headers.
     std::vector<Header> m_request_headers_idx;  ///< The request headers index.
-    curl_slist* m_curl_request_headers;         ///< The curl request headers.
-    bool m_headers_committed;                   ///< Have the headers been committed into CURL?
-    std::string m_request_data;                 ///< The request data if any.
+    curl_slist*         m_curl_request_headers; ///< The curl request headers.
+    bool                m_headers_committed;    ///< Have the headers been committed into CURL?
+    std::string         m_request_data;         ///< The request data if any. Mutually exclusive with m_mime_handle
+    /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data
+    curl_mime* m_mime_handle;
 
-    RequestStatus m_status_code;                ///< The status of this HTTP request.
+    RequestStatus m_status_code; ///< The status of this HTTP request.
     // TODO: merge into a single large buffer
-    std::string m_response_headers;             ///< The response headers.
+    std::string         m_response_headers;     ///< The response headers.
     std::vector<Header> m_response_headers_idx; ///< Views into each header.
-    std::string m_response_data;                ///< The response data if any.
+    std::string         m_response_data;        ///< The response data if any.
 
-    void* m_user_data;                          ///< The user data.
+    void* m_user_data; ///< The user data.
 
-    ssize_t m_max_download_bytes;               ///< Maximum number of bytes to be written.
-    ssize_t m_bytes_written;                    ///< Number of bytes that have been written so far.
+    ssize_t m_max_download_bytes; ///< Maximum number of bytes to be written.
+    ssize_t m_bytes_written;      ///< Number of bytes that have been written so far.
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -280,9 +266,7 @@ private:
      * Converts a CURLcode into a RequestStatus.
      * @param curl_code The CURLcode to convert.
      */
-    auto setCompletionStatus(
-        CURLcode curl_code
-    ) -> void;
+    auto setCompletionStatus(CURLcode curl_code) -> void;
 
     auto onComplete() -> void;
 
@@ -293,23 +277,19 @@ private:
     auto getRemainingDownloadBytes() -> ssize_t;
 
     friend auto curl_write_header(
-        char* buffer,
+        char*  buffer,
         size_t size,
         size_t nitems,
-        void* user_ptr
-    ) -> size_t; ///< libcurl will call this function when a header is received for the HTTP request.
+        void*  user_ptr) -> size_t; ///< libcurl will call this function when a header is received for the HTTP request.
 
     friend auto curl_write_data(
-        void* buffer,
+        void*  buffer,
         size_t size,
         size_t nitems,
-        void* user_ptr
-    ) -> size_t; ///< libcurl will call this function when data is received for the HTTP request.
+        void*  user_ptr) -> size_t; ///< libcurl will call this function when data is received for the HTTP request.
 
-    friend auto requests_accept_async(
-        uv_async_t* async
-    ) -> void; ///< libuv will call this function when the AddRequest() function is called.
-
+    friend auto requests_accept_async(uv_async_t* async)
+        -> void; ///< libuv will call this function when the AddRequest() function is called.
 };
 
-} // lift
+} // namespace lift

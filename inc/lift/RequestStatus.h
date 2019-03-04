@@ -24,14 +24,6 @@ enum class RequestStatus
 };
 
 /**
- * @deprecated Use to_string()
- */
-[[deprecated]]
-auto request_status2str(
-    RequestStatus request_status
-) -> const std::string&;
-
-/**
  * @param request_status Convert to string.
  * @return String representation of the request status.
  */

@@ -46,6 +46,7 @@ set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
     pthread
     z
     dl
+    stdc++fs
 )
 
 set(LIFT_CURL_LIBRARY_DEPENDENCIES

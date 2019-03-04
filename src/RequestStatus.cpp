@@ -14,13 +14,6 @@ static const std::string REQUEST_STATUS_RESPONSE_EMPTY      = "RESPONSE_EMPTY";
 static const std::string REQUEST_STATUS_ERROR               = "ERROR";
 static const std::string REQUEST_STATUS_DOWNLOAD_ERROR      = "DOWNLOAD_ERROR";
 
-auto request_status2str(
-    RequestStatus request_status
-) -> const std::string&
-{
-    return to_string(request_status);
-}
-
 auto to_string(RequestStatus request_status) -> const std::string&
 {
     switch(request_status)

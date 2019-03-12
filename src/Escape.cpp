@@ -18,12 +18,12 @@ auto escape(
 
     if(escaped_data != nullptr)
     {
-        std::string value(escaped_data);
+        std::string value{escaped_data};
         curl_free(escaped_data);
         return value;
     }
 
-    return "";
+    return std::string{};
 }
 
 auto unescape_recurse(
@@ -33,7 +33,7 @@ auto unescape_recurse(
     std::string unescaped_data = unescape(escaped_data);
     while(unescaped_data != escaped_data)
     {
-        escaped_data   = unescaped_data;
+        escaped_data   = std::move(unescaped_data);
         unescaped_data = unescape(escaped_data);
     }
     return unescaped_data;
@@ -50,12 +50,12 @@ auto unescape(
 
     if(decoded_data != nullptr)
     {
-        std::string value(decoded_data);
+        std::string value{decoded_data};
         curl_free(decoded_data);
         return value;
     }
 
-    return "";
+    return std::string{};
 }
 
 } // lift

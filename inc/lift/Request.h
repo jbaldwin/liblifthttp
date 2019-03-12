@@ -44,8 +44,10 @@ private:
         std::unique_ptr<RequestHandle> request_handle
     );
 
-    RequestPool* m_request_pool;                        ///< The request pool that owns this request.
-    std::unique_ptr<RequestHandle> m_request_handle;    ///< The actual underlying request object.
+    /// The request pool that owns this request.
+    RequestPool* m_request_pool;
+    /// The actual underlying request object.
+    std::unique_ptr<RequestHandle> m_request_handle;
 
     friend auto requests_accept_async(
         uv_async_t* async

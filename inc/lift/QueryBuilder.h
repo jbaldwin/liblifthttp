@@ -17,6 +17,9 @@ namespace lift
  *
  * It currently does not validate that the correct parts for a url are provided,
  * so the user must be diligent to set all the appropriate fields.
+ *
+ * Note that the user is responsible for the lifetime of all string_view's
+ * passed into the query builder.  They must be 'alive' until Build() is called.
  */
 class QueryBuilder
 {
@@ -48,21 +51,6 @@ public:
 
     /**
      * Sets the port.
-     *
-     * The SetPort(uint16_t) function takes precendence if both are called.
-     *
-     * @param port The url port.
-     * @return QueryBuilder
-     */
-    auto SetPort(
-        std::string_view port
-    ) -> QueryBuilder&;
-
-    /**
-     * Sets the port.
-     *
-     * This function takes precedence over the SetPort(StringView) version if both are set.
-     *
      * @param port The url port.
      * @return QueryBuidler
      */
@@ -97,7 +85,7 @@ public:
      * @param value The unescaped value of the parameter.
      * @return QueryBuilder
      */
-    auto AppendPathPart(
+    auto AppendQueryParameter(
         std::string_view name,
         std::string_view value
     ) -> QueryBuilder&;
@@ -111,22 +99,37 @@ public:
         std::string_view fragment
     ) -> QueryBuilder&;
 
+    /**
+     * This function will build the HTTP query string based on the provided
+     * information since the last time Build() was called.  Internally each
+     * time Build() is called the query builder resets its state for the
+     * next query.
+     * @return Builds the query into a well formed string.
+     */
     auto Build() -> std::string;
 
 private:
-    std::stringstream m_converter;  ///< Used to convert the m_port_int value.
-    std::string m_query;            ///< A buffer for generating the url from its parts.
+    /// A buffer for generating the url from its parts.
+    std::stringstream m_query;
 
-    std::string_view m_scheme;            ///< The url scheme.
-    std::string_view m_hostname;          ///< The url hostname.
-    std::string_view m_port_str;          ///< The url port (as a string).
-    uint16_t m_port_int;            ///< The url port (as an integer).
-    std::vector<std::string_view> m_path_parts;   ///< The path parts in order.
+    /// The url scheme.
+    std::string_view m_scheme;
+    /// The url hostname.
+    std::string_view m_hostname;
+    /// The url port.
+    uint16_t m_port;
+    /// The path parts in order.
+    std::vector<std::string_view> m_path_parts;
+    /// The query parameters (unescaped), they are escaped in Build().
     std::vector<
         std::pair<std::string_view, std::string_view>
-    > m_query_parameters;           ///< The query paremeters (unescaped).
-    std::string_view m_fragment;          ///< The url fragment.
+    > m_query_parameters;
+    /// The url fragment.
+    std::string_view m_fragment;
 
+    /**
+     * Resets all internal member fields to generate a new query.
+     */
     auto reset() -> void;
 };
 

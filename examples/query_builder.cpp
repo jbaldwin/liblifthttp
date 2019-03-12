@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
         .SetPort(443)
         .AppendPathPart("test")
         .AppendPathPart("path")
-        .AppendPathPart("param1", "value1")
-        .AppendPathPart("param2", "value2");
+        .AppendQueryParameter("param1", "value1")
+        .AppendQueryParameter("param2", "value2");
 
     auto url = query_builder.Build();
     auto request = request_pool.Produce(url);

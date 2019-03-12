@@ -32,14 +32,14 @@ public:
     auto HasValue() const -> bool;
 
     /**
-     * @return A view into the header's value or null if it doesn't have a value.
+     * @return A view into the header's value or empty if it doesn't have a value.
      */
     auto GetValue() const -> std::string_view;
 
 private:
-    std::string_view m_header; ///< The full header data.
-    std::string_view m_name;        ///< The header's name.
-    std::string_view m_value;       ///< The header's value if it has one.
+    std::string_view m_header;    ///< The full header data.
+    std::string_view m_name;      ///< The header's name.
+    std::string_view m_value;     ///< The header's value if it has one.
 };
 
 } // lift

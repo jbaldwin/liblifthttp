@@ -9,8 +9,8 @@ Request::Request(
     RequestPool* request_pool,
     std::unique_ptr<RequestHandle> request_handle
 )
-    : m_request_pool(request_pool),
-      m_request_handle(std::move(request_handle))
+    :   m_request_pool(request_pool),
+        m_request_handle(std::move(request_handle))
 {
 
 }

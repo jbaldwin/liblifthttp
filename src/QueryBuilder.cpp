@@ -5,17 +5,15 @@ namespace lift
 {
 
 QueryBuilder::QueryBuilder()
-    : m_converter(),
-      m_query(),
-      m_scheme(),
-      m_hostname(),
-      m_port_str(),
-      m_port_int(0),
-      m_path_parts(),
-      m_query_parameters(),
-      m_fragment()
+    :   m_query(),
+        m_scheme(),
+        m_hostname(),
+        m_port(0),
+        m_path_parts(),
+        m_query_parameters(),
+        m_fragment()
 {
-    m_query.reserve(2048);
+
 }
 
 auto QueryBuilder::SetScheme(
@@ -35,18 +33,10 @@ auto QueryBuilder::SetHostname(
 }
 
 auto QueryBuilder::SetPort(
-    std::string_view port
-) -> QueryBuilder&
-{
-    m_port_str = port;
-    return *this;
-}
-
-auto QueryBuilder::SetPort(
     uint16_t port
 ) -> QueryBuilder&
 {
-    m_port_int = port;
+    m_port = port;
     return *this;
 }
 
@@ -58,7 +48,7 @@ auto QueryBuilder::AppendPathPart(
     return *this;
 }
 
-auto QueryBuilder::AppendPathPart(
+auto QueryBuilder::AppendQueryParameter(
     std::string_view name,
     std::string_view value
 ) -> QueryBuilder&
@@ -79,65 +69,49 @@ auto QueryBuilder::Build() -> std::string
 {
     if(!m_scheme.empty())
     {
-        m_query.append(m_scheme.data(), m_scheme.length());
+        m_query << m_scheme;
     }
-    m_query.append("://");
+    m_query << "://";
     if(!m_hostname.empty())
     {
-        m_query.append(m_hostname.data(), m_hostname.length());
+        m_query << m_hostname;
     }
-    if(m_port_int != 0 || !m_port_str.empty())
+    if(m_port != 0)
     {
-        m_query.append(":");
-        if(m_port_int != 0)
-        {
-            m_converter.clear();
-            m_converter.str("");
-            m_converter << m_port_int;
-
-            m_query.append(m_converter.str());
-        }
-        else
-        {
-            m_query.append(m_port_str.data(), m_port_str.length());
-        }
+        m_query << ":" << m_port;
     }
     if(!m_path_parts.empty())
     {
         for(auto path_part : m_path_parts)
         {
-            m_query.append("/");
-            m_query.append(path_part.data(), path_part.length());
+            m_query << "/" << path_part;
         }
     }
     if(!m_query_parameters.empty())
     {
         bool first = true;
 
-        for(auto& pair : m_query_parameters)
+        for(const auto& [name, value] : m_query_parameters)
         {
             if(first)
             {
-                m_query.append("?");
+                m_query << "?";
                 first = false;
             }
             else
             {
-                m_query.append("&");
+                m_query << "&";
             }
-            auto escaped_data = lift::escape(pair.second);
-            m_query.append(pair.first.data(), pair.first.length());
-            m_query.append("=");
-            m_query.append(escaped_data);
+            auto escaped_value = lift::escape(value);
+            m_query << name << "=" << escaped_value;
         }
     }
     if(!m_fragment.empty())
     {
-        m_query.append("#");
-        m_query.append(m_fragment.data(), m_fragment.length());
+        m_query << "#" << m_fragment;
     }
 
-    auto copy = m_query;
+    auto copy = m_query.str();
     reset();
     return copy;
 }
@@ -145,13 +119,13 @@ auto QueryBuilder::Build() -> std::string
 auto QueryBuilder::reset() -> void
 {
     m_query.clear();
-    m_scheme = std::string_view();
-    m_hostname = std::string_view();
-    m_port_str = std::string_view();
-    m_port_int = 0;
+    m_query.str("");
+    m_scheme = std::string_view{};
+    m_hostname = std::string_view{};
+    m_port = 0;
     m_path_parts.clear();
     m_query_parameters.clear();
-    m_fragment = std::string_view();
+    m_fragment = std::string_view{};
 }
 
 } // lift

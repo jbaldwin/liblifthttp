@@ -70,9 +70,12 @@ public:
     ) -> Request;
 
 private:
-    std::mutex m_lock;                                      ///< Used for thread safe calls.
-    std::deque<std::unique_ptr<RequestHandle>> m_requests;  ///< Pool of un-used Request handles.
-    std::unique_ptr<CurlPool> m_curl_pool;                  ///< Pool of CURL* handles.
+    /// Used for thread safe calls.
+    std::mutex m_lock;
+    /// Pool of un-used Request handles.
+    std::deque<std::unique_ptr<RequestHandle>> m_requests;
+    /// Pool of CURL* handles.
+    std::unique_ptr<CurlPool> m_curl_pool;
 
     /**
      * Returns a Request object to the pool to be re-used.

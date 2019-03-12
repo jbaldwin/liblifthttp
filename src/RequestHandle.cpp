@@ -29,24 +29,23 @@ RequestHandle::RequestHandle(
     std::function<void(Request)> on_complete_handler,
     ssize_t max_download_bytes
 )
-    : m_on_complete_handler(std::move(on_complete_handler)),
-      m_request_pool(request_pool),
-      m_curl_handle(curl_handle),
-      m_curl_pool(curl_pool),
-      m_url(),
-      m_request_headers(),
-      m_request_headers_idx(),
-      m_curl_request_headers(nullptr),
-      m_headers_committed(false),
-      m_request_data(),
-      m_mime_handle(nullptr),
-      m_status_code(RequestStatus::BUILDING),
-      m_response_headers(),
-      m_response_headers_idx(),
-      m_response_data(),
-      m_user_data(nullptr),
-      m_max_download_bytes(max_download_bytes),
-      m_bytes_written(0)
+    :   m_on_complete_handler(std::move(on_complete_handler)),
+        m_request_pool(request_pool),
+        m_curl_handle(curl_handle),
+        m_curl_pool(curl_pool),
+        m_url(),
+        m_request_headers(),
+        m_request_headers_idx(),
+        m_curl_request_headers(nullptr),
+        m_headers_committed(false),
+        m_request_data(),
+        m_mime_handle(nullptr),
+        m_status_code(RequestStatus::BUILDING),
+        m_response_headers(),
+        m_response_headers_idx(),
+        m_response_data(),
+        m_max_download_bytes(max_download_bytes),
+        m_bytes_written(0)
 {
     init();
     SetUrl(url);
@@ -83,8 +82,6 @@ auto RequestHandle::init() -> void
     m_response_headers.reserve(16'384);
     m_response_headers_idx.reserve(16);
     m_response_data.reserve(16'384);
-
-    m_user_data = nullptr;
 }
 
 auto RequestHandle::SetOnCompleteHandler(
@@ -107,7 +104,7 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
         if(curl_url)
         {
-            m_url = std::string_view(curl_url, std::strlen(curl_url));
+            m_url = std::string_view{curl_url, std::strlen(curl_url)};
             return true;
         }
     }
@@ -215,7 +212,7 @@ auto RequestHandle::AddHeader(
     std::string_view name
 ) -> void
 {
-    AddHeader(name, std::string_view());
+    AddHeader(name, std::string_view{});
 }
 
 auto RequestHandle::AddHeader(
@@ -246,7 +243,7 @@ auto RequestHandle::AddHeader(
     }
     m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
 
-    std::string_view full_header(start, header_len - 1); // subtract off the null byte
+    std::string_view full_header{start, header_len - 1}; // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);
 }
 
@@ -358,7 +355,7 @@ auto RequestHandle::GetCompletionStatus() const -> RequestStatus
 
 auto RequestHandle::Reset() -> void
 {
-    m_url = std::string_view();
+    m_url = std::string_view{};
     m_request_headers.clear();
     m_request_headers_idx.clear();
     if(m_curl_request_headers)
@@ -366,7 +363,8 @@ auto RequestHandle::Reset() -> void
         curl_slist_free_all(m_curl_request_headers);
         m_curl_request_headers = nullptr;
     }
-    m_request_data = std::string(); // replace since this buffer is 'moved' into the Request.
+    // replace rather than clear() since this buffer is 'moved' into the Request and will free up memory.
+    m_request_data = std::string{};
     
     if (m_mime_handle)
     {
@@ -458,7 +456,8 @@ auto RequestHandle::setCompletionStatus(
              * Otherwise, there was an error in the CURL write callback.
              */
             m_status_code = (getRemainingDownloadBytes() == 0)
-                ? RequestStatus::SUCCESS : RequestStatus::DOWNLOAD_ERROR;
+                ? RequestStatus::SUCCESS
+                : RequestStatus::DOWNLOAD_ERROR;
             break;
         default:
             m_status_code = RequestStatus::ERROR;
@@ -487,7 +486,7 @@ auto curl_write_header(
     auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
     size_t data_length = size * nitems;
 
-    std::string_view data_view(buffer, data_length);
+    std::string_view data_view{buffer, data_length};
 
     if(data_view.empty())
     {
@@ -520,7 +519,7 @@ auto curl_write_header(
         data_view.remove_suffix(rm_size);
     }
 
-    size_t capacity = raw_request_ptr->m_response_headers.capacity();
+    size_t capacity  = raw_request_ptr->m_response_headers.capacity();
     size_t total_len = raw_request_ptr->m_response_headers.size() + data_view.length();
     if(capacity < total_len)
     {
@@ -537,7 +536,7 @@ auto curl_write_header(
     // Calculate and append the Header view object.
     const char* start = raw_request_ptr->m_response_headers.c_str();
     auto total_length = raw_request_ptr->m_response_headers.length();
-    std::string_view request_data_view((start + total_length) - data_view.length(), data_view.length());
+    std::string_view request_data_view{(start + total_length) - data_view.length(), data_view.length()};
     raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
 
     return data_length;

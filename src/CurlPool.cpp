@@ -4,8 +4,8 @@ namespace lift
 {
 
 CurlPool::CurlPool()
-    : m_lock(),
-      m_curl_handles()
+    :   m_lock(),
+        m_curl_handles()
 {
 
 }
@@ -41,7 +41,7 @@ auto CurlPool::Return(
     CURL* curl_handle
 ) -> void
 {
-    std::lock_guard<std::mutex> guard(m_lock);
+    std::lock_guard<std::mutex> guard{m_lock};
     m_curl_handles.emplace_back(curl_handle);
 }
 

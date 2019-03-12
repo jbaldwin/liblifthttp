@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
     lift::initialize();
 
-    lift::EventLoop event_loop;
+    lift::EventLoop event_loop{};
     auto& request_pool = event_loop.GetRequestPool();
     auto req1 = request_pool.Produce("http://www.example.com", 1s);
     req1->SetOnCompleteHandler([](lift::Request r) { on_complete(std::move(r), 1, 100.5); });

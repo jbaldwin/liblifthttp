@@ -54,7 +54,6 @@ set(LIFT_CURL_LIBRARY_DEPENDENCIES
 )
 
 set(SOURCE_FILES
-    inc/lift/CurlPool.h src/CurlPool.cpp
     inc/lift/Escape.h src/Escape.cpp
     inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp

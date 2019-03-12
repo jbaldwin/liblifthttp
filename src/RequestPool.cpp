@@ -1,25 +1,26 @@
 #include "lift/RequestPool.h"
-#include "lift/CurlPool.h"
 
 namespace lift
 {
 
-RequestPool::RequestPool()
-    :   m_lock(),
-        m_requests(),
-        m_curl_pool(std::make_unique<CurlPool>())
+auto RequestPool::Reserve(
+    size_t count
+) -> void
 {
-
-}
-
-RequestPool::~RequestPool()
-{
-    /**
-     * Clearing requests is important so that they are all cleaned up
-     * before the CurlPool destructs since the Request destructor
-     * will call CurlPool::Return(curl_handle).
-     */
-    m_requests.clear();
+    std::lock_guard<std::mutex> guard{m_lock};
+    for(size_t i = 0; i < count; ++i)
+    {
+        // All these fields will get reset on Produce().
+        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
+            new RequestHandle(
+                *this,
+                "",
+                std::chrono::milliseconds{0},
+                [](Request) { }
+            )
+        );
+        m_requests.emplace_back(std::move(request_handle_ptr));
+    }
 }
 
 auto RequestPool::Produce(
@@ -50,18 +51,16 @@ auto RequestPool::Produce(
         m_lock.unlock();
 
         // Cannot use std::make_unique here since RequestHandle ctor is private friend.
-        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
-            new RequestHandle(
+        auto request_handle_ptr = std::unique_ptr<RequestHandle>{
+            new RequestHandle{
+                *this,
                 url,
                 timeout,
-                *this,
-                m_curl_pool->Produce(),
-                *m_curl_pool,
                 std::move(on_complete_handler)
-            )
-        );
+            }
+        };
 
-        return Request(this, std::move(request_handle_ptr));
+        return Request{this, std::move(request_handle_ptr)};
     }
     else
     {
@@ -73,7 +72,7 @@ auto RequestPool::Produce(
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
 
-        return Request(this, std::move(request_handle_ptr));
+        return Request{this, std::move(request_handle_ptr)};
     }
 }
 

@@ -28,10 +28,17 @@ class RequestHandle
 public:
     ~RequestHandle();
 
-    RequestHandle(const RequestHandle&) = delete;                 ///< No copying
-    RequestHandle(RequestHandle&&)      = default;                ///< Can move
-    auto operator=(const RequestHandle&) = delete;                ///< No copy assign
-    auto operator=(RequestHandle &&) -> RequestHandle& = default; ///< Can move assign
+    /**
+     * Do not move or copy these objects anywhere, they should always be wrapped in
+     * a unique_ptr for cheapness of moving their internals as well as maintaining
+     * the life time of these objects in the pool
+     * @{
+     */
+    RequestHandle(const RequestHandle&)               = delete;
+    RequestHandle(RequestHandle&&)                    = delete;
+    auto operator=(const RequestHandle&)              = delete;
+    auto operator=(RequestHandle&&) -> RequestHandle& = delete;
+    /** @} */
 
     /**
      * @param on_complete_handler When this request completes this handle is called.
@@ -153,6 +160,9 @@ public:
      * NOTE: this is mutually exclusive with using SetRequestData, as you cannot
      * include traditional POST data in a mime-type form submission.
      *
+     * NOTE: Fields are specifically const std::string& because the underlying curl library
+     * only takes a char* that is required to be null terminated.
+     *
      * @param field_name The name of the form field.
      * @param field_value The value for the form field.
      * 
@@ -230,20 +240,16 @@ public:
 private:
     /**
      * Private constructor -- only the RequestPool can create new Requests.
+     * @param request_pool The request pool that generated this handle.
      * @param url          The url for the request.
      * @param timeout      The timeout for the request in milliseconds.
-     * @param request_pool The request pool that generated this handle.
-     * @param curl_handle  The CURL* handle for this Request.
-     * @param curl_pool    The CurlPool to return the CURL* handle when this request destructs.
      * @param on_complete_handler   Function to be called when the CURL request finishes.
      * @param max_download_bytes    The maximum number of bytes to download, if -1, will download entire file.
      */
     explicit RequestHandle(
+        RequestPool&                 request_pool,
         const std::string&           url,
         std::chrono::milliseconds    timeout,
-        RequestPool&                 request_pool,
-        CURL*                        curl_handle,
-        CurlPool&                    curl_pool,
         std::function<void(Request)> on_complete_handler = nullptr,
         ssize_t                      max_download_bytes  = -1);
 
@@ -256,22 +262,20 @@ private:
     RequestPool& m_request_pool;
 
     /// The cURL handle for this request.
-    CURL*     m_curl_handle;
-    /// The curl handle pool.
-    CurlPool& m_curl_pool;
+    CURL* m_curl_handle{nullptr};
 
     /// A view into the curl url.
-    std::string_view    m_url;
+    std::string_view m_url;
     /// The request headers.
-    std::string         m_request_headers;
+    std::string m_request_headers;
     /// The request headers index.  Used to generate the curl slist.
     std::vector<Header> m_request_headers_idx;
     /// The curl request headers.
-    curl_slist*         m_curl_request_headers;
+    curl_slist* m_curl_request_headers;
     /// Have the headers been committed into cURL?
-    bool                m_headers_committed;
+    bool m_headers_committed;
     /// The request data if any. Mutually exclusive with m_mime_handle.
-    std::string         m_request_data;
+    std::string m_request_data;
     /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data.
     curl_mime* m_mime_handle;
 
@@ -279,11 +283,11 @@ private:
     RequestStatus m_status_code;
     // TODO: merge into a single large buffer
     /// The response headers.
-    std::string         m_response_headers;
+    std::string m_response_headers;
     /// Views into each header.
     std::vector<Header> m_response_headers_idx;
     /// The response data if any.
-    std::string         m_response_data;
+    std::string m_response_data;
 
     /// Maximum number of bytes to be written.
     ssize_t m_max_download_bytes;

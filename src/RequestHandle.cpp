@@ -1,6 +1,5 @@
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
-#include "lift/CurlPool.h"
 
 #include <cstring>
 
@@ -21,18 +20,15 @@ auto curl_write_data(
 ) -> size_t;
 
 RequestHandle::RequestHandle(
+    RequestPool& request_pool,
     const std::string& url,
     std::chrono::milliseconds timeout_ms,
-    RequestPool& request_pool,
-    CURL* curl_handle,
-    CurlPool& curl_pool,
     std::function<void(Request)> on_complete_handler,
     ssize_t max_download_bytes
 )
     :   m_on_complete_handler(std::move(on_complete_handler)),
         m_request_pool(request_pool),
-        m_curl_handle(curl_handle),
-        m_curl_pool(curl_pool),
+        m_curl_handle(curl_easy_init()),
         m_url(),
         m_request_headers(),
         m_request_headers_idx(),
@@ -55,9 +51,12 @@ RequestHandle::RequestHandle(
 RequestHandle::~RequestHandle()
 {
     Reset();
-    if(m_curl_handle)
+
+    // Reset doesn't delete the CURL* handle since it can be re-used between requests.
+    // Delete it now.
+    if(m_curl_handle != nullptr)
     {
-        m_curl_pool.Return(m_curl_handle);
+        curl_easy_cleanup(m_curl_handle);
         m_curl_handle = nullptr;
     }
 }
@@ -275,7 +274,10 @@ auto RequestHandle::GetRequestData() const -> const std::string&
     return m_request_data;
 }
 
-auto RequestHandle::AddMimeField(const std::string& field_name, const std::string& field_value) -> void
+auto RequestHandle::AddMimeField(
+    const std::string& field_name,
+    const std::string& field_value
+) -> void
 {
     if (!m_request_data.empty())
     {
@@ -293,7 +295,10 @@ auto RequestHandle::AddMimeField(const std::string& field_name, const std::strin
     curl_mime_data(field, field_value.data(), field_value.size());
 }
 
-auto RequestHandle::AddMimeField(const std::string& field_name, const std::filesystem::path& field_filepath) -> void
+auto RequestHandle::AddMimeField(
+    const std::string& field_name,
+    const std::filesystem::path& field_filepath
+) -> void
 {
     if (!m_request_data.empty())
     {

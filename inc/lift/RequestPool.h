@@ -19,13 +19,22 @@ class RequestPool
     friend class Request;
 
 public:
-    RequestPool();
-    ~RequestPool();
+    RequestPool() = default;
+    ~RequestPool() = default;
 
     RequestPool(const RequestPool&) = delete;                       ///< No copying
     RequestPool(RequestPool&&) = default;                           ///< Can move
     auto operator = (const RequestPool&) -> RequestPool& = delete;  ///< No copy assign
     auto operator = (RequestPool&&) -> RequestPool& = default;      ///< Can move assign
+
+    /**
+     * This can be useful to pre-allocate a large number of Request objects to be used
+     * immediately and incur expensives start up (like CURL* handles) before starting requests.
+     * @param count Pre-allocates/reserves this many request objects.
+     */
+    auto Reserve(
+        size_t count
+    ) -> void;
 
     /**
      * Produces a new Request with infinite timeout.
@@ -71,11 +80,9 @@ public:
 
 private:
     /// Used for thread safe calls.
-    std::mutex m_lock;
+    std::mutex m_lock{};
     /// Pool of un-used Request handles.
-    std::deque<std::unique_ptr<RequestHandle>> m_requests;
-    /// Pool of CURL* handles.
-    std::unique_ptr<CurlPool> m_curl_pool;
+    std::deque<std::unique_ptr<RequestHandle>> m_requests{};
 
     /**
      * Returns a Request object to the pool to be re-used.

@@ -82,18 +82,26 @@ private:
      * Each event loop gets its own private request pool for efficiency.
      * This needs to be first so it de-allocates all its RequestHandles on shutdown.
      */
-    RequestPool m_request_pool;
+    RequestPool m_request_pool{};
 
-    std::atomic<bool> m_is_running;  ///< Set to true if the EventLoop is currently running.
-    std::atomic<bool> m_is_stopping; ///< Set to true if the EventLoop is currently shutting down.
-    std::atomic<uint64_t> m_active_request_count; ///< The active number of requests running.
+    /// Set to true if the EventLoop is currently running.
+    std::atomic<bool> m_is_running{false};
+    /// Set to true if the EventLoop is currently shutting down.
+    std::atomic<bool> m_is_stopping{false};
+    /// The active number of requests running.
+    std::atomic<uint64_t> m_active_request_count{0};
 
-    uv_loop_t* m_loop;          ///< The UV event loop to drive libcurl.
-    uv_async_t m_async;         ///< The async trigger for injecting new requests into the event loop.
-    uv_timer_t m_timeout_timer; ///< libcurl requires a single timer to drive timeouts/wake-ups.
-    CURLM* m_cmh;               ///< The libcurl multi handle for driving multiple easy handles at once.
+    /// The UV event loop to drive libcurl.
+    uv_loop_t* m_loop{uv_loop_new()};
+    /// The async trigger for injecting new requests into the event loop.
+    uv_async_t m_async{};
+    /// libcurl requires a single timer to drive timeouts/wake-ups.
+    uv_timer_t m_timeout_timer{};
+    /// The libcurl multi handle for driving multiple easy handles at once.
+    CURLM* m_cmh{curl_multi_init()};
 
-    std::mutex m_pending_requests_lock; ///< Pending requests are safely queued via this lock.
+    /// Pending requests are safely queued via this lock.
+    std::mutex m_pending_requests_lock{};
     /**
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
@@ -103,15 +111,20 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<Request> m_pending_requests;
-    std::vector<Request> m_grabbed_requests; ///< Only accessible from within the EventLoop thread.
+    std::vector<Request> m_pending_requests{};
+    /// Only accessible from within the EventLoop thread.
+    std::vector<Request> m_grabbed_requests{};
 
-    std::thread m_background_thread; ///< The background thread spawned to drive the event loop.
+    /// The background thread spawned to drive the event loop.
+    std::thread m_background_thread{};
 
-    std::atomic<bool> m_async_closed;         ///< Flag to denote that the m_async handle has been closed on shutdown.
-    std::atomic<bool> m_timeout_timer_closed; ///< Flag to denote that the m_timeout_timer has been closed on shutdown.
+    /// Flag to denote that the m_async handle has been closed on shutdown.
+    std::atomic<bool> m_async_closed{false};
+    /// Flag to denote that the m_timeout_timer has been closed on shutdown.
+    std::atomic<bool> m_timeout_timer_closed{false};
 
-    auto run() -> void; ///< The background thread runs from this function.
+    /// The background thread runs from this function.
+    auto run() -> void;
 
     /**
      * Checks current pending curl actions like timeouts.

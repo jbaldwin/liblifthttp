@@ -104,20 +104,6 @@ auto requests_accept_async(
 ) -> void;
 
 EventLoop::EventLoop()
-    :   m_request_pool(),
-        m_is_running(false),
-        m_is_stopping(false),
-        m_active_request_count(0),
-        m_loop(uv_loop_new()),
-        m_async(),
-        m_timeout_timer(),
-        m_cmh(curl_multi_init()),
-        m_pending_requests_lock(),
-        m_pending_requests(),
-        m_grabbed_requests(),
-        m_background_thread(),
-        m_async_closed(false),
-        m_timeout_timer_closed(false)
 {
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;

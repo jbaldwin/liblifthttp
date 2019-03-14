@@ -15,8 +15,11 @@
 namespace lift
 {
 
+class CurlContext;
+
 class EventLoop
 {
+    friend CurlContext;
 public:
     /**
      * Creates a new lift event loop.
@@ -117,6 +120,9 @@ private:
 
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread{};
+
+    /// List of CurlContext objects to re-use for requests.
+    std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
     std::atomic<bool> m_async_closed{false};

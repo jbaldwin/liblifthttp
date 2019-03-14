@@ -18,7 +18,6 @@ namespace lift
 {
 class Request;
 class RequestPool;
-class CurlPool;
 
 class RequestHandle
 {

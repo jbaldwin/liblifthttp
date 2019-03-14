@@ -13,22 +13,29 @@ namespace lift
 class CurlContext
 {
 public:
-    CurlContext(
-        EventLoop& event_loop,
-        uv_loop_t* uv_loop,
-        curl_socket_t sock_fd
+    explicit CurlContext(
+        EventLoop& event_loop
     )
-        :   m_event_loop(event_loop),
-            m_poll_handle(),
-            m_sock_fd(sock_fd)
+        :   m_event_loop(event_loop)
     {
-        uv_poll_init_socket(uv_loop, &m_poll_handle, m_sock_fd);
         m_poll_handle.data = this;
     }
 
-    CurlContext(const CurlContext& copy) = delete;
-    CurlContext(CurlContext&& move) = default;
-    auto operator=(const CurlContext& assign) = delete;
+    ~CurlContext() = default;
+
+    CurlContext(const CurlContext& ) = delete;
+    CurlContext(CurlContext&& ) = delete;
+    auto operator=(const CurlContext& ) = delete;
+    auto operator=(CurlContext&& ) = delete;
+
+    auto Init(
+        uv_loop_t* uv_loop,
+        curl_socket_t sock_fd
+    ) -> void
+    {
+        m_sock_fd = sock_fd;
+        uv_poll_init(uv_loop, &m_poll_handle, m_sock_fd);
+    }
 
     auto Close()
     {
@@ -39,24 +46,9 @@ public:
         uv_close(reinterpret_cast<uv_handle_t*>(&m_poll_handle), CurlContext::on_close);
     }
 
-    auto GetEventLoop() -> EventLoop&
-    {
-        return m_event_loop;
-    }
-
-    auto GetPollHandle() -> uv_poll_t*
-    {
-        return &m_poll_handle;
-    }
-    auto GetCurlSocket() -> curl_socket_t
-    {
-        return m_sock_fd;
-    }
-
-private:
     EventLoop& m_event_loop;
-    uv_poll_t m_poll_handle;
-    curl_socket_t m_sock_fd;
+    uv_poll_t m_poll_handle{};
+    curl_socket_t m_sock_fd{CURL_SOCKET_BAD};
 
     static auto on_close(
         uv_handle_t* handle
@@ -65,9 +57,9 @@ private:
         auto* curl_context = static_cast<CurlContext*>(handle->data);
         /**
          * uv has signaled that it is finished with the m_poll_handle,
-         * we can now safely delete 'this'.
+         * we can now safely tell the event loop to re-use this curl context.
          */
-        delete curl_context;
+        curl_context->m_event_loop.m_curl_context_ready.emplace_back(curl_context);
     }
 };
 
@@ -100,7 +92,7 @@ auto on_uv_curl_perform_callback(
 ) -> void;
 
 auto requests_accept_async(
-    uv_async_t* async
+    uv_async_t* handle
 ) -> void;
 
 EventLoop::EventLoop()
@@ -282,8 +274,18 @@ auto curl_handle_socket_actions(
         }
         else
         {
-            // new request
-            curl_context = new CurlContext{*event_loop, event_loop->m_loop, socket};
+            // new request, and no curl context's available? make one
+            if(event_loop->m_curl_context_ready.empty())
+            {
+                curl_context = new CurlContext{*event_loop};
+            }
+            else
+            {
+                curl_context = event_loop->m_curl_context_ready.front().release();
+                event_loop->m_curl_context_ready.pop_front();
+            }
+
+            curl_context->Init(event_loop->m_loop, socket);
             curl_multi_assign(event_loop->m_cmh, socket, static_cast<void*>(curl_context));
         }
     }
@@ -291,10 +293,10 @@ auto curl_handle_socket_actions(
     switch(action)
     {
         case CURL_POLL_IN:
-            uv_poll_start(curl_context->GetPollHandle(), UV_READABLE, on_uv_curl_perform_callback);
+            uv_poll_start(&curl_context->m_poll_handle, UV_READABLE, on_uv_curl_perform_callback);
             break;
         case CURL_POLL_OUT:
-            uv_poll_start(curl_context->GetPollHandle(), UV_WRITABLE, on_uv_curl_perform_callback);
+            uv_poll_start(&curl_context->m_poll_handle, UV_WRITABLE, on_uv_curl_perform_callback);
             break;
         case CURL_POLL_REMOVE:
             if(socketp != nullptr)
@@ -339,7 +341,7 @@ auto on_uv_curl_perform_callback(
 ) -> void
 {
     auto* curl_context = static_cast<CurlContext*>(req->data);
-    auto& event_loop = curl_context->GetEventLoop();
+    auto& event_loop = curl_context->m_event_loop;
 
     int action = 0;
     if(status < 0)
@@ -355,7 +357,7 @@ auto on_uv_curl_perform_callback(
         action |= CURL_CSELECT_OUT;
     }
 
-    event_loop.checkActions(curl_context->GetCurlSocket(), action);
+    event_loop.checkActions(curl_context->m_sock_fd, action);
 }
 
 auto requests_accept_async(

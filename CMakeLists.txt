@@ -17,7 +17,7 @@ set(LIBCRYPTO "" CACHE FILEPATH "User specificed libcrypto static location.")
 set(LIBCURL "curl" CACHE FILEPATH "User specified libcurl static location.")
 set(LIBCARES "" CACHE FILEPATH "User specified libcares static location.")
 
-message("${PROJECT_NAME} CURL_INCLUDE + ${CURL_INCLUDE}")
+message("${PROJECT_NAME} CURL_INCLUDE = ${CURL_INCLUDE}")
 message("${PROJECT_NAME} LIBSSL = ${LIBSSL}")
 message("${PROJECT_NAME} LIBCRYPTO = ${LIBCRYPTO}")
 message("${PROJECT_NAME} LIBCURL = ${LIBCURL}")
@@ -51,7 +51,7 @@ set(SOURCE_FILES
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE})
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

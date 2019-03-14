@@ -1,10 +1,10 @@
 #pragma once
 
+#include "lift/EventLoop.h"
+#include "lift/QueryBuilder.h"
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
 #include "lift/RequestPool.h"
-#include "lift/EventLoop.h"
-#include "lift/QueryBuilder.h"
 
 namespace lift
 {

@@ -4,18 +4,6 @@
 namespace lift
 {
 
-QueryBuilder::QueryBuilder()
-    :   m_query(),
-        m_scheme(),
-        m_hostname(),
-        m_port(0),
-        m_path_parts(),
-        m_query_parameters(),
-        m_fragment()
-{
-
-}
-
 auto QueryBuilder::SetScheme(
     std::string_view scheme
 ) -> QueryBuilder&

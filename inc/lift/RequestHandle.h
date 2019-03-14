@@ -261,7 +261,7 @@ private:
     RequestPool& m_request_pool;
 
     /// The cURL handle for this request.
-    CURL* m_curl_handle{nullptr};
+    CURL* m_curl_handle{curl_easy_init()};
 
     /// A view into the curl url.
     std::string_view m_url;
@@ -270,17 +270,16 @@ private:
     /// The request headers index.  Used to generate the curl slist.
     std::vector<Header> m_request_headers_idx;
     /// The curl request headers.
-    curl_slist* m_curl_request_headers;
+    curl_slist* m_curl_request_headers{nullptr};
     /// Have the headers been committed into cURL?
-    bool m_headers_committed;
+    bool m_headers_committed{false};
     /// The request data if any. Mutually exclusive with m_mime_handle.
     std::string m_request_data;
     /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data.
-    curl_mime* m_mime_handle;
+    curl_mime* m_mime_handle{nullptr};
 
     /// The status of this HTTP request.
-    RequestStatus m_status_code;
-    // TODO: merge into a single large buffer
+    RequestStatus m_status_code{RequestStatus::BUILDING};
     /// The response headers.
     std::string m_response_headers;
     /// Views into each header.
@@ -289,9 +288,9 @@ private:
     std::string m_response_data;
 
     /// Maximum number of bytes to be written.
-    ssize_t m_max_download_bytes;
+    ssize_t m_max_download_bytes{0};
     /// Number of bytes that have been written so far.
-    ssize_t m_bytes_written;
+    ssize_t m_bytes_written{0};
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -339,7 +338,7 @@ private:
 
     /// libuv will call this function when the AddRequest() function is called.
     friend auto requests_accept_async(
-        uv_async_t* async
+        uv_async_t* handle
     ) -> void;
 };
 

@@ -3,11 +3,11 @@
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
 
-#include <deque>
-#include <memory>
 #include <chrono>
-#include <mutex>
+#include <deque>
 #include <functional>
+#include <memory>
+#include <mutex>
 
 namespace lift
 {
@@ -22,10 +22,10 @@ public:
     RequestPool() = default;
     ~RequestPool() = default;
 
-    RequestPool(const RequestPool&) = delete;                       ///< No copying
-    RequestPool(RequestPool&&) = default;                           ///< Can move
-    auto operator = (const RequestPool&) -> RequestPool& = delete;  ///< No copy assign
-    auto operator = (RequestPool&&) -> RequestPool& = default;      ///< Can move assign
+    RequestPool(const RequestPool&) = delete;
+    RequestPool(RequestPool&&) = delete;
+    auto operator = (const RequestPool&) -> RequestPool& = delete;
+    auto operator = (RequestPool&&) -> RequestPool& = delete;
 
     /**
      * This can be useful to pre-allocate a large number of Request objects to be used

@@ -4,42 +4,24 @@ project(lifthttp CXX)
 # Create a Debug/lib or Release/lib output directory.
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
 
-# Custom locations for libcurl dependencies.
-if(NOT "$ENV{CURL_INCLUDE}" STREQUAL "")
-    set(LIFT_CURL_INCLUDE "$ENV{CURL_INCLUDE}")
+find_program(CLANG_TIDY_BIN NAMES "clang-tidy" DOC "clang-tidy binary location")
+if(CLANG_TIDY_BIN)
+    set(CLANG_TIDY_COMMAND "${CLANG_TIDY_BIN}" "-checks=*,-cppcoreguidelines-pro-type-union-access,-hicpp-signed-bitwise,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-google-runtime-int,-hicpp-vararg,-cppcoreguidelines-pro-type-vararg,-cert-err58-cpp,-clang-analyzer-alpha.*,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-fuchsia-trailing-return,-fuchsia-default-arguments,-readability-else-after-return,-google-readability-namespace-comments,-llvm-namespace-comment,-hicpp-no-array-decay,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-google-default-arguments,-llvm-header-guard,-google-runtime-references,-misc-macro-parentheses,-bugprone-macro-parentheses,-bugprone-unused-return-value" "-header-filter=.*")
 endif()
 
-if(NOT "$ENV{LIBSSL}" STREQUAL "")
-    set(LIBSSL $ENV{LIBSSL})
-else()
-    set(LIBSSL "" CACHE STRING "User specified libsss static location.")
-endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT "$ENV{LIBCRYPTO}" STREQUAL "")
-    set(LIBCRYPTO $ENV{LIBCRYPTO})
-else()
-    set(LIBCRYPTO "" CACHE STRING "User specificed libcrypto static location.")
-endif()
+set(CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
+set(LIBSSL "" CACHE FILEPATH "User specified libssl static location.")
+set(LIBCRYPTO "" CACHE FILEPATH "User specificed libcrypto static location.")
+set(LIBCURL "curl" CACHE FILEPATH "User specified libcurl static location.")
+set(LIBCARES "" CACHE FILEPATH "User specified libcares static location.")
 
-if(NOT "$ENV{LIBCURL}" STREQUAL "")
-    set(LIBCURL $ENV{LIBCURL})
-else()
-    set(LIBCURL "curl" CACHE STRING "User specified libcurl static location.")
-endif()
-
-if(NOT "$ENV{LIBCARES}" STREQUAL "")
-    set(LIBCARES $ENV{LIBCARES})
-else()
-    set(LIBCARES "" CACHE STRING "User specified libcares static location.")
-endif()
-
-option(D_GLIBCXX_DEBUG "Use D_GLIBCXX_DEBUG when building Debug" ON)
-
+message("${PROJECT_NAME} CURL_INCLUDE + ${CURL_INCLUDE}")
 message("${PROJECT_NAME} LIBSSL = ${LIBSSL}")
 message("${PROJECT_NAME} LIBCRYPTO = ${LIBCRYPTO}")
 message("${PROJECT_NAME} LIBCURL = ${LIBCURL}")
 message("${PROJECT_NAME} LIBCARES = ${LIBCARES}")
-message("${PROJECT_NAME} D_GLIBCXX_DEBUG=${D_GLIBCXX_DEBUG}")
 
 set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
     uv
@@ -67,8 +49,9 @@ set(SOURCE_FILES
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -76,21 +59,19 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES}
 )
 
-target_compile_options(
-    ${PROJECT_NAME} PRIVATE
-    -Wall
-    -Wextra
-    -Weffc++
-    -Werror
-    -Wpedantic
-    -pedantic-errors
-)
+if(UNIX)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Weffc++ -Wpedantic -pedantic-errors)
+endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(
         ${PROJECT_NAME} PRIVATE
         -Wno-unknown-pragmas
     )
+endif()
+
+if(CLANG_TIDY_BIN)
+    set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -110,31 +91,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         -Wno-covered-switch-default
         -fcolor-diagnostics
         -ferror-limit=128
-    )
-endif()
-
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    message("${PROJECT_NAME} is building Debug")
-    target_compile_options(
-        ${PROJECT_NAME} PRIVATE
-        -O0
-        -g
-        -gdwarf-2
-    )
-    if(D_GLIBCXX_DEBUG)
-        message("${PROJECT_NAME} D_GLIBCXX_DEBUG is ON")
-        target_compile_options(${PROJECT_NAME} PRIVATE -D_GLIBCXX_DEBUG)
-    else()
-        message("${PROJECT_NAME} D_GLIBCXX_DEBUG is OFF")
-    endif()
-
-else() # "Release"
-    message("${PROJECT_NAME} is building Release")
-    target_compile_options(
-        ${PROJECT_NAME} PRIVATE
-        -O2
-        -g
-        -gdwarf-2
     )
 endif()
 

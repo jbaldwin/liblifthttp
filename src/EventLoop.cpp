@@ -2,13 +2,21 @@
 
 #include <curl/multi.h>
 
-#include <thread>
 #include <chrono>
+#include <thread>
 
 using namespace std::chrono_literals;
 
 namespace lift
 {
+
+
+template<typename O, typename I>
+static auto uv_type_cast(I* i) -> O*
+{
+    auto* void_ptr = static_cast<void*>(i);
+    return static_cast<O*>(void_ptr);
+}
 
 class CurlContext
 {
@@ -43,7 +51,7 @@ public:
         /**
          * uv requires us to jump through a few hoops before we can delete ourselves.
          */
-        uv_close(reinterpret_cast<uv_handle_t*>(&m_poll_handle), CurlContext::on_close);
+        uv_close(uv_type_cast<uv_handle_t>(&m_poll_handle), CurlContext::on_close);
     }
 
     EventLoop& m_event_loop;
@@ -141,8 +149,8 @@ auto EventLoop::Stop() -> void
 {
     m_is_stopping = true;
     uv_timer_stop(&m_timeout_timer);
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_timeout_timer), uv_close_callback);
-    uv_close(reinterpret_cast<uv_handle_t*>(&m_async),         uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&m_timeout_timer), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&m_async),         uv_close_callback);
     uv_async_send(&m_async); // fake a request to make sure the loop wakes up
     uv_stop(m_loop);
 
@@ -206,7 +214,7 @@ auto EventLoop::checkActions(
     CURLMsg* message = nullptr;
     int msgs_left = 0;
 
-    while((message = curl_multi_info_read(m_cmh, &msgs_left)))
+    while((message = curl_multi_info_read(m_cmh, &msgs_left)) != nullptr)
     {
         if(message->msg == CURLMSG_DONE)
         {
@@ -277,7 +285,8 @@ auto curl_handle_socket_actions(
             // new request, and no curl context's available? make one
             if(event_loop->m_curl_context_ready.empty())
             {
-                curl_context = new CurlContext{*event_loop};
+                auto curl_context_ptr = std::make_unique<CurlContext>(*event_loop);
+                curl_context = curl_context_ptr.release();
             }
             else
             {
@@ -316,11 +325,11 @@ auto curl_handle_socket_actions(
 auto uv_close_callback(uv_handle_t* handle) -> void
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);
-    if(handle == reinterpret_cast<uv_handle_t*>(&event_loop->m_async))
+    if(handle == uv_type_cast<uv_handle_t>(&event_loop->m_async))
     {
         event_loop->m_async_closed = true;
     }
-    else if(handle == reinterpret_cast<uv_handle_t*>(&event_loop->m_timeout_timer))
+    else if(handle == uv_type_cast<uv_handle_t>(&event_loop->m_timeout_timer))
     {
         event_loop->m_timeout_timer_closed = true;
     }
@@ -343,18 +352,21 @@ auto on_uv_curl_perform_callback(
     auto* curl_context = static_cast<CurlContext*>(req->data);
     auto& event_loop = curl_context->m_event_loop;
 
-    int action = 0;
+    int32_t action = 0;
     if(status < 0)
     {
         action = CURL_CSELECT_ERR;
     }
-    if(!status && (events & UV_READABLE))
+    if(status == 0)
     {
-        action |= CURL_CSELECT_IN;
-    }
-    if(!status && (events & UV_WRITABLE))
-    {
-        action |= CURL_CSELECT_OUT;
+        if((events & UV_READABLE) != 0)
+        {
+            action |= CURL_CSELECT_IN;
+        }
+        if((events & UV_WRITABLE) != 0)
+        {
+            action |= CURL_CSELECT_OUT;
+        }
     }
 
     event_loop.checkActions(curl_context->m_sock_fd, action);

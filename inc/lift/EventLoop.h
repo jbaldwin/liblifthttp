@@ -6,11 +6,11 @@
 #include <uv.h>
 
 #include <atomic>
-#include <vector>
-#include <mutex>
-#include <memory>
 #include <list>
+#include <memory>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 namespace lift
 {
@@ -25,13 +25,12 @@ public:
      * Creates a new lift event loop.
      */
     EventLoop();
-
     ~EventLoop();
 
-    EventLoop(const EventLoop& copy) = delete;                              ///< No copying
-    EventLoop(EventLoop&& move) = default;                                  ///< Can move
-    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;  ///< No copy assign
-    auto operator = (EventLoop&& move_assign) -> EventLoop& = default;      ///< Can move assign
+    EventLoop(const EventLoop& copy) = delete;
+    EventLoop(EventLoop&& move) = delete;
+    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;
+    auto operator = (EventLoop&& move_assign) -> EventLoop& = delete;
 
     /**
      * @return True if the event loop is currently running.
@@ -236,7 +235,7 @@ private:
      * @param async The async object trigger, this will always be m_async.
      */
     friend auto requests_accept_async(
-        uv_async_t* async
+        uv_async_t* handle
     ) -> void;
 };
 

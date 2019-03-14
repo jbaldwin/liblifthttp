@@ -9,6 +9,7 @@ set(SYNCH_SIMPLE_SOURCE_FILES
 )
 add_executable(synch_simple ${SYNCH_SIMPLE_SOURCE_FILES})
 target_link_libraries(synch_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(synch_simple PRIVATE cxx_std_17)
 
 ### async_simple ###
 set(ASYNC_SIMPLE_SOURCE_FILES
@@ -16,6 +17,7 @@ set(ASYNC_SIMPLE_SOURCE_FILES
 )
 add_executable(async_simple ${ASYNC_SIMPLE_SOURCE_FILES})
 target_link_libraries(async_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(async_simple PRIVATE cxx_std_17)
 
 ### async_simple_max_bytes ###
 set(ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES
@@ -23,6 +25,7 @@ set(ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES
 )
 add_executable(async_simple_max_bytes ${ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES})
 target_link_libraries(async_simple_max_bytes PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(async_simple_max_bytes PRIVATE cxx_std_17)
 
 ### async_batch_requests ###
 set(ASYNC_BATCH_REQUESTS_SOURCE_FILES
@@ -30,6 +33,7 @@ set(ASYNC_BATCH_REQUESTS_SOURCE_FILES
 )
 add_executable(async_batch_requests ${ASYNC_BATCH_REQUESTS_SOURCE_FILES})
 target_link_libraries(async_batch_requests PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(async_batch_requests PRIVATE cxx_std_17)
 
 ### query_builder ###
 set(QUERY_BUILDER_SOURCE_FILES
@@ -37,6 +41,7 @@ set(QUERY_BUILDER_SOURCE_FILES
 )
 add_executable(query_builder ${QUERY_BUILDER_SOURCE_FILES})
 target_link_libraries(query_builder PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(query_builder PRIVATE cxx_std_17)
 
 ### request_headers ###
 set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
@@ -44,6 +49,7 @@ set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
 )
 add_executable(request_headers_simple ${REQUEST_HEADERS_SIMPLE_SOURCE_FILES})
 target_link_libraries(request_headers_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(request_headers_simple PRIVATE cxx_std_17)
 
 ### benchmark_simple ###
 set(BENCHMARK_SIMPLE_SOURCE_FILES
@@ -51,6 +57,7 @@ set(BENCHMARK_SIMPLE_SOURCE_FILES
 )
 add_executable(benchmark_simple ${BENCHMARK_SIMPLE_SOURCE_FILES})
 target_link_libraries(benchmark_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(benchmark_simple PRIVATE cxx_std_17)
 
 ### user_data ###
 set(USER_DATA_SOURCE_FILES
@@ -58,3 +65,4 @@ set(USER_DATA_SOURCE_FILES
 )
 add_executable(user_data ${USER_DATA_SOURCE_FILES})
 target_link_libraries(user_data PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(user_data PRIVATE cxx_std_17)

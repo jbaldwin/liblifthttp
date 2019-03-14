@@ -28,20 +28,7 @@ RequestHandle::RequestHandle(
 )
     :   m_on_complete_handler(std::move(on_complete_handler)),
         m_request_pool(request_pool),
-        m_curl_handle(curl_easy_init()),
-        m_url(),
-        m_request_headers(),
-        m_request_headers_idx(),
-        m_curl_request_headers(nullptr),
-        m_headers_committed(false),
-        m_request_data(),
-        m_mime_handle(nullptr),
-        m_status_code(RequestStatus::BUILDING),
-        m_response_headers(),
-        m_response_headers_idx(),
-        m_response_data(),
-        m_max_download_bytes(max_download_bytes),
-        m_bytes_written(0)
+        m_max_download_bytes(max_download_bytes)
 {
     init();
     SetUrl(url);
@@ -73,7 +60,6 @@ auto RequestHandle::init() -> void
 
     SetMaxDownloadBytes(m_max_download_bytes);
 
-    // TODO make the buffer reservations configurable.
     m_request_headers.reserve(16'384);
     m_request_headers_idx.reserve(16);
     m_headers_committed = false;
@@ -101,7 +87,7 @@ auto RequestHandle::SetUrl(const std::string& url) -> bool
     {
         char* curl_url = nullptr;
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
-        if(curl_url)
+        if(curl_url != nullptr)
         {
             m_url = std::string_view{curl_url, std::strlen(curl_url)};
             return true;
@@ -227,7 +213,7 @@ auto RequestHandle::AddHeader(
     {
         do
         {
-            capacity *= 1.5;
+            capacity *= 2;
         } while(capacity < total_len);
         m_request_headers.reserve(capacity);
     }
@@ -255,7 +241,7 @@ auto RequestHandle::SetRequestData(
     std::string data
 ) -> void
 {
-    if (m_mime_handle)
+    if (m_mime_handle != nullptr)
     {
         throw std::logic_error("Cannot SetRequestData on RequestHandle after using AddMimeField");
     }
@@ -363,7 +349,7 @@ auto RequestHandle::Reset() -> void
     m_url = std::string_view{};
     m_request_headers.clear();
     m_request_headers_idx.clear();
-    if(m_curl_request_headers)
+    if(m_curl_request_headers != nullptr)
     {
         curl_slist_free_all(m_curl_request_headers);
         m_curl_request_headers = nullptr;
@@ -371,7 +357,7 @@ auto RequestHandle::Reset() -> void
     // replace rather than clear() since this buffer is 'moved' into the Request and will free up memory.
     m_request_data = std::string{};
     
-    if (m_mime_handle)
+    if (m_mime_handle != nullptr)
     {
         curl_mime_free(m_mime_handle);
         m_mime_handle = nullptr;
@@ -394,7 +380,7 @@ auto RequestHandle::prepareForPerform() -> void
     {
         // Its possible the headers have been previous committed -- this will re-commit them all
         // in the event additional headers have been added between requests.
-        if(m_curl_request_headers)
+        if(m_curl_request_headers != nullptr)
         {
             curl_slist_free_all(m_curl_request_headers);
             m_curl_request_headers = nullptr;
@@ -412,7 +398,7 @@ auto RequestHandle::prepareForPerform() -> void
         m_headers_committed = true;
     }
 
-    if (m_mime_handle)
+    if (m_mime_handle != nullptr)
     {
         curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, m_mime_handle);
     }
@@ -530,7 +516,7 @@ auto curl_write_header(
     {
         do
         {
-            capacity *= 1.5;
+            capacity *= 2;
         } while(capacity < total_len);
         raw_request_ptr->m_response_headers.reserve(capacity);
     }

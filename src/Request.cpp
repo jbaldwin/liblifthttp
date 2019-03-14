@@ -1,5 +1,6 @@
 #include "lift/Request.h"
 #include "lift/RequestPool.h"
+
 #include "lift/EventLoop.h"
 
 namespace lift
@@ -21,9 +22,10 @@ Request::~Request()
      * Only move the request handle into the pool if this is the 'valid'
      * request object that still owns the data.
      */
-    if(m_request_handle && m_request_pool)
+    if(m_request_handle != nullptr && m_request_pool != nullptr)
     {
         m_request_pool->returnRequest(std::move(m_request_handle));
+        m_request_pool = nullptr;
         m_request_handle = nullptr;
     }
 }

@@ -12,14 +12,13 @@
 #include <thread>
 #include <vector>
 
-namespace lift
-{
+namespace lift {
 
 class CurlContext;
 
-class EventLoop
-{
+class EventLoop {
     friend CurlContext;
+
 public:
     /**
      * Creates a new lift event loop.
@@ -29,8 +28,8 @@ public:
 
     EventLoop(const EventLoop& copy) = delete;
     EventLoop(EventLoop&& move) = delete;
-    auto operator = (const EventLoop& copy_assign) -> EventLoop& = delete;
-    auto operator = (EventLoop&& move_assign) -> EventLoop& = delete;
+    auto operator=(const EventLoop& copy_assign) -> EventLoop& = delete;
+    auto operator=(EventLoop&& move_assign) -> EventLoop& = delete;
 
     /**
      * @return True if the event loop is currently running.
@@ -62,8 +61,7 @@ public:
      *                when this request completes/timesout/errors.
      */
     auto StartRequest(
-        Request request
-    ) -> bool;
+        Request request) -> bool;
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
@@ -74,36 +72,35 @@ public:
      * @tparam Container A container of class Request.
      * @param requests The batch of requests to process.
      */
-    template<typename Container>
+    template <typename Container>
     auto StartRequests(
-        Container requests
-    ) -> void;
+        Container requests) -> void;
 
 private:
     /**
      * Each event loop gets its own private request pool for efficiency.
      * This needs to be first so it de-allocates all its RequestHandles on shutdown.
      */
-    RequestPool m_request_pool{};
+    RequestPool m_request_pool {};
 
     /// Set to true if the EventLoop is currently running.
-    std::atomic<bool> m_is_running{false};
+    std::atomic<bool> m_is_running { false };
     /// Set to true if the EventLoop is currently shutting down.
-    std::atomic<bool> m_is_stopping{false};
+    std::atomic<bool> m_is_stopping { false };
     /// The active number of requests running.
-    std::atomic<uint64_t> m_active_request_count{0};
+    std::atomic<uint64_t> m_active_request_count { 0 };
 
     /// The UV event loop to drive libcurl.
-    uv_loop_t* m_loop{uv_loop_new()};
+    uv_loop_t* m_loop { uv_loop_new() };
     /// The async trigger for injecting new requests into the event loop.
-    uv_async_t m_async{};
+    uv_async_t m_async {};
     /// libcurl requires a single timer to drive timeouts/wake-ups.
-    uv_timer_t m_timeout_timer{};
+    uv_timer_t m_timeout_timer {};
     /// The libcurl multi handle for driving multiple easy handles at once.
-    CURLM* m_cmh{curl_multi_init()};
+    CURLM* m_cmh { curl_multi_init() };
 
     /// Pending requests are safely queued via this lock.
-    std::mutex m_pending_requests_lock{};
+    std::mutex m_pending_requests_lock {};
     /**
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
@@ -113,20 +110,20 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<Request> m_pending_requests{};
+    std::vector<Request> m_pending_requests {};
     /// Only accessible from within the EventLoop thread.
-    std::vector<Request> m_grabbed_requests{};
+    std::vector<Request> m_grabbed_requests {};
 
     /// The background thread spawned to drive the event loop.
-    std::thread m_background_thread{};
+    std::thread m_background_thread {};
 
     /// List of CurlContext objects to re-use for requests.
     std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
-    std::atomic<bool> m_async_closed{false};
+    std::atomic<bool> m_async_closed { false };
     /// Flag to denote that the m_timeout_timer has been closed on shutdown.
-    std::atomic<bool> m_timeout_timer_closed{false};
+    std::atomic<bool> m_timeout_timer_closed { false };
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -143,8 +140,7 @@ private:
      */
     auto checkActions(
         curl_socket_t socket,
-        int event_bitmask
-    ) -> void;
+        int event_bitmask) -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -159,8 +155,7 @@ private:
     friend auto curl_start_timeout(
         CURLM* cmh,
         long timeout_ms,
-        void* user_data
-    ) -> void;
+        void* user_data) -> void;
 
     /**
      * This function is called by libcurl to handle socket actions and update each sockets
@@ -182,8 +177,7 @@ private:
         curl_socket_t socket,
         int action,
         void* user_data,
-        void* socketp
-    ) -> int;
+        void* socketp) -> int;
 
     /**
      * This function is called by uv_close() to say the handles resources are properly closed.
@@ -196,8 +190,7 @@ private:
      * @param handle The handle that is being closed.
      */
     friend auto uv_close_callback(
-        uv_handle_t* handle
-    ) -> void;
+        uv_handle_t* handle) -> void;
 
     /**
      * This function is called by libuv when the m_timeout_timer expires.
@@ -208,8 +201,7 @@ private:
      * @param handle The timer object trigger, this will always be m_timeout_timer.
      */
     friend auto on_uv_timeout_callback(
-        uv_timer_t* handle
-    ) -> void;
+        uv_timer_t* handle) -> void;
 
     /**
      * This function is called by libuv to call checkActions(socket, action) for a specific
@@ -223,8 +215,7 @@ private:
     friend auto on_uv_curl_perform_callback(
         uv_poll_t* req,
         int status,
-        int events
-    ) -> void;
+        int events) -> void;
 
     /**
      * This function is called by libuv when the m_async is triggered with a new request.
@@ -235,8 +226,7 @@ private:
      * @param async The async object trigger, this will always be m_async.
      */
     friend auto requests_accept_async(
-        uv_async_t* handle
-    ) -> void;
+        uv_async_t* handle) -> void;
 };
 
 } // lift

@@ -1,21 +1,18 @@
 #include <lift/Lift.h>
 
+#include <atomic>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <atomic>
 
 static auto on_complete(lift::Request request) -> void
 {
-    if(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS)
-    {
+    if (request->GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
         std::cout
             << "Completed " << request->GetUrl()
             << " ms:" << request->GetTotalTime().count() << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout
             << "Error: " << request->GetUrl() << " : "
             << lift::to_string(request->GetCompletionStatus()) << std::endl;
@@ -37,8 +34,7 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
-    std::vector<std::string> urls =
-    {
+    std::vector<std::string> urls = {
         "http://www.example.com",
         "http://www.google.com",
         "http://www.reddit.com"
@@ -54,8 +50,7 @@ int main(int argc, char* argv[])
      * and an additional 250ms timeout per each request.
      */
     std::chrono::milliseconds timeout = 250ms;
-    for(auto& url : urls)
-    {
+    for (auto& url : urls) {
         std::cout << "Requesting " << url << std::endl;
         lift::Request request = request_pool.Produce(url, on_complete, timeout);
         event_loop.StartRequest(std::move(request));
@@ -64,8 +59,7 @@ int main(int argc, char* argv[])
     }
 
     // Now wait for all the requests to finish before cleaning up.
-    while(event_loop.GetActiveRequestCount() > 0)
-    {
+    while (event_loop.GetActiveRequestCount() > 0) {
         std::this_thread::sleep_for(100ms);
     }
 

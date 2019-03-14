@@ -1,11 +1,11 @@
 #include <lift/Lift.h>
 
+#include <atomic>
+#include <chrono>
 #include <iostream>
-#include <vector>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <atomic>
+#include <vector>
 
 static auto on_complete(lift::Request request, uint64_t user_data_value1, double user_data_value2) -> void
 {
@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
     lift::initialize();
 
-    lift::EventLoop event_loop{};
+    lift::EventLoop event_loop {};
     auto& request_pool = event_loop.GetRequestPool();
     auto req1 = request_pool.Produce("http://www.example.com", 1s);
     req1->SetOnCompleteHandler([](lift::Request r) { on_complete(std::move(r), 1, 100.5); });
@@ -33,8 +33,7 @@ int main(int argc, char* argv[])
     // sleep for a bit so this thread doesn't grab the active request count too fast and just shutdown
     std::this_thread::sleep_for(500ms);
 
-    while(event_loop.GetActiveRequestCount() > 0)
-    {
+    while (event_loop.GetActiveRequestCount() > 0) {
         std::this_thread::sleep_for(10ms);
     }
     event_loop.Stop();

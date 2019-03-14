@@ -1,0 +1,6 @@
+---
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+# DO NOT MOVE THE LINE BELOW OTHERWISE THESE OPTIONS APPLY TO NON C++ FILES
+Language:     Cpp
+BasedOnStyle: WebKit
+...

@@ -1,34 +1,30 @@
-#include "lift/Request.h"
 #include "lift/RequestHandle.h"
+#include "lift/Request.h"
 
 #include <cstring>
 
-namespace lift
-{
+namespace lift {
 auto curl_write_header(
     char* buffer,
     size_t size,
     size_t nitems,
-    void* user_ptr
-) -> size_t;
+    void* user_ptr) -> size_t;
 
 auto curl_write_data(
     void* buffer,
     size_t size,
     size_t nitems,
-    void* user_ptr
-) -> size_t;
+    void* user_ptr) -> size_t;
 
 RequestHandle::RequestHandle(
     RequestPool& request_pool,
     const std::string& url,
     std::chrono::milliseconds timeout_ms,
     std::function<void(Request)> on_complete_handler,
-    ssize_t max_download_bytes
-)
-    :   m_on_complete_handler(std::move(on_complete_handler)),
-        m_request_pool(request_pool),
-        m_max_download_bytes(max_download_bytes)
+    ssize_t max_download_bytes)
+    : m_on_complete_handler(std::move(on_complete_handler))
+    , m_request_pool(request_pool)
+    , m_max_download_bytes(max_download_bytes)
 {
     init();
     SetUrl(url);
@@ -41,8 +37,7 @@ RequestHandle::~RequestHandle()
 
     // Reset doesn't delete the CURL* handle since it can be re-used between requests.
     // Delete it now.
-    if(m_curl_handle != nullptr)
-    {
+    if (m_curl_handle != nullptr) {
         curl_easy_cleanup(m_curl_handle);
         m_curl_handle = nullptr;
     }
@@ -50,12 +45,12 @@ RequestHandle::~RequestHandle()
 
 auto RequestHandle::init() -> void
 {
-    curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE,        this);
+    curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERFUNCTION, curl_write_header);
-    curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA,     this);
-    curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION,  curl_write_data);
-    curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA,      this);
-    curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL,       1l);
+    curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA, this);
+    curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION, curl_write_data);
+    curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL, 1l);
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1l);
 
     SetMaxDownloadBytes(m_max_download_bytes);
@@ -70,26 +65,23 @@ auto RequestHandle::init() -> void
 }
 
 auto RequestHandle::SetOnCompleteHandler(
-    std::function<void(Request)> on_complete_handler
-) -> void {
+    std::function<void(Request)> on_complete_handler) -> void
+{
     m_on_complete_handler = std::move(on_complete_handler);
 }
 
 auto RequestHandle::SetUrl(const std::string& url) -> bool
 {
-    if(url.empty())
-    {
+    if (url.empty()) {
         return false;
     }
 
     auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_URL, url.c_str());
-    if(error_code == CURLE_OK)
-    {
+    if (error_code == CURLE_OK) {
         char* curl_url = nullptr;
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
-        if(curl_url != nullptr)
-        {
-            m_url = std::string_view{curl_url, std::strlen(curl_url)};
+        if (curl_url != nullptr) {
+            m_url = std::string_view { curl_url, std::strlen(curl_url) };
             return true;
         }
     }
@@ -103,62 +95,58 @@ auto RequestHandle::GetUrl() const -> std::string_view
 }
 
 auto RequestHandle::SetMethod(
-    http::Method http_method
-) -> void
+    http::Method http_method) -> void
 {
-    switch(http_method)
-    {
-        case http::Method::GET:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
-            break;
-        case http::Method::HEAD:
-            curl_easy_setopt(m_curl_handle, CURLOPT_NOBODY, 1L);
-            break;
-        case http::Method::POST:
-            curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
-            break;
-        case http::Method::PUT:
-            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PUT");
-            break;
-        case http::Method::DELETE:
-            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
-            break;
-        case http::Method::CONNECT:
-            curl_easy_setopt(m_curl_handle, CURLOPT_CONNECT_ONLY, 1L);
-            break;
-        case http::Method::OPTIONS:
-            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "OPTIONS");
-            break;
-        case http::Method::PATCH:
-            curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
-            break;
+    switch (http_method) {
+    case http::Method::GET:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
+        break;
+    case http::Method::HEAD:
+        curl_easy_setopt(m_curl_handle, CURLOPT_NOBODY, 1L);
+        break;
+    case http::Method::POST:
+        curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
+        break;
+    case http::Method::PUT:
+        curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PUT");
+        break;
+    case http::Method::DELETE:
+        curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+        break;
+    case http::Method::CONNECT:
+        curl_easy_setopt(m_curl_handle, CURLOPT_CONNECT_ONLY, 1L);
+        break;
+    case http::Method::OPTIONS:
+        curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "OPTIONS");
+        break;
+    case http::Method::PATCH:
+        curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+        break;
     }
 }
 
 auto RequestHandle::SetVersion(
-    http::Version http_version
-) -> void
+    http::Version http_version) -> void
 {
-    switch(http_version)
-    {
-        case http::Version ::USE_BEST:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
-            break;
-        case http::Version::V1_0:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-            break;
-        case http::Version::V1_1:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-            break;
-        case http::Version::V2_0:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
-            break;
-        case http::Version::V2_0_TLS:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
-            break;
-        case http::Version::V2_0_ONLY:
-            curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
-            break;
+    switch (http_version) {
+    case http::Version ::USE_BEST:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
+        break;
+    case http::Version::V1_0:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+        break;
+    case http::Version::V1_1:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        break;
+    case http::Version::V2_0:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+        break;
+    case http::Version::V2_0_TLS:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
+        break;
+    case http::Version::V2_0_ONLY:
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
+        break;
     }
 }
 
@@ -169,13 +157,11 @@ auto RequestHandle::SetMaxDownloadBytes(ssize_t max_download_bytes) -> void
 }
 
 auto RequestHandle::SetTimeout(
-    std::chrono::milliseconds timeout
-) -> bool
+    std::chrono::milliseconds timeout) -> bool
 {
     int64_t timeout_ms = timeout.count();
 
-    if(timeout_ms > 0)
-    {
+    if (timeout_ms > 0) {
         auto error_code = curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout_ms));
         return (error_code == CURLE_OK);
     }
@@ -184,8 +170,7 @@ auto RequestHandle::SetTimeout(
 
 auto RequestHandle::SetFollowRedirects(
     bool follow_redirects,
-    int64_t max_redirects
-) -> bool
+    int64_t max_redirects) -> bool
 {
     long curl_value = (follow_redirects) ? 1L : 0L;
     auto error_code1 = curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
@@ -194,27 +179,23 @@ auto RequestHandle::SetFollowRedirects(
 }
 
 auto RequestHandle::AddHeader(
-    std::string_view name
-) -> void
+    std::string_view name) -> void
 {
-    AddHeader(name, std::string_view{});
+    AddHeader(name, std::string_view {});
 }
 
 auto RequestHandle::AddHeader(
     std::string_view name,
-    std::string_view value
-) -> void
+    std::string_view value) -> void
 {
     m_headers_committed = false; // A new header was added, they need to be committed again.
     size_t capacity = m_request_headers.capacity();
     size_t header_len = name.length() + value.length() + 3; //": \0"
     size_t total_len = m_request_headers.size() + header_len;
-    if(capacity < total_len)
-    {
-        do
-        {
+    if (capacity < total_len) {
+        do {
             capacity *= 2;
-        } while(capacity < total_len);
+        } while (capacity < total_len);
         m_request_headers.reserve(capacity);
     }
 
@@ -222,13 +203,12 @@ auto RequestHandle::AddHeader(
 
     m_request_headers.append(name.data(), name.length());
     m_request_headers.append(": ");
-    if(!value.empty())
-    {
+    if (!value.empty()) {
         m_request_headers.append(value.data(), value.length());
     }
     m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
 
-    std::string_view full_header{start, header_len - 1}; // subtract off the null byte
+    std::string_view full_header { start, header_len - 1 }; // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);
 }
 
@@ -238,11 +218,9 @@ auto RequestHandle::GetRequestHeaders() const -> const std::vector<Header>&
 }
 
 auto RequestHandle::SetRequestData(
-    std::string data
-) -> void
+    std::string data) -> void
 {
-    if (m_mime_handle != nullptr)
-    {
+    if (m_mime_handle != nullptr) {
         throw std::logic_error("Cannot SetRequestData on RequestHandle after using AddMimeField");
     }
 
@@ -252,7 +230,7 @@ auto RequestHandle::SetRequestData(
     m_request_data = std::move(data);
 
     curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request_data.size()));
-    curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS,    m_request_data.data());
+    curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS, m_request_data.data());
 }
 
 auto RequestHandle::GetRequestData() const -> const std::string&
@@ -262,17 +240,14 @@ auto RequestHandle::GetRequestData() const -> const std::string&
 
 auto RequestHandle::AddMimeField(
     const std::string& field_name,
-    const std::string& field_value
-) -> void
+    const std::string& field_value) -> void
 {
-    if (!m_request_data.empty())
-    {
+    if (!m_request_data.empty()) {
         throw std::logic_error("Cannot AddMimeField on RequestHandle after using SetRequestData");
     }
 
-    if (m_mime_handle == nullptr)
-    {
-        m_mime_handle = curl_mime_init(m_curl_handle);   
+    if (m_mime_handle == nullptr) {
+        m_mime_handle = curl_mime_init(m_curl_handle);
     }
 
     auto* field = curl_mime_addpart(m_mime_handle);
@@ -283,22 +258,18 @@ auto RequestHandle::AddMimeField(
 
 auto RequestHandle::AddMimeField(
     const std::string& field_name,
-    const std::filesystem::path& field_filepath
-) -> void
+    const std::filesystem::path& field_filepath) -> void
 {
-    if (!m_request_data.empty())
-    {
+    if (!m_request_data.empty()) {
         throw std::logic_error("Cannot AddMimeField on RequestHandle after using SetRequestData");
     }
 
-    if (!std::filesystem::exists(field_filepath))
-    {
+    if (!std::filesystem::exists(field_filepath)) {
         throw std::runtime_error("Filepath for AddMimeField doesn't exist");
     }
 
-    if (m_mime_handle == nullptr)
-    {
-        m_mime_handle = curl_mime_init(m_curl_handle);   
+    if (m_mime_handle == nullptr) {
+        m_mime_handle = curl_mime_init(m_curl_handle);
     }
 
     auto* field = curl_mime_addpart(m_mime_handle);
@@ -346,19 +317,17 @@ auto RequestHandle::GetCompletionStatus() const -> RequestStatus
 
 auto RequestHandle::Reset() -> void
 {
-    m_url = std::string_view{};
+    m_url = std::string_view {};
     m_request_headers.clear();
     m_request_headers_idx.clear();
-    if(m_curl_request_headers != nullptr)
-    {
+    if (m_curl_request_headers != nullptr) {
         curl_slist_free_all(m_curl_request_headers);
         m_curl_request_headers = nullptr;
     }
     // replace rather than clear() since this buffer is 'moved' into the Request and will free up memory.
-    m_request_data = std::string{};
-    
-    if (m_mime_handle != nullptr)
-    {
+    m_request_data = std::string {};
+
+    if (m_mime_handle != nullptr) {
         curl_mime_free(m_mime_handle);
         m_mime_handle = nullptr;
     }
@@ -376,30 +345,25 @@ auto RequestHandle::Reset() -> void
 auto RequestHandle::prepareForPerform() -> void
 {
     clearResponseBuffers();
-    if(!m_headers_committed && !m_request_headers_idx.empty())
-    {
+    if (!m_headers_committed && !m_request_headers_idx.empty()) {
         // Its possible the headers have been previous committed -- this will re-commit them all
         // in the event additional headers have been added between requests.
-        if(m_curl_request_headers != nullptr)
-        {
+        if (m_curl_request_headers != nullptr) {
             curl_slist_free_all(m_curl_request_headers);
             m_curl_request_headers = nullptr;
         }
 
-        for(auto header : m_request_headers_idx)
-        {
+        for (auto header : m_request_headers_idx) {
             m_curl_request_headers = curl_slist_append(
                 m_curl_request_headers,
-                header.GetHeader().data()
-            );
+                header.GetHeader().data());
         }
 
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
         m_headers_committed = true;
     }
 
-    if (m_mime_handle != nullptr)
-    {
+    if (m_mime_handle != nullptr) {
         curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, m_mime_handle);
     }
 
@@ -414,50 +378,49 @@ auto RequestHandle::clearResponseBuffers() -> void
 }
 
 auto RequestHandle::setCompletionStatus(
-    CURLcode curl_code
-) -> void
+    CURLcode curl_code) -> void
 {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
-    switch(curl_code)
-    {
-        case CURLcode::CURLE_OK:
-            m_status_code = RequestStatus::SUCCESS;
-            break;
-        case CURLcode::CURLE_GOT_NOTHING:
-            m_status_code = RequestStatus::RESPONSE_EMPTY;
-            break;
-        case CURLcode::CURLE_OPERATION_TIMEDOUT:
-            m_status_code = RequestStatus::TIMEOUT;
-            break;
-        case CURLcode::CURLE_COULDNT_CONNECT:
-            m_status_code = RequestStatus::CONNECT_ERROR;
-            break;
-        case CURLcode::CURLE_COULDNT_RESOLVE_HOST:
-            m_status_code = RequestStatus::CONNECT_DNS_ERROR;
-            break;
-        case CURLcode::CURLE_SSL_CONNECT_ERROR:
-            m_status_code = RequestStatus::CONNECT_SSL_ERROR;
-            break;
-        case CURLcode::CURLE_WRITE_ERROR:
-            /**
+    switch (curl_code) {
+    case CURLcode::CURLE_OK:
+        m_status_code = RequestStatus::SUCCESS;
+        break;
+    case CURLcode::CURLE_GOT_NOTHING:
+        m_status_code = RequestStatus::RESPONSE_EMPTY;
+        break;
+    case CURLcode::CURLE_OPERATION_TIMEDOUT:
+        m_status_code = RequestStatus::TIMEOUT;
+        break;
+    case CURLcode::CURLE_COULDNT_CONNECT:
+        m_status_code = RequestStatus::CONNECT_ERROR;
+        break;
+    case CURLcode::CURLE_COULDNT_RESOLVE_HOST:
+        m_status_code = RequestStatus::CONNECT_DNS_ERROR;
+        break;
+    case CURLcode::CURLE_SSL_CONNECT_ERROR:
+        m_status_code = RequestStatus::CONNECT_SSL_ERROR;
+        break;
+    case CURLcode::CURLE_WRITE_ERROR:
+        /**
              * If there is a cURL write error, but the maximum number of bytes has been written,
              * then we intentionally aborted, so let's set this to success.
              * Otherwise, there was an error in the CURL write callback.
              */
-            m_status_code = (getRemainingDownloadBytes() == 0)
-                ? RequestStatus::SUCCESS
-                : RequestStatus::DOWNLOAD_ERROR;
-            break;
-        default:
-            m_status_code = RequestStatus::ERROR;
-            break;
+        m_status_code = (getRemainingDownloadBytes() == 0)
+            ? RequestStatus::SUCCESS
+            : RequestStatus::DOWNLOAD_ERROR;
+        break;
+    default:
+        m_status_code = RequestStatus::ERROR;
+        break;
     }
 #pragma GCC diagnostic pop
 }
 
-auto RequestHandle::onComplete() -> void {
+auto RequestHandle::onComplete() -> void
+{
     Request request(&m_request_pool, std::unique_ptr<RequestHandle>(this));
     m_on_complete_handler(std::move(request));
 }
@@ -471,53 +434,44 @@ auto curl_write_header(
     char* buffer,
     size_t size,
     size_t nitems,
-    void* user_ptr
-) -> size_t
+    void* user_ptr) -> size_t
 {
     auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
     size_t data_length = size * nitems;
 
-    std::string_view data_view{buffer, data_length};
+    std::string_view data_view { buffer, data_length };
 
-    if(data_view.empty())
-    {
+    if (data_view.empty()) {
         return data_length;
     }
 
     // Ignore empty header lines from curl.
-    if(data_view.length() == 2 && data_view == "\r\n")
-    {
+    if (data_view.length() == 2 && data_view == "\r\n") {
         return data_length;
     }
     // Ignore the HTTP/ 'header' line from curl.
-    if(data_view.length() >= 4 && data_view.substr(0, 5) == "HTTP/")
-    {
+    if (data_view.length() >= 4 && data_view.substr(0, 5) == "HTTP/") {
         return data_length;
     }
 
     // Drop the trailing \r\n from the header.
-    if(data_view.length() >= 2)
-    {
+    if (data_view.length() >= 2) {
         size_t rm_size = 0;
-        if(data_view[data_view.length() - 1] == '\n')
-        {
+        if (data_view[data_view.length() - 1] == '\n') {
             ++rm_size;
         }
-        if(data_view[data_view.length() - 2] == '\r')
-        {
+        if (data_view[data_view.length() - 2] == '\r') {
             ++rm_size;
         }
         data_view.remove_suffix(rm_size);
     }
 
-    size_t capacity  = raw_request_ptr->m_response_headers.capacity();
+    size_t capacity = raw_request_ptr->m_response_headers.capacity();
     size_t total_len = raw_request_ptr->m_response_headers.size() + data_view.length();
-    if(capacity < total_len)
-    {
-        do
-        {
+    if (capacity < total_len) {
+        do {
             capacity *= 2;
-        } while(capacity < total_len);
+        } while (capacity < total_len);
         raw_request_ptr->m_response_headers.reserve(capacity);
     }
 
@@ -527,7 +481,7 @@ auto curl_write_header(
     // Calculate and append the Header view object.
     const char* start = raw_request_ptr->m_response_headers.c_str();
     auto total_length = raw_request_ptr->m_response_headers.length();
-    std::string_view request_data_view{(start + total_length) - data_view.length(), data_view.length()};
+    std::string_view request_data_view { (start + total_length) - data_view.length(), data_view.length() };
     raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
 
     return data_length;
@@ -537,15 +491,13 @@ auto curl_write_data(
     void* buffer,
     size_t size,
     size_t nitems,
-    void* user_ptr
-) -> size_t
+    void* user_ptr) -> size_t
 {
     auto* raw_request_ptr = static_cast<RequestHandle*>(user_ptr);
     size_t data_length = size * nitems;
 
     // If m_max_download_bytes is greater than -1, we are performing partial download.
-    if (raw_request_ptr->m_max_download_bytes > -1)
-    {
+    if (raw_request_ptr->m_max_download_bytes > -1) {
         auto bytes_left_to_write = raw_request_ptr->getRemainingDownloadBytes();
 
         /**
@@ -556,17 +508,13 @@ auto curl_write_data(
          * when the length returned from the write callback does match the
          * length (size * nitems) passed in.
          **/
-        if (bytes_left_to_write > -1)
-        {
+        if (bytes_left_to_write > -1) {
             auto ubytes_left_to_write = static_cast<size_t>(bytes_left_to_write);
 
-            if (ubytes_left_to_write < data_length)
-            {
+            if (ubytes_left_to_write < data_length) {
                 data_length = ubytes_left_to_write;
             }
-        }
-        else
-        {
+        } else {
             /**
              * bytes_left_to_write should never be negative, but if it is,
              * stop this request, because something is wrong.

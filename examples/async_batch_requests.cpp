@@ -1,47 +1,46 @@
 #include <lift/Lift.h>
 
+#include <atomic>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <atomic>
 
 static auto on_complete(lift::Request request) -> void
 {
-    switch(request->GetCompletionStatus())
-    {
-        case lift::RequestStatus::SUCCESS:
-            std::cout
-                << "Completed " << request->GetUrl()
-                << " ms:" << request->GetTotalTime().count() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_ERROR:
-            std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_DNS_ERROR:
-            std::cout << "Unable to lookup DNS entry for: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_SSL_ERROR:
-            std::cout << "SSL Error for: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::TIMEOUT:
-            std::cout << "Timeout: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::RESPONSE_EMPTY:
-            std::cout << "No response received: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::DOWNLOAD_ERROR:
-            std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::ERROR:
-            std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::BUILDING:
-        case lift::RequestStatus::EXECUTING:
-            std::cout
-                << "Request is in an invalid state: "
-                << to_string(request->GetCompletionStatus()) << std::endl;
-            break;
+    switch (request->GetCompletionStatus()) {
+    case lift::RequestStatus::SUCCESS:
+        std::cout
+            << "Completed " << request->GetUrl()
+            << " ms:" << request->GetTotalTime().count() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_ERROR:
+        std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_DNS_ERROR:
+        std::cout << "Unable to lookup DNS entry for: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_SSL_ERROR:
+        std::cout << "SSL Error for: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::TIMEOUT:
+        std::cout << "Timeout: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::RESPONSE_EMPTY:
+        std::cout << "No response received: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::DOWNLOAD_ERROR:
+        std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::ERROR:
+        std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::BUILDING:
+    case lift::RequestStatus::EXECUTING:
+        std::cout
+            << "Request is in an invalid state: "
+            << to_string(request->GetCompletionStatus()) << std::endl;
+        break;
     }
 }
 
@@ -54,8 +53,7 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::initialize();
 
-    std::vector<std::string> urls =
-    {
+    std::vector<std::string> urls = {
         "http://www.example.com",
         "http://www.google.com",
         "http://www.reddit.com"
@@ -67,7 +65,7 @@ int main(int argc, char* argv[])
     {
         std::vector<lift::Request> requests;
         requests.reserve(urls.size());
-        for(auto& url : urls) {
+        for (auto& url : urls) {
             requests.emplace_back(request_pool.Produce(url, on_complete, 250ms));
         }
 
@@ -83,8 +81,7 @@ int main(int argc, char* argv[])
     std::this_thread::sleep_for(100ms); // just to be sure still gets kicked off
 
     // Now wait for all the requests to finish before cleaning up.
-    while(event_loop.GetActiveRequestCount() > 0)
-    {
+    while (event_loop.GetActiveRequestCount() > 0) {
         std::this_thread::sleep_for(100ms);
     }
 

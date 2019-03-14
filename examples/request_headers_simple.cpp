@@ -16,8 +16,7 @@ int main(int argc, char* argv[])
     request->AddHeader("x-test-header-2", "test_value-2");
     request->AddHeader("x-test-header-3", "test_value-3");
 
-    for(auto& header : request->GetRequestHeaders())
-    {
+    for (auto& header : request->GetRequestHeaders()) {
         std::cout << header.GetHeader() << std::endl;
     }
     std::cout << std::endl;

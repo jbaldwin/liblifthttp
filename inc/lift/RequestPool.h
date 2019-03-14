@@ -9,13 +9,11 @@
 #include <memory>
 #include <mutex>
 
-namespace lift
-{
+namespace lift {
 
 class CurlPool;
 
-class RequestPool
-{
+class RequestPool {
     friend class Request;
 
 public:
@@ -24,8 +22,8 @@ public:
 
     RequestPool(const RequestPool&) = delete;
     RequestPool(RequestPool&&) = delete;
-    auto operator = (const RequestPool&) -> RequestPool& = delete;
-    auto operator = (RequestPool&&) -> RequestPool& = delete;
+    auto operator=(const RequestPool&) -> RequestPool& = delete;
+    auto operator=(RequestPool &&) -> RequestPool& = delete;
 
     /**
      * This can be useful to pre-allocate a large number of Request objects to be used
@@ -33,8 +31,7 @@ public:
      * @param count Pre-allocates/reserves this many request objects.
      */
     auto Reserve(
-        size_t count
-    ) -> void;
+        size_t count) -> void;
 
     /**
      * Produces a new Request with infinite timeout.
@@ -45,8 +42,7 @@ public:
      * @return A request object setup for the URL.
      */
     auto Produce(
-        const std::string& url
-    ) -> Request;
+        const std::string& url) -> Request;
 
     /**
      * Produces a new Request with the specified timeout.
@@ -59,8 +55,7 @@ public:
      */
     auto Produce(
         const std::string& url,
-        std::chrono::milliseconds timeout
-    ) -> Request;
+        std::chrono::milliseconds timeout) -> Request;
 
     /**
      * Produces a new Request.  This function is thread safe.
@@ -75,14 +70,13 @@ public:
     auto Produce(
         const std::string& url,
         std::function<void(Request)> on_complete_handler,
-        std::chrono::milliseconds timeout
-    ) -> Request;
+        std::chrono::milliseconds timeout) -> Request;
 
 private:
     /// Used for thread safe calls.
-    std::mutex m_lock{};
+    std::mutex m_lock {};
     /// Pool of un-used Request handles.
-    std::deque<std::unique_ptr<RequestHandle>> m_requests{};
+    std::deque<std::unique_ptr<RequestHandle>> m_requests {};
 
     /**
      * Returns a Request object to the pool to be re-used.
@@ -92,8 +86,7 @@ private:
      * @param request The request to return to the pool to be re-used.
      */
     auto returnRequest(
-        std::unique_ptr<RequestHandle> request
-    ) -> void;
+        std::unique_ptr<RequestHandle> request) -> void;
 };
 
 } // lift

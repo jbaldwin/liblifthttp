@@ -6,8 +6,7 @@
 #include "lift/RequestHandle.h"
 #include "lift/RequestPool.h"
 
-namespace lift
-{
+namespace lift {
 
 /**
  * Initializes the LiftHttp library, this function should be called once

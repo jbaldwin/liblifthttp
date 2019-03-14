@@ -2,19 +2,16 @@
 
 #include <string_view>
 
-namespace lift
-{
+namespace lift {
 
-class Header
-{
+class Header {
 public:
     /**
      * Creates a view into the header data.
      * @param header_data The full header data to split into name/value pair.
      */
     explicit Header(
-        std::string_view header_data
-    );
+        std::string_view header_data);
 
     /**
      * @return The entire header, e.g. "Connection: Keep-Alive"
@@ -37,9 +34,9 @@ public:
     auto GetValue() const -> std::string_view;
 
 private:
-    std::string_view m_header;    ///< The full header data.
-    std::string_view m_name;      ///< The header's name.
-    std::string_view m_value;     ///< The header's value if it has one.
+    std::string_view m_header; ///< The full header data.
+    std::string_view m_name; ///< The header's name.
+    std::string_view m_value; ///< The header's value if it has one.
 };
 
 } // lift

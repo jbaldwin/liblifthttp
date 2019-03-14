@@ -2,11 +2,9 @@
 
 #include <string>
 
-namespace lift::http
-{
+namespace lift::http {
 
-enum class Method
-{
+enum class Method {
     GET,
     HEAD,
     POST,
@@ -17,21 +15,19 @@ enum class Method
     PATCH
 };
 
-enum class Version
-{
-    USE_BEST,       ///< Use the best version available.
-    V1_0,           ///< Use HTTP 1.0.
-    V1_1,           ///< Use HTTP 1.1.
-    V2_0,           ///< Attempt HTTP 2 requests but fallback to 1.1 on failure.
-    V2_0_TLS,       ///< Attempt HTTP 2 over TLS (HTTPS) but fallback to 1.1 on failure.
-    V2_0_ONLY       ///< Use HTTP 2.0 non-TLS with no fallback to 1.1.
+enum class Version {
+    USE_BEST, ///< Use the best version available.
+    V1_0, ///< Use HTTP 1.0.
+    V1_1, ///< Use HTTP 1.1.
+    V2_0, ///< Attempt HTTP 2 requests but fallback to 1.1 on failure.
+    V2_0_TLS, ///< Attempt HTTP 2 over TLS (HTTPS) but fallback to 1.1 on failure.
+    V2_0_ONLY ///< Use HTTP 2.0 non-TLS with no fallback to 1.1.
 };
 
 /**
  * https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
  */
-enum class StatusCode : uint32_t
-{
+enum class StatusCode : uint32_t {
     HTTP_100_CONTINUE = 100,
     HTTP_101_SWITCHING_PROTOCOLS = 101,
     HTTP_102_PROCESSING = 102,
@@ -105,15 +101,13 @@ enum class StatusCode : uint32_t
  * @return string
  */
 auto to_string(
-    StatusCode code
-) -> const std::string&;
+    StatusCode code) -> const std::string&;
 
 /**
  * @param code The HTTP status code as an int.
  * @return StatusCode
  */
 auto to_enum(
-    uint32_t code
-) -> StatusCode;
+    uint32_t code) -> StatusCode;
 
 } // lift

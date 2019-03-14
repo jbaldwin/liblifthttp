@@ -5,8 +5,7 @@
 #include <string_view>
 #include <vector>
 
-namespace lift
-{
+namespace lift {
 
 /**
  * The query builder is a simple url builder class to reduce string allocations
@@ -21,8 +20,7 @@ namespace lift
  * Note that the user is responsible for the lifetime of all string_view's
  * passed into the query builder.  They must be 'alive' until Build() is called.
  */
-class QueryBuilder
-{
+class QueryBuilder {
 public:
     QueryBuilder() = default;
 
@@ -35,8 +33,7 @@ public:
      * @return QueryBuilder
      */
     auto SetScheme(
-        std::string_view scheme
-    ) -> QueryBuilder&;
+        std::string_view scheme) -> QueryBuilder&;
 
     /**
      * Sets the hostname for the url.
@@ -46,8 +43,7 @@ public:
      * @return QueryBuilder
      */
     auto SetHostname(
-        std::string_view hostname
-    ) -> QueryBuilder&;
+        std::string_view hostname) -> QueryBuilder&;
 
     /**
      * Sets the port.
@@ -55,8 +51,7 @@ public:
      * @return QueryBuidler
      */
     auto SetPort(
-        uint16_t port
-    ) -> QueryBuilder&;
+        uint16_t port) -> QueryBuilder&;
 
     /**
      * Adds a path part to the url.  Path parts shouldn't include '/' as the builder
@@ -71,8 +66,7 @@ public:
      * @return QueryBuilder
      */
     auto AppendPathPart(
-        std::string_view path_part
-    ) -> QueryBuilder&;
+        std::string_view path_part) -> QueryBuilder&;
 
     /**
      * Adds a query parameter to the url.
@@ -87,8 +81,7 @@ public:
      */
     auto AppendQueryParameter(
         std::string_view name,
-        std::string_view value
-    ) -> QueryBuilder&;
+        std::string_view value) -> QueryBuilder&;
 
     /**
      * Sets the fragment for the url.
@@ -96,8 +89,7 @@ public:
      * @return QueryBuilder
      */
     auto SetFragment(
-        std::string_view fragment
-    ) -> QueryBuilder&;
+        std::string_view fragment) -> QueryBuilder&;
 
     /**
      * This function will build the HTTP query string based on the provided
@@ -117,13 +109,13 @@ private:
     /// The url hostname.
     std::string_view m_hostname;
     /// The url port.
-    uint16_t m_port{0};
+    uint16_t m_port { 0 };
     /// The path parts in order.
     std::vector<std::string_view> m_path_parts;
     /// The query parameters (unescaped), they are escaped in Build().
     std::vector<
-        std::pair<std::string_view, std::string_view>
-    > m_query_parameters;
+        std::pair<std::string_view, std::string_view>>
+        m_query_parameters;
     /// The url fragment.
     std::string_view m_fragment;
 

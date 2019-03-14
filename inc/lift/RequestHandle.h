@@ -14,13 +14,11 @@
 #include <string_view>
 #include <vector>
 
-namespace lift
-{
+namespace lift {
 class Request;
 class RequestPool;
 
-class RequestHandle
-{
+class RequestHandle {
     friend class EventLoop;
     friend class RequestPool;
 
@@ -33,26 +31,24 @@ public:
      * the life time of these objects in the pool
      * @{
      */
-    RequestHandle(const RequestHandle&)               = delete;
-    RequestHandle(RequestHandle&&)                    = delete;
-    auto operator=(const RequestHandle&)              = delete;
-    auto operator=(RequestHandle&&) -> RequestHandle& = delete;
+    RequestHandle(const RequestHandle&) = delete;
+    RequestHandle(RequestHandle&&) = delete;
+    auto operator=(const RequestHandle&) = delete;
+    auto operator=(RequestHandle &&) -> RequestHandle& = delete;
     /** @} */
 
     /**
      * @param on_complete_handler When this request completes this handle is called.
      */
     auto SetOnCompleteHandler(
-        std::function<void(Request)> on_complete_handler
-    ) -> void;
+        std::function<void(Request)> on_complete_handler) -> void;
 
     /**
      * @param url The URL of the HTTP request.
      * @return True if the url was set.
      */
     auto SetUrl(
-        const std::string& url
-    ) -> bool;
+        const std::string& url) -> bool;
 
     /**
      * @return The currently set URL for this HTTP request.
@@ -63,15 +59,13 @@ public:
      * @param http_method Sets the HTTP method for this request.
      */
     auto SetMethod(
-        http::Method http_method
-    ) -> void;
+        http::Method http_method) -> void;
 
     /**
      * @param http_version Sets the HTTP version for this request.
      */
     auto SetVersion(
-        http::Version http_version
-    ) -> void;
+        http::Version http_version) -> void;
 
     /**
      * Sets the timeout for this HTTP request.  This should be set before Perform() is called
@@ -80,8 +74,7 @@ public:
      * @return True if the timeout was set.
      */
     auto SetTimeout(
-        std::chrono::milliseconds timeout
-    ) -> bool;
+        std::chrono::milliseconds timeout) -> bool;
 
     /**
      * Sets the maximum number of bytes of data to write.
@@ -94,8 +87,7 @@ public:
      * @param max_download_bytes The maximum number of bytes to be written for this request.
      */
     auto SetMaxDownloadBytes(
-        ssize_t max_download_bytes
-    ) -> void;
+        ssize_t max_download_bytes) -> void;
 
     /**
      * Sets if this request should follow redirects.  By default following redirects is
@@ -106,16 +98,14 @@ public:
      */
     auto SetFollowRedirects(
         bool follow_redirects,
-        int64_t max_redirects = -1
-        ) -> bool;
+        int64_t max_redirects = -1) -> bool;
 
     /**
      * Adds a request header with an empty value.  This can be useful to manipulate cURL.
      * @param name The name of the header, e.g. 'Accept'.
      */
     auto AddHeader(
-        std::string_view name
-    ) -> void;
+        std::string_view name) -> void;
 
     /**
      * Adds a request header with its value.
@@ -124,8 +114,7 @@ public:
      */
     auto AddHeader(
         std::string_view name,
-        std::string_view value
-    ) -> void;
+        std::string_view value) -> void;
 
     /**
      * @return The list of headers applied to this request.
@@ -144,8 +133,7 @@ public:
      * @throws std::logic_error If called after using AddMimeField or AddMimeFileField
      */
     auto SetRequestData(
-        std::string data
-    ) -> void;
+        std::string data) -> void;
 
     /**
      * @return The request data.  If never set an empty string is returned.
@@ -169,8 +157,7 @@ public:
      */
     auto AddMimeField(
         const std::string& field_name,
-        const std::string& field_value
-    ) -> void;
+        const std::string& field_value) -> void;
 
     /**
      * Adds an additional mime field (as a file) to the request. This is only valid
@@ -192,8 +179,7 @@ public:
      */
     auto AddMimeField(
         const std::string& field_name,
-        const std::filesystem::path& field_filepath
-    ) -> void;
+        const std::filesystem::path& field_filepath) -> void;
 
     /**
      * Performs the HTTP request synchronously.  This call will block the calling thread.
@@ -246,11 +232,11 @@ private:
      * @param max_download_bytes    The maximum number of bytes to download, if -1, will download entire file.
      */
     explicit RequestHandle(
-        RequestPool&                 request_pool,
-        const std::string&           url,
-        std::chrono::milliseconds    timeout,
+        RequestPool& request_pool,
+        const std::string& url,
+        std::chrono::milliseconds timeout,
         std::function<void(Request)> on_complete_handler = nullptr,
-        ssize_t                      max_download_bytes  = -1);
+        ssize_t max_download_bytes = -1);
 
     auto init() -> void;
 
@@ -261,7 +247,7 @@ private:
     RequestPool& m_request_pool;
 
     /// The cURL handle for this request.
-    CURL* m_curl_handle{curl_easy_init()};
+    CURL* m_curl_handle { curl_easy_init() };
 
     /// A view into the curl url.
     std::string_view m_url;
@@ -270,16 +256,16 @@ private:
     /// The request headers index.  Used to generate the curl slist.
     std::vector<Header> m_request_headers_idx;
     /// The curl request headers.
-    curl_slist* m_curl_request_headers{nullptr};
+    curl_slist* m_curl_request_headers { nullptr };
     /// Have the headers been committed into cURL?
-    bool m_headers_committed{false};
+    bool m_headers_committed { false };
     /// The request data if any. Mutually exclusive with m_mime_handle.
     std::string m_request_data;
     /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data.
-    curl_mime* m_mime_handle{nullptr};
+    curl_mime* m_mime_handle { nullptr };
 
     /// The status of this HTTP request.
-    RequestStatus m_status_code{RequestStatus::BUILDING};
+    RequestStatus m_status_code { RequestStatus::BUILDING };
     /// The response headers.
     std::string m_response_headers;
     /// Views into each header.
@@ -288,9 +274,9 @@ private:
     std::string m_response_data;
 
     /// Maximum number of bytes to be written.
-    ssize_t m_max_download_bytes{0};
+    ssize_t m_max_download_bytes { 0 };
     /// Number of bytes that have been written so far.
-    ssize_t m_bytes_written{0};
+    ssize_t m_bytes_written { 0 };
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -311,8 +297,7 @@ private:
      * @param curl_code The CURLcode to convert.
      */
     auto setCompletionStatus(
-        CURLcode curl_code
-    ) -> void;
+        CURLcode curl_code) -> void;
 
     auto onComplete() -> void;
 
@@ -324,22 +309,21 @@ private:
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(
-        char*  buffer,
+        char* buffer,
         size_t size,
         size_t nitems,
-        void*  user_ptr) -> size_t;
+        void* user_ptr) -> size_t;
 
     /// libcurl will call this function when data is received for the HTTP request.
     friend auto curl_write_data(
-        void*  buffer,
+        void* buffer,
         size_t size,
         size_t nitems,
-        void*  user_ptr) -> size_t;
+        void* user_ptr) -> size_t;
 
     /// libuv will call this function when the AddRequest() function is called.
     friend auto requests_accept_async(
-        uv_async_t* handle
-    ) -> void;
+        uv_async_t* handle) -> void;
 };
 
 } // namespace lift

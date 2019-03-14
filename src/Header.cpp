@@ -2,18 +2,15 @@
 
 #include <string>
 
-namespace lift
-{
+namespace lift {
 
 Header::Header(
-    std::string_view header_data
-)
-    :   m_header(header_data),
-        m_name(header_data)
+    std::string_view header_data)
+    : m_header(header_data)
+    , m_name(header_data)
 {
     auto colon_pos = m_name.find(':');
-    if(colon_pos != std::string_view::npos)
-    {
+    if (colon_pos != std::string_view::npos) {
         /**
          * Use remove_suffix|prefix for safety bounds checking.
          */
@@ -25,12 +22,10 @@ Header::Header(
         m_value = header_data;
         m_value.remove_prefix(colon_pos + 1);
         // Remove any prefix whitespace.
-        while(!m_value.empty() && std::isspace(m_value[0]) != 0)
-        {
+        while (!m_value.empty() && std::isspace(m_value[0]) != 0) {
             m_value.remove_prefix(1);
         }
     }
-
 }
 
 auto Header::GetHeader() const -> std::string_view
@@ -54,4 +49,3 @@ auto Header::GetValue() const -> std::string_view
 }
 
 } // lift
-

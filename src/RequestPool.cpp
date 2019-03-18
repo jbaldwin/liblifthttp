@@ -8,18 +8,18 @@ auto RequestPool::Reserve(
     std::lock_guard<std::mutex> guard { m_lock };
     for (size_t i = 0; i < count; ++i) {
         // All these fields will get reset on Produce().
-        auto request_handle_ptr = std::unique_ptr<RequestHandle>(
-            new RequestHandle(
+        auto request_handle_ptr = std::unique_ptr<Request>(
+            new Request(
                 *this,
                 "",
                 std::chrono::milliseconds { 0 },
-                [](Request) {}));
+                [](RequestHandle) {}));
         m_requests.emplace_back(std::move(request_handle_ptr));
     }
 }
 
 auto RequestPool::Produce(
-    const std::string& url) -> Request
+    const std::string& url) -> RequestHandle
 {
     using namespace std::chrono_literals;
     return Produce(url, nullptr, 0ms);
@@ -27,31 +27,31 @@ auto RequestPool::Produce(
 
 auto RequestPool::Produce(
     const std::string& url,
-    std::chrono::milliseconds timeout) -> Request
+    std::chrono::milliseconds timeout) -> RequestHandle
 {
     return Produce(url, nullptr, timeout);
 }
 
 auto RequestPool::Produce(
     const std::string& url,
-    std::function<void(Request)> on_complete_handler,
-    std::chrono::milliseconds timeout) -> Request
+    std::function<void(RequestHandle)> on_complete_handler,
+    std::chrono::milliseconds timeout) -> RequestHandle
 {
     m_lock.lock();
 
     if (m_requests.empty()) {
         m_lock.unlock();
 
-        // Cannot use std::make_unique here since RequestHandle ctor is private friend.
-        auto request_handle_ptr = std::unique_ptr<RequestHandle> {
-            new RequestHandle {
+        // Cannot use std::make_unique here since Request ctor is private friend.
+        auto request_handle_ptr = std::unique_ptr<Request> {
+            new Request {
                 *this,
                 url,
                 timeout,
                 std::move(on_complete_handler) }
         };
 
-        return Request { this, std::move(request_handle_ptr) };
+        return RequestHandle { this, std::move(request_handle_ptr) };
     } else {
         auto request_handle_ptr = std::move(m_requests.back());
         m_requests.pop_back();
@@ -61,12 +61,12 @@ auto RequestPool::Produce(
         request_handle_ptr->SetUrl(url);
         request_handle_ptr->SetTimeout(timeout);
 
-        return Request { this, std::move(request_handle_ptr) };
+        return RequestHandle { this, std::move(request_handle_ptr) };
     }
 }
 
 auto RequestPool::returnRequest(
-    std::unique_ptr<RequestHandle> request) -> void
+    std::unique_ptr<Request> request) -> void
 {
     request->Reset(); // Reset the request if it is returned to the pool.
     {

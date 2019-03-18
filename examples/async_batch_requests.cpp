@@ -6,7 +6,7 @@
 #include <string>
 #include <thread>
 
-static auto on_complete(lift::Request request) -> void
+static auto on_complete(lift::RequestHandle request) -> void
 {
     switch (request->GetCompletionStatus()) {
     case lift::RequestStatus::SUCCESS:
@@ -33,12 +33,12 @@ static auto on_complete(lift::Request request) -> void
         std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
         break;
     case lift::RequestStatus::ERROR:
-        std::cout << "Request had an unrecoverable error: " << request->GetUrl() << std::endl;
+        std::cout << "RequestHandle had an unrecoverable error: " << request->GetUrl() << std::endl;
         break;
     case lift::RequestStatus::BUILDING:
     case lift::RequestStatus::EXECUTING:
         std::cout
-            << "Request is in an invalid state: "
+            << "RequestHandle is in an invalid state: "
             << to_string(request->GetCompletionStatus()) << std::endl;
         break;
     }
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     auto& request_pool = event_loop.GetRequestPool();
 
     {
-        std::vector<lift::Request> requests;
+        std::vector<lift::RequestHandle> requests;
         requests.reserve(urls.size());
         for (auto& url : urls) {
             requests.emplace_back(request_pool.Produce(url, on_complete, 250ms));

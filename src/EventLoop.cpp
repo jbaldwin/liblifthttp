@@ -154,7 +154,7 @@ auto EventLoop::GetRequestPool() -> RequestPool&
 }
 
 auto EventLoop::StartRequest(
-    Request request) -> bool
+    RequestHandle request) -> bool
 {
     if (m_is_stopping) {
         return false;
@@ -204,7 +204,7 @@ auto EventLoop::checkActions(
             CURL* easy_handle = message->easy_handle;
             CURLcode easy_result = message->data.result;
 
-            RequestHandle* raw_request_handle_ptr = nullptr;
+            Request* raw_request_handle_ptr = nullptr;
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
             curl_multi_remove_handle(m_cmh, easy_handle);
 

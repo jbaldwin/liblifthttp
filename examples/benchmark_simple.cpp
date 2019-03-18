@@ -16,7 +16,7 @@ static auto print_usage(
 static std::atomic<uint64_t> g_success { 0 };
 static std::atomic<uint64_t> g_error { 0 };
 
-static auto on_complete(lift::Request request, lift::EventLoop& event_loop) -> void
+static auto on_complete(lift::RequestHandle request, lift::EventLoop& event_loop) -> void
 {
     if (request->GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
         ++g_success;
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
              */
             auto request = request_pool.Produce(
                 url,
-                [&event_loop](lift::Request r) {
+                [&event_loop](lift::RequestHandle r) {
                     on_complete(std::move(r), event_loop);
                 },
                 1s);

@@ -61,7 +61,7 @@ public:
      *                when this request completes/timesout/errors.
      */
     auto StartRequest(
-        Request request) -> bool;
+        RequestHandle request) -> bool;
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
@@ -110,9 +110,9 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<Request> m_pending_requests {};
+    std::vector<RequestHandle> m_pending_requests {};
     /// Only accessible from within the EventLoop thread.
-    std::vector<Request> m_grabbed_requests {};
+    std::vector<RequestHandle> m_grabbed_requests {};
 
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread {};

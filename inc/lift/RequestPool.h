@@ -14,7 +14,7 @@ namespace lift {
 class CurlPool;
 
 class RequestPool {
-    friend class Request;
+    friend class RequestHandle;
 
 public:
     RequestPool() = default;
@@ -42,7 +42,7 @@ public:
      * @return A request object setup for the URL.
      */
     auto Produce(
-        const std::string& url) -> Request;
+        const std::string& url) -> RequestHandle;
 
     /**
      * Produces a new Request with the specified timeout.
@@ -55,7 +55,7 @@ public:
      */
     auto Produce(
         const std::string& url,
-        std::chrono::milliseconds timeout) -> Request;
+        std::chrono::milliseconds timeout) -> RequestHandle;
 
     /**
      * Produces a new Request.  This function is thread safe.
@@ -69,14 +69,14 @@ public:
      */
     auto Produce(
         const std::string& url,
-        std::function<void(Request)> on_complete_handler,
-        std::chrono::milliseconds timeout) -> Request;
+        std::function<void(RequestHandle)> on_complete_handler,
+        std::chrono::milliseconds timeout) -> RequestHandle;
 
 private:
     /// Used for thread safe calls.
     std::mutex m_lock {};
     /// Pool of un-used Request handles.
-    std::deque<std::unique_ptr<RequestHandle>> m_requests {};
+    std::deque<std::unique_ptr<Request>> m_requests {};
 
     /**
      * Returns a Request object to the pool to be re-used.
@@ -86,7 +86,7 @@ private:
      * @param request The request to return to the pool to be re-used.
      */
     auto returnRequest(
-        std::unique_ptr<RequestHandle> request) -> void;
+        std::unique_ptr<Request> request) -> void;
 };
 
 } // lift

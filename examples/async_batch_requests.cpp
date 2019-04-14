@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::initialize();
+    lift::GlobalScopeInitializer lift_init{};
 
     std::vector<std::string> urls = {
         "http://www.example.com",
@@ -84,11 +84,6 @@ int main(int argc, char* argv[])
     while (event_loop.GetActiveRequestCount() > 0) {
         std::this_thread::sleep_for(100ms);
     }
-
-    // Cleanup EventLoop / Threads and LiftHttp library.
-    event_loop.Stop();
-
-    lift::cleanup();
 
     return 0;
 }

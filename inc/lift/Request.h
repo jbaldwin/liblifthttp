@@ -250,28 +250,28 @@ private:
     CURL* m_curl_handle { curl_easy_init() };
 
     /// A view into the curl url.
-    std::string_view m_url;
+    std::string_view m_url{};
     /// The request headers.
-    std::string m_request_headers;
+    std::string m_request_headers{};
     /// The request headers index.  Used to generate the curl slist.
-    std::vector<Header> m_request_headers_idx;
+    std::vector<Header> m_request_headers_idx{};
     /// The curl request headers.
     curl_slist* m_curl_request_headers { nullptr };
     /// Have the headers been committed into cURL?
     bool m_headers_committed { false };
     /// The request data if any. Mutually exclusive with m_mime_handle.
-    std::string m_request_data;
+    std::string m_request_data{};
     /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data.
     curl_mime* m_mime_handle { nullptr };
 
     /// The status of this HTTP request.
     RequestStatus m_status_code { RequestStatus::BUILDING };
     /// The response headers.
-    std::string m_response_headers;
+    std::string m_response_headers{};
     /// Views into each header.
-    std::vector<Header> m_response_headers_idx;
+    std::vector<Header> m_response_headers_idx{};
     /// The response data if any.
-    std::string m_response_data;
+    std::string m_response_data{};
 
     /// Maximum number of bytes to be written.
     ssize_t m_max_download_bytes { 0 };

@@ -34,9 +34,12 @@ public:
     auto GetValue() const -> std::string_view;
 
 private:
-    std::string_view m_header; ///< The full header data.
-    std::string_view m_name; ///< The header's name.
-    std::string_view m_value; ///< The header's value if it has one.
+    /// The full header data.
+    std::string_view m_header;
+    /// The header's name.
+    std::string_view m_name;
+    /// The header's value if it has one.
+    std::string_view m_value{};
 };
 
 } // lift

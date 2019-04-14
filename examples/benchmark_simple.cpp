@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     uint64_t threads = std::stoul(argv[4]);
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::initialize();
+    lift::GlobalScopeInitializer lift_init{};
 
     std::vector<std::unique_ptr<lift::EventLoop>> loops;
     for (uint64_t i = 0; i < threads; ++i) {
@@ -82,13 +82,7 @@ int main(int argc, char* argv[])
     std::chrono::seconds seconds(duration_s);
     std::this_thread::sleep_for(seconds);
 
-    for (auto& loop : loops) {
-        loop->Stop();
-    }
-
     std::cout << "Total success:" << g_success << " total error:" << g_error << std::endl;
-
-    lift::cleanup();
 
     return 0;
 }

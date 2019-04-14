@@ -24,6 +24,10 @@ public:
      * Creates a new lift event loop.
      */
     EventLoop();
+
+    /**
+     * Stops the EventLoop and shuts down all resources.
+     */
     ~EventLoop();
 
     EventLoop(const EventLoop& copy) = delete;
@@ -40,11 +44,6 @@ public:
      * @return Gets the number of active HTTP requests currently running.
      */
     auto GetActiveRequestCount() const -> uint64_t;
-
-    /**
-     * Stops the EventLoop and shutsdown all resources.
-     */
-    auto Stop() -> void;
 
     /**
      * @return The request pool for this EventLoop.
@@ -117,7 +116,7 @@ private:
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread {};
 
-    /// List of CurlContext objects to re-use for requests.
+    /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
 
     /// Flag to denote that the m_async handle has been closed on shutdown.

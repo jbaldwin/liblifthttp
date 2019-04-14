@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::initialize();
+    lift::GlobalScopeInitializer lift_init{};
 
     lift::RequestPool request_pool {};
 
@@ -43,8 +43,6 @@ int main(int argc, char* argv[])
     std::cout << "Requesting " << url << std::endl;
     request->Perform();
     std::cout << request->GetResponseData() << std::endl;
-
-    lift::cleanup();
 
     return 0;
 }

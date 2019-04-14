@@ -92,6 +92,7 @@ auto requests_accept_async(
     uv_async_t* handle) -> void;
 
 EventLoop::EventLoop()
+    : m_curl_context_ready()
 {
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;
@@ -118,22 +119,6 @@ EventLoop::EventLoop()
 
 EventLoop::~EventLoop()
 {
-    curl_multi_cleanup(m_cmh);
-    uv_loop_close(m_loop);
-}
-
-auto EventLoop::IsRunning() -> bool
-{
-    return m_is_running;
-}
-
-auto EventLoop::GetActiveRequestCount() const -> uint64_t
-{
-    return m_active_request_count;
-}
-
-auto EventLoop::Stop() -> void
-{
     m_is_stopping = true;
     uv_timer_stop(&m_timeout_timer);
     uv_close(uv_type_cast<uv_handle_t>(&m_timeout_timer), uv_close_callback);
@@ -146,6 +131,19 @@ auto EventLoop::Stop() -> void
     }
 
     m_background_thread.join();
+
+    curl_multi_cleanup(m_cmh);
+    uv_loop_close(m_loop);
+}
+
+auto EventLoop::IsRunning() -> bool
+{
+    return m_is_running;
+}
+
+auto EventLoop::GetActiveRequestCount() const -> uint64_t
+{
+    return m_active_request_count;
 }
 
 auto EventLoop::GetRequestPool() -> RequestPool&

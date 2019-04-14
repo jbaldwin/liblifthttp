@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     (void)argv;
     using namespace std::chrono_literals;
 
-    lift::initialize();
+    lift::GlobalScopeInitializer lift_init{};
 
     lift::EventLoop event_loop {};
     auto& request_pool = event_loop.GetRequestPool();
@@ -36,9 +36,6 @@ int main(int argc, char* argv[])
     while (event_loop.GetActiveRequestCount() > 0) {
         std::this_thread::sleep_for(10ms);
     }
-    event_loop.Stop();
-
-    lift::cleanup();
 
     return 0;
 }

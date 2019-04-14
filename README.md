@@ -39,20 +39,44 @@ https://github.com/jbaldwin/liblifthttp
 See all of the examples under the examples/ directory.
 
 ### Simple Synchronous
+```C++
+// Initialize must be called first before using the LiftHttp library.
+lift::GlobalScopeInitializer lift_init{};
+lift::RequestPool pool{};
+auto request = pool.Produce("http://www.example.com");
 
-    lift::initialize();
+request->Perform();  // This call is the blocking synchronous HTTP call.
 
-    lift::RequestPool request_pool;
-    auto request = request_pool.Produce("http://www.example.com");
-    std::cout << "Requesting http://www.example.com" << std::endl;
-    request->Perform();
-    std::cout << request->GetResponseData() << std::endl;
-
-    lift::cleanup();
+std::cout << request->GetResponseData() << "\n";
+```
 
 ### Simple Asynchronous
+```C++
+// Event loops in Lift come with their own RequestPool, no need to provide one.
+// Creating the event loop starts it immediately, it spawns a background thread for executing requests.
+lift::EventLoop loop{};
+auto& pool = loop.GetRequestPool();
 
-See [Async Simple](https://github.com/jbaldwin/liblifthttp/blob/master/examples/async_simple.cpp)
+// Create the request just like we did in the sync version, but we provide a lambda for on completion.
+// Note: that the Lambda is executed ON the Lift event loop thread.  If you want to handle on completion
+// processing on this main thread you need to std::move it back via a queue or inter-thread communication.
+auto request = pool.Produce(
+    "http://www.example.com",
+    [](lift::RequestHandle r) { std::cout << r->GetResponseData(); }, // on destruct 'r' will return to the pool.
+    10s, // optional time out parameter here
+);
+
+// Now inject the request into the event to be executed.  Moving into the event loop is required,
+// this passes ownership of the request to the event loop.
+loop.StartRequest(std::move(request));
+
+// Block on this main thread until the lift event loop thread has completed the request, or timed out.
+while(loop.GetActiveRequestCount() > 0) {
+    std::this_thread::sleep_for(10ms);
+}
+
+// When loop goes out of scope here it will automatically stop the background thread.
+```
 
 ## Support
 

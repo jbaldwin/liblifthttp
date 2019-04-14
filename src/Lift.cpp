@@ -4,7 +4,7 @@
 
 namespace lift {
 
-auto initialize() -> void
+auto startup() -> void
 {
     static std::atomic<uint64_t> initialized { 0 };
 
@@ -13,13 +13,23 @@ auto initialize() -> void
     }
 }
 
-auto cleanup() -> void
+auto shutdown() -> void
 {
     static std::atomic<uint64_t> cleaned { 0 };
 
     if (cleaned.fetch_add(1) == 0) {
         curl_global_cleanup();
     }
+}
+
+GlobalScopeInitializer::GlobalScopeInitializer()
+{
+    startup();
+}
+
+GlobalScopeInitializer::~GlobalScopeInitializer()
+{
+    shutdown();
 }
 
 } // lift

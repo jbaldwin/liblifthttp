@@ -41,6 +41,12 @@ public:
     auto IsRunning() -> bool;
 
     /**
+     * Stops the event loop from accepting new requests.  It will continue to process
+     * existing requests.
+     */
+    auto Stop() -> void;
+
+    /**
      * @return Gets the number of active HTTP requests currently running.
      */
     auto GetActiveRequestCount() const -> uint64_t;

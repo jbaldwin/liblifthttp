@@ -21,10 +21,10 @@ class RequestHandle {
 
 public:
     ~RequestHandle();
-    RequestHandle(const RequestHandle&) = delete; ///< No copying
-    RequestHandle(RequestHandle&& from) = default; ///< Can move
-    auto operator=(const RequestHandle&) = delete; ///< No copy assign
-    auto operator=(RequestHandle &&) -> RequestHandle& = default; ///< Can move assign
+    RequestHandle(const RequestHandle&) = delete;
+    RequestHandle(RequestHandle&& from) = default;
+    auto operator=(const RequestHandle&) = delete;
+    auto operator=(RequestHandle &&) -> RequestHandle& = default;
 
     /**
      * @return Access to the underlying request handle.

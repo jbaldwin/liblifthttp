@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     (void)argv;
     using namespace std::chrono_literals;
 
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
     lift::EventLoop event_loop {};
     auto& request_pool = event_loop.GetRequestPool();

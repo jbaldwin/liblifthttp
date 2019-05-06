@@ -120,6 +120,11 @@ EventLoop::EventLoop()
 EventLoop::~EventLoop()
 {
     m_is_stopping = true;
+
+    while (GetActiveRequestCount() > 0) {
+        std::this_thread::sleep_for(1ms);
+    }
+
     uv_timer_stop(&m_timeout_timer);
     uv_close(uv_type_cast<uv_handle_t>(&m_timeout_timer), uv_close_callback);
     uv_close(uv_type_cast<uv_handle_t>(&m_async), uv_close_callback);
@@ -139,6 +144,11 @@ EventLoop::~EventLoop()
 auto EventLoop::IsRunning() -> bool
 {
     return m_is_running;
+}
+
+auto EventLoop::Stop() -> void
+{
+    m_is_stopping = true;
 }
 
 auto EventLoop::GetActiveRequestCount() const -> uint64_t

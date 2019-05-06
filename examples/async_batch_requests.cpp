@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
     std::vector<std::string> urls = {
         "http://www.example.com",

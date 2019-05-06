@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
     lift::RequestPool request_pool;
     auto request = request_pool.Produce("http://www.example.com");

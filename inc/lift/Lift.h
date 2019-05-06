@@ -34,15 +34,14 @@ auto shutdown() -> void;
  * }
  *
  */
-struct GlobalScopeInitializer
-{
+struct GlobalScopeInitializer {
     GlobalScopeInitializer();
     ~GlobalScopeInitializer();
 
     GlobalScopeInitializer(const GlobalScopeInitializer&) = delete;
     GlobalScopeInitializer(GlobalScopeInitializer&&) = delete;
     auto operator=(const GlobalScopeInitializer&) -> GlobalScopeInitializer& = delete;
-    auto operator=(GlobalScopeInitializer&&) -> GlobalScopeInitializer& = delete;
+    auto operator=(GlobalScopeInitializer &&) -> GlobalScopeInitializer& = delete;
 };
 
 } // lift

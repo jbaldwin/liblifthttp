@@ -10,7 +10,24 @@
 static auto print_usage(
     const std::string& program_name) -> void
 {
-    std::cout << program_name << "<url> <duration_seconds> <connections> <threads>" << std::endl;
+    std::cout << program_name << " <url> <duration_seconds> <connections> <threads>" << std::endl;
+}
+
+static auto print_stats(
+    uint64_t duration_s,
+    uint64_t threads,
+    uint64_t total_success,
+    uint64_t total_error) -> void
+{
+    auto total = total_success + total_error;
+    std::cout << "  Thread Stats    Avg\n";
+    std::cout << "    Req/sec     " << (total / static_cast<double>(threads) / duration_s) << "\n";
+
+    std::cout << "  " << total << " requests in " << duration_s << "s\n";
+    if (total_error > 0) {
+        std::cout << "  " << total_error << " errors\n";
+    }
+    std::cout << "Requests/sec: " << (total / static_cast<double>(duration_s)) << "\n";
 }
 
 static std::atomic<uint64_t> g_success { 0 };
@@ -24,10 +41,8 @@ static auto on_complete(lift::RequestHandle request, lift::EventLoop& event_loop
         ++g_error;
     }
 
-    // And request again!
-    if (!event_loop.StartRequest(std::move(request))) {
-        std::cerr << "Event loop is no longer accepting requests.\n";
-    }
+    // And request again until we are shutting down.
+    event_loop.StartRequest(std::move(request));
 }
 
 int main(int argc, char* argv[])
@@ -45,44 +60,40 @@ int main(int argc, char* argv[])
     uint64_t threads = std::stoul(argv[4]);
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
-    std::vector<std::unique_ptr<lift::EventLoop>> loops;
-    for (uint64_t i = 0; i < threads; ++i) {
-        auto event_loop_ptr = std::make_unique<lift::EventLoop>();
-        auto& request_pool = event_loop_ptr->GetRequestPool();
+    {
+        std::vector<std::unique_ptr<lift::EventLoop>> loops;
+        for (uint64_t i = 0; i < threads; ++i) {
+            auto event_loop_ptr = std::make_unique<lift::EventLoop>();
+            auto& request_pool = event_loop_ptr->GetRequestPool();
 
-        for (uint64_t j = 0; j < connections; ++j) {
-            auto& event_loop = *event_loop_ptr;
+            for (uint64_t j = 0; j < connections; ++j) {
+                auto& event_loop = *event_loop_ptr;
 
-            /**
-             * An example using std::bind().
-             */
-            //using namespace std::placeholders;
-            //auto callback = std::bind(on_complete, _1, std::ref(event_loop));
-            //auto request = request_pool.Produce(url, std::move(callback), 1000ms);
+                auto request = request_pool.Produce(
+                    url,
+                    [&event_loop](lift::RequestHandle r) {
+                        on_complete(std::move(r), event_loop);
+                    },
+                    1s);
+                request->SetFollowRedirects(false);
+                request->AddHeader("Connection", "Keep-Alive");
+                event_loop_ptr->StartRequest(std::move(request));
+            }
 
-            /**
-             * An example using a lambda.
-             */
-            auto request = request_pool.Produce(
-                url,
-                [&event_loop](lift::RequestHandle r) {
-                    on_complete(std::move(r), event_loop);
-                },
-                1s);
-            request->SetFollowRedirects(false);
-            request->AddHeader("Connection", "Keep-Alive");
-            event_loop_ptr->StartRequest(std::move(request));
+            loops.emplace_back(std::move(event_loop_ptr));
         }
 
-        loops.emplace_back(std::move(event_loop_ptr));
+        std::chrono::seconds seconds(duration_s);
+        std::this_thread::sleep_for(seconds);
+
+        for (auto& thread : loops) {
+            thread->Stop();
+        }
     }
 
-    std::chrono::seconds seconds(duration_s);
-    std::this_thread::sleep_for(seconds);
-
-    std::cout << "Total success:" << g_success << " total error:" << g_error << std::endl;
+    print_stats(duration_s, threads, g_success, g_error);
 
     return 0;
 }

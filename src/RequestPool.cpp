@@ -13,7 +13,7 @@ auto RequestPool::Reserve(
                 *this,
                 "",
                 std::chrono::milliseconds { 0 },
-                [](RequestHandle) {}));
+                [](RequestHandle r) { (void)r; }));
         m_requests.emplace_back(std::move(request_handle_ptr));
     }
 }

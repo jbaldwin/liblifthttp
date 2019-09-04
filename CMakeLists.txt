@@ -42,7 +42,7 @@ set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
 )
 
 set(LIFT_CURL_LIBRARY_DEPENDENCIES
-    -Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group
+    "-Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group"
 )
 
 set(SOURCE_FILES

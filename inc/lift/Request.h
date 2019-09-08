@@ -53,6 +53,7 @@ public:
     /**
      * @return The currently set URL for this HTTP request.
      */
+    [[nodiscard]]
     auto GetUrl() const -> std::string_view;
 
     /**
@@ -119,6 +120,7 @@ public:
     /**
      * @return The list of headers applied to this request.
      */
+    [[nodiscard]]
     auto GetRequestHeaders() const -> const std::vector<Header>&;
 
     /**
@@ -138,6 +140,7 @@ public:
     /**
      * @return The request data.  If never set an empty string is returned.
      */
+    [[nodiscard]]
     auto GetRequestData() const -> const std::string&;
 
     /**
@@ -190,21 +193,25 @@ public:
     /**
      * @return The HTTP response status code.
      */
+    [[nodiscard]]
     auto GetResponseStatusCode() const -> http::StatusCode;
 
     /**
      * @return The HTTP response headers.
      */
+    [[nodiscard]]
     auto GetResponseHeaders() const -> const std::vector<Header>&;
 
     /**
      * @return The HTTP download payload.
      */
+    [[nodiscard]]
     auto GetResponseData() const -> const std::string&;
 
     /**
      * @return The total HTTP request time in milliseconds.
      */
+    [[nodiscard]]
     auto GetTotalTime() const -> std::chrono::milliseconds;
 
     /**
@@ -215,6 +222,7 @@ public:
      *
      * @return Gets the request completion status.
      */
+    [[nodiscard]]
     auto GetCompletionStatus() const -> RequestStatus;
 
     /**

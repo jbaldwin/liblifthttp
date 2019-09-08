@@ -16,6 +16,9 @@ auto curl_write_data(
     size_t nitems,
     void* user_ptr) -> size_t;
 
+static constexpr uint64_t HEADER_DEFAULT_MEMORY_BYTES = 16'384;
+static constexpr uint64_t HEADER_DEFAULT_COUNT = 16;
+
 Request::Request(
     RequestPool& request_pool,
     const std::string& url,
@@ -50,18 +53,18 @@ auto Request::init() -> void
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERDATA, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEFUNCTION, curl_write_data);
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL, 1l);
-    curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1l);
+    curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
 
     SetMaxDownloadBytes(m_max_download_bytes);
 
-    m_request_headers.reserve(16'384);
-    m_request_headers_idx.reserve(16);
+    m_request_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
+    m_request_headers_idx.reserve(HEADER_DEFAULT_COUNT);
     m_headers_committed = false;
 
-    m_response_headers.reserve(16'384);
-    m_response_headers_idx.reserve(16);
-    m_response_data.reserve(16'384);
+    m_response_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
+    m_response_headers_idx.reserve(HEADER_DEFAULT_COUNT);
+    m_response_data.reserve(HEADER_DEFAULT_MEMORY_BYTES);
 }
 
 auto Request::SetOnCompleteHandler(
@@ -305,9 +308,11 @@ auto Request::GetResponseData() const -> const std::string&
 
 auto Request::GetTotalTime() const -> std::chrono::milliseconds
 {
+    constexpr uint64_t SEC_2_MS = 1000;
+
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    return std::chrono::milliseconds(static_cast<int64_t>(total_time * 1000));
+    return std::chrono::milliseconds(static_cast<int64_t>(total_time * SEC_2_MS));
 }
 
 auto Request::GetCompletionStatus() const -> RequestStatus
@@ -450,7 +455,8 @@ auto curl_write_header(
         return data_length;
     }
     // Ignore the HTTP/ 'header' line from curl.
-    if (data_view.length() >= 4 && data_view.substr(0, 5) == "HTTP/") {
+    constexpr size_t HTTPSLASH_LEN = 5;
+    if (data_view.length() >= 4 && data_view.substr(0, HTTPSLASH_LEN) == "HTTP/") {
         return data_length;
     }
 

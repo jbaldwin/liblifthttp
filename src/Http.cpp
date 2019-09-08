@@ -2,70 +2,107 @@
 
 namespace lift::http {
 
-static const std::string STATUS_CODE_HTTP_100_CONTINUE = "100 Continue";
-static const std::string STATUS_CODE_HTTP_101_SWITCHING_PROTOCOLS = "101 Switching Protocols";
-static const std::string STATUS_CODE_HTTP_102_PROCESSING = "102 Processing";
-static const std::string STATUS_CODE_HTTP_103_EARLY_HINTS = "103 Early Hints";
-static const std::string STATUS_CODE_HTTP_200_OK = "200 OK";
-static const std::string STATUS_CODE_HTTP_201_CREATED = "201 Created";
-static const std::string STATUS_CODE_HTTP_202_ACCEPTED = "202 Accepted";
-static const std::string STATUS_CODE_HTTP_203_NON_AUTHORITATIVE_INFORMATION = "203 Non-Authoritative Information";
-static const std::string STATUS_CODE_HTTP_204_NO_CONTENT = "204 No Content";
-static const std::string STATUS_CODE_HTTP_205_RESET_CONTENT = "205 Reset Content";
-static const std::string STATUS_CODE_HTTP_206_PARTIAL_CONTENT = "206 Partial Content";
-static const std::string STATUS_CODE_HTTP_207_MULTI_STATUS = "207 Multi-Status";
-static const std::string STATUS_CODE_HTTP_208_ALREADY_REPORTED = "208 Already Reported";
-static const std::string STATUS_CODE_HTTP_226_IM_USED = "226 IM Used";
-static const std::string STATUS_CODE_HTTP_300_MULTIPLE_CHOICES = "300 Multiple Choices";
-static const std::string STATUS_CODE_HTTP_301_MOVED_PERMANENTLY = "301 Moved Permanently";
-static const std::string STATUS_CODE_HTTP_302_FOUND = "302 Found";
-static const std::string STATUS_CODE_HTTP_303_SEE_OTHER = "303 See Other";
-static const std::string STATUS_CODE_HTTP_304_NOT_MODIFIED = "304 Not Modified";
-static const std::string STATUS_CODE_HTTP_305_USE_PROXY = "305 Use Proxy";
-static const std::string STATUS_CODE_HTTP_306_SWITCH_PROXY = "306 Switch Proxy";
-static const std::string STATUS_CODE_HTTP_307_TEMPORARY_REDIRECT = "307 Temporary Redirect";
-static const std::string STATUS_CODE_HTTP_308_PERMANENT_REDIRECT = "308 Permanent Redirect";
-static const std::string STATUS_CODE_HTTP_400_BAD_REQUEST = "400 Bad Request";
-static const std::string STATUS_CODE_HTTP_401_UNAUTHORIZED = "401 Unauthorized";
-static const std::string STATUS_CODE_HTTP_402_PAYMENT_REQUIRED = "402 Payment Required";
-static const std::string STATUS_CODE_HTTP_403_FORBIDDEN = "403 Forbidden";
-static const std::string STATUS_CODE_HTTP_404_NOT_FOUND = "404 Not Found";
-static const std::string STATUS_CODE_HTTP_405_METHOD_NOT_ALLOWED = "405 Method Not Allowed";
-static const std::string STATUS_CODE_HTTP_406_NOT_ACCEPTABLE = "406 Not Acceptable";
-static const std::string STATUS_CODE_HTTP_407_PROXY_AUTHENTICATION_REQUIRED = "407 Proxy Authentication Required";
-static const std::string STATUS_CODE_HTTP_408_REQUEST_TIMEOUT = "408 Request Timeout";
-static const std::string STATUS_CODE_HTTP_409_CONFLICT = "409 Conflict";
-static const std::string STATUS_CODE_HTTP_410_GONE = "410 Gone";
-static const std::string STATUS_CODE_HTTP_411_LENGTH_REQUIRED = "411 Length Required";
-static const std::string STATUS_CODE_HTTP_412_PRECONDITION_FAILED = "412 Precondition Failed";
-static const std::string STATUS_CODE_HTTP_413_PAYLOAD_TOO_LARGE = "413 Payload Too Large";
-static const std::string STATUS_CODE_HTTP_414_URI_TOO_LONG = "414 URI Too Long";
-static const std::string STATUS_CODE_HTTP_415_UNSUPPORTED_MEDIA_TYPE = "415 Unsupported Media Type";
-static const std::string STATUS_CODE_HTTP_416_RANGE_NOT_SATISFIABLE = "416 Range Not Satisfiable";
-static const std::string STATUS_CODE_HTTP_417_EXPECTATION_FAILED = "417 Expectation Failed";
-static const std::string STATUS_CODE_HTTP_418_IM_A_TEAPOT_ = "418 I'm a teapot";
-static const std::string STATUS_CODE_HTTP_421_MISDIRECTED_REQUEST = "421 Misdirected Request";
-static const std::string STATUS_CODE_HTTP_422_UNPROCESSABLE_ENTITY = "422 Unprocessable Entity";
-static const std::string STATUS_CODE_HTTP_423_LOCKED = "423 Locked";
-static const std::string STATUS_CODE_HTTP_424_FAILED_DEPENDENCY = "424 Failed Dependency";
-static const std::string STATUS_CODE_HTTP_426_UPGRADE_REQUIRED = "426 Upgrade Required";
-static const std::string STATUS_CODE_HTTP_428_PRECONDITION_FAILED = "428 Precondition Required";
-static const std::string STATUS_CODE_HTTP_429_TOO_MANY_REQUESTS = "429 Too Many Requests";
-static const std::string STATUS_CODE_HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = "431 Request Header Fields Too Large";
-static const std::string STATUS_CODE_HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = "451 Unavailable For Legal Reasons";
-static const std::string STATUS_CODE_HTTP_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
-static const std::string STATUS_CODE_HTTP_501_NOT_IMPLEMENTED = "501 Not Implemented";
-static const std::string STATUS_CODE_HTTP_502_BAD_GATEWAY = "502 Bad Gateway";
-static const std::string STATUS_CODE_HTTP_503_SERVICE_UNAVAILABLE = "503 Service Unavailable";
-static const std::string STATUS_CODE_HTTP_504_GATEWAY_TIMEOUT = "504 Gateway Timeout";
-static const std::string STATUS_CODE_HTTP_505_HTTP_VERSION_NOT_SUPPORTED = "505 HTTP Version Not Supported";
-static const std::string STATUS_CODE_HTTP_506_VARIANT_ALSO_NEGOTIATES = "506 Variant Also Negotiates";
-static const std::string STATUS_CODE_HTTP_507_INSUFFICIENT_STORAGE = "507 Insufficient Storage";
-static const std::string STATUS_CODE_HTTP_508_LOOP_DETECTED = "508 Loop Detected";
-static const std::string STATUS_CODE_HTTP_510_NOT_EXTENDED = "510 Not Extended";
-static const std::string STATUS_CODE_HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required";
+using namespace std::string_literals;
 
-static const std::string STATUS_CODE_HTTP_UNKNOWN = "UNKNOWN";
+static const std::string METHOD_GET = "GET"s;
+static const std::string METHOD_HEAD = "HEAD"s;
+static const std::string METHOD_POST = "POST"s;
+static const std::string METHOD_PUT = "PUT"s;
+static const std::string METHOD_DELETE = "DELETE"s;
+static const std::string METHOD_CONNECT = "CONNECT"s;
+static const std::string METHOD_OPTIONS = "OPTIONS"s;
+static const std::string METHOD_PATCH = "PATCH"s;
+
+auto to_string(
+    Method method) -> const std::string&
+{
+    switch(method)
+    {
+        case Method::GET:
+            return METHOD_GET;
+        case Method::HEAD:
+            return METHOD_HEAD;
+        case Method::POST:
+            return METHOD_POST;
+        case Method::PUT:
+            return METHOD_PUT;
+        case Method::DELETE:
+            return METHOD_DELETE;
+        case Method::CONNECT:
+            return METHOD_CONNECT;
+        case Method::OPTIONS:
+            return METHOD_OPTIONS;
+        case Method::PATCH:
+            return METHOD_PATCH;
+        default:
+            return METHOD_GET;
+    }
+}
+
+static const std::string STATUS_CODE_HTTP_100_CONTINUE = "100 Continue"s;
+static const std::string STATUS_CODE_HTTP_101_SWITCHING_PROTOCOLS = "101 Switching Protocols"s;
+static const std::string STATUS_CODE_HTTP_102_PROCESSING = "102 Processing"s;
+static const std::string STATUS_CODE_HTTP_103_EARLY_HINTS = "103 Early Hints"s;
+static const std::string STATUS_CODE_HTTP_200_OK = "200 OK"s;
+static const std::string STATUS_CODE_HTTP_201_CREATED = "201 Created"s;
+static const std::string STATUS_CODE_HTTP_202_ACCEPTED = "202 Accepted"s;
+static const std::string STATUS_CODE_HTTP_203_NON_AUTHORITATIVE_INFORMATION = "203 Non-Authoritative Information"s;
+static const std::string STATUS_CODE_HTTP_204_NO_CONTENT = "204 No Content"s;
+static const std::string STATUS_CODE_HTTP_205_RESET_CONTENT = "205 Reset Content"s;
+static const std::string STATUS_CODE_HTTP_206_PARTIAL_CONTENT = "206 Partial Content"s;
+static const std::string STATUS_CODE_HTTP_207_MULTI_STATUS = "207 Multi-Status"s;
+static const std::string STATUS_CODE_HTTP_208_ALREADY_REPORTED = "208 Already Reported"s;
+static const std::string STATUS_CODE_HTTP_226_IM_USED = "226 IM Used"s;
+static const std::string STATUS_CODE_HTTP_300_MULTIPLE_CHOICES = "300 Multiple Choices"s;
+static const std::string STATUS_CODE_HTTP_301_MOVED_PERMANENTLY = "301 Moved Permanently"s;
+static const std::string STATUS_CODE_HTTP_302_FOUND = "302 Found"s;
+static const std::string STATUS_CODE_HTTP_303_SEE_OTHER = "303 See Other"s;
+static const std::string STATUS_CODE_HTTP_304_NOT_MODIFIED = "304 Not Modified"s;
+static const std::string STATUS_CODE_HTTP_305_USE_PROXY = "305 Use Proxy"s;
+static const std::string STATUS_CODE_HTTP_306_SWITCH_PROXY = "306 Switch Proxy"s;
+static const std::string STATUS_CODE_HTTP_307_TEMPORARY_REDIRECT = "307 Temporary Redirect"s;
+static const std::string STATUS_CODE_HTTP_308_PERMANENT_REDIRECT = "308 Permanent Redirect"s;
+static const std::string STATUS_CODE_HTTP_400_BAD_REQUEST = "400 Bad Request"s;
+static const std::string STATUS_CODE_HTTP_401_UNAUTHORIZED = "401 Unauthorized"s;
+static const std::string STATUS_CODE_HTTP_402_PAYMENT_REQUIRED = "402 Payment Required"s;
+static const std::string STATUS_CODE_HTTP_403_FORBIDDEN = "403 Forbidden"s;
+static const std::string STATUS_CODE_HTTP_404_NOT_FOUND = "404 Not Found"s;
+static const std::string STATUS_CODE_HTTP_405_METHOD_NOT_ALLOWED = "405 Method Not Allowed"s;
+static const std::string STATUS_CODE_HTTP_406_NOT_ACCEPTABLE = "406 Not Acceptable"s;
+static const std::string STATUS_CODE_HTTP_407_PROXY_AUTHENTICATION_REQUIRED = "407 Proxy Authentication Required"s;
+static const std::string STATUS_CODE_HTTP_408_REQUEST_TIMEOUT = "408 Request Timeout"s;
+static const std::string STATUS_CODE_HTTP_409_CONFLICT = "409 Conflict"s;
+static const std::string STATUS_CODE_HTTP_410_GONE = "410 Gone"s;
+static const std::string STATUS_CODE_HTTP_411_LENGTH_REQUIRED = "411 Length Required"s;
+static const std::string STATUS_CODE_HTTP_412_PRECONDITION_FAILED = "412 Precondition Failed"s;
+static const std::string STATUS_CODE_HTTP_413_PAYLOAD_TOO_LARGE = "413 Payload Too Large"s;
+static const std::string STATUS_CODE_HTTP_414_URI_TOO_LONG = "414 URI Too Long"s;
+static const std::string STATUS_CODE_HTTP_415_UNSUPPORTED_MEDIA_TYPE = "415 Unsupported Media Type"s;
+static const std::string STATUS_CODE_HTTP_416_RANGE_NOT_SATISFIABLE = "416 Range Not Satisfiable"s;
+static const std::string STATUS_CODE_HTTP_417_EXPECTATION_FAILED = "417 Expectation Failed"s;
+static const std::string STATUS_CODE_HTTP_418_IM_A_TEAPOT_ = "418 I'm a teapot"s;
+static const std::string STATUS_CODE_HTTP_421_MISDIRECTED_REQUEST = "421 Misdirected Request"s;
+static const std::string STATUS_CODE_HTTP_422_UNPROCESSABLE_ENTITY = "422 Unprocessable Entity"s;
+static const std::string STATUS_CODE_HTTP_423_LOCKED = "423 Locked"s;
+static const std::string STATUS_CODE_HTTP_424_FAILED_DEPENDENCY = "424 Failed Dependency"s;
+static const std::string STATUS_CODE_HTTP_426_UPGRADE_REQUIRED = "426 Upgrade Required"s;
+static const std::string STATUS_CODE_HTTP_428_PRECONDITION_FAILED = "428 Precondition Required"s;
+static const std::string STATUS_CODE_HTTP_429_TOO_MANY_REQUESTS = "429 Too Many Requests"s;
+static const std::string STATUS_CODE_HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = "431 Request Header Fields Too Large"s;
+static const std::string STATUS_CODE_HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = "451 Unavailable For Legal Reasons"s;
+static const std::string STATUS_CODE_HTTP_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error"s;
+static const std::string STATUS_CODE_HTTP_501_NOT_IMPLEMENTED = "501 Not Implemented"s;
+static const std::string STATUS_CODE_HTTP_502_BAD_GATEWAY = "502 Bad Gateway"s;
+static const std::string STATUS_CODE_HTTP_503_SERVICE_UNAVAILABLE = "503 Service Unavailable"s;
+static const std::string STATUS_CODE_HTTP_504_GATEWAY_TIMEOUT = "504 Gateway Timeout"s;
+static const std::string STATUS_CODE_HTTP_505_HTTP_VERSION_NOT_SUPPORTED = "505 HTTP Version Not Supported"s;
+static const std::string STATUS_CODE_HTTP_506_VARIANT_ALSO_NEGOTIATES = "506 Variant Also Negotiates"s;
+static const std::string STATUS_CODE_HTTP_507_INSUFFICIENT_STORAGE = "507 Insufficient Storage"s;
+static const std::string STATUS_CODE_HTTP_508_LOOP_DETECTED = "508 Loop Detected"s;
+static const std::string STATUS_CODE_HTTP_510_NOT_EXTENDED = "510 Not Extended"s;
+static const std::string STATUS_CODE_HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required"s;
+
+static const std::string STATUS_CODE_HTTP_UNKNOWN = "UNKNOWN"s;
 
 auto to_string(
     StatusCode code) -> const std::string&
@@ -204,6 +241,110 @@ auto to_enum(
     uint32_t code) -> StatusCode
 {
     return static_cast<StatusCode>(code);
+}
+
+const static std::string NO_CONTENT = ""s;
+
+const static std::string TEXT_CSS = "text/css"s;
+const static std::string TEXT_CSV = "text/csv"s;
+const static std::string TEXT_HTML = "text/html"s;
+const static std::string TEXT_PLAIN = "text/plain"s;
+const static std::string TEXT_XML = "text/xml"s;
+
+const static std::string IMAGE_GIF = "image/gif"s;
+const static std::string IMAGE_JPEG = "image/jpeg"s;
+const static std::string IMAGE_PNG = "image/png"s;
+const static std::string IMAGE_TIFF = "image/tiff"s;
+const static std::string IMAGE_X_ICON = "image/x-icon"s;
+const static std::string IMAGE_SVG_XML = "image/svg+xml"s;
+
+const static std::string VIDEO_MPEG = "video/mpeg"s;
+const static std::string VIDEO_MP4 = "video/mp4"s;
+const static std::string VIDEO_X_FLV = "video/x-flv"s;
+const static std::string VIDEO_WEBM = "video/webm"s;
+
+const static std::string MULTIPART_MIXED = "multipart/mixed"s;
+const static std::string MULTIPART_ALTERNATIVE = "multipart/alternative"s;
+const static std::string MULTIPART_RELATED = "multipart/related"s;
+const static std::string MULTIPART_FORM_DATA = "multipart/form-data"s;
+
+const static std::string AUDIO_MPEG = "audio/mpeg"s;
+const static std::string AUDIO_X_MS_WMA = "audio/x-ms-wma"s;
+const static std::string AUDIO_X_WAV = "audio/x-wav"s;
+
+const static std::string APPLICATION_JAVASCRIPT = "application/javascript"s;
+const static std::string APPLICATION_OCTET_STREAM = "application/octet-stream"s;
+const static std::string APPLICATION_OGG = "application/ogg"s;
+const static std::string APPLICATION_PDF = "application/pdf"s;
+const static std::string APPLICATION_XHTML_XML = "application/xhtml+xml"s;
+const static std::string APPLICATION_X_SHOCKWAVE_FLASH = "application/x-shockwave-flash"s;
+const static std::string APPLICATION_JSON = "application/json"s;
+const static std::string APPLICATION_LD_JSON = "application/ld+json"s;
+const static std::string APPLICATION_XML = "application/xml"s;
+const static std::string APPLICATION_ZIP = "application/zip"s;
+const static std::string APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"s;
+
+auto to_string(
+    ContentType content_type) -> const std::string&
+{
+    switch(content_type)
+    {
+        case ContentType::NO_CONTENT: return NO_CONTENT;
+
+        case ContentType::TEXT_CSS: return TEXT_CSS;
+        case ContentType::TEXT_CSV: return TEXT_CSV;
+        case ContentType::TEXT_HTML: return TEXT_HTML;
+        case ContentType::TEXT_PLAIN: return TEXT_PLAIN;
+        case ContentType::TEXT_XML: return TEXT_XML;
+
+        case ContentType::IMAGE_GIF: return IMAGE_GIF;
+        case ContentType::IMAGE_JPEG: return IMAGE_JPEG;
+        case ContentType::IMAGE_PNG: return IMAGE_PNG;
+        case ContentType::IMAGE_TIFF: return IMAGE_TIFF;
+        case ContentType::IMAGE_X_ICON: return IMAGE_X_ICON;
+        case ContentType::IMAGE_SVG_XML: return IMAGE_SVG_XML;
+
+        case ContentType::VIDEO_MPEG: return VIDEO_MPEG;
+        case ContentType::VIDEO_MP4: return VIDEO_MP4;
+        case ContentType::VIDEO_X_FLV: return VIDEO_X_FLV;
+        case ContentType::VIDEO_WEBM: return VIDEO_WEBM;
+
+        case ContentType::MULTIPART_MIXED: return MULTIPART_MIXED;
+        case ContentType::MULTIPART_ALTERNATIVE: return MULTIPART_ALTERNATIVE;
+        case ContentType::MULTIPART_RELATED: return MULTIPART_RELATED;
+        case ContentType::MULTIPART_FORM_DATA: return MULTIPART_FORM_DATA;
+
+        case ContentType::AUDIO_MPEG: return AUDIO_MPEG;
+        case ContentType::AUDIO_X_MS_WMA: return AUDIO_X_MS_WMA;
+        case ContentType::AUDIO_X_WAV: return AUDIO_X_WAV;
+
+        case ContentType::APPLICATION_JAVASCRIPT: return APPLICATION_JAVASCRIPT;
+        case ContentType::APPLICATION_OCTET_STREAM: return APPLICATION_OCTET_STREAM;
+        case ContentType::APPLICATION_OGG: return APPLICATION_OGG;
+        case ContentType::APPLICATION_PDF: return APPLICATION_PDF;
+        case ContentType::APPLICATION_XHTML_XML: return APPLICATION_XHTML_XML;
+        case ContentType::APPLICATION_X_SHOCKWAVE_FLASH: return APPLICATION_X_SHOCKWAVE_FLASH;
+        case ContentType::APPLICATION_JSON: return APPLICATION_JSON;
+        case ContentType::APPLICATION_LD_JSON: return APPLICATION_LD_JSON;
+        case ContentType::APPLICATION_XML: return APPLICATION_XML;
+        case ContentType::APPLICATION_ZIP: return APPLICATION_ZIP;
+        case ContentType::APPLICATION_X_WWW_FORM_URLENCODED: return APPLICATION_X_WWW_FORM_URLENCODED;
+    }
+}
+
+const static std::string CT_CLOSE = "close"s;
+const static std::string CT_KEEP_ALIVE = "keep-alive"s;
+const static std::string CT_UPGRADE = "upgrade"s;
+
+auto to_string(
+    ConnectionType connection_type) -> const std::string&
+{
+    switch(connection_type)
+    {
+        case ConnectionType::CLOSE: return CT_CLOSE;
+        case ConnectionType::KEEP_ALIVE: return CT_KEEP_ALIVE;
+        case ConnectionType::UPGRADE: return CT_UPGRADE;
+    }
 }
 
 } // namespace lift::http

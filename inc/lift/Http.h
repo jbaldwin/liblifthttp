@@ -15,6 +15,9 @@ enum class Method {
     PATCH
 };
 
+auto to_string(
+    Method method) -> const std::string&;
+
 enum class Version {
     USE_BEST, ///< Use the best version available.
     V1_0, ///< Use HTTP 1.0.
@@ -109,5 +112,68 @@ auto to_string(
  */
 auto to_enum(
     uint32_t code) -> StatusCode;
+
+/**
+ * HTTP 'Content-Type" types.  Can be extended to support
+ * as many values as needed.  The design here is to recude
+ * string copies/manipulation.
+ */
+enum class ContentType : uint64_t
+{
+    NO_CONTENT,
+
+    TEXT_CSS,
+    TEXT_CSV,
+    TEXT_HTML,
+    TEXT_PLAIN,
+    TEXT_XML,
+
+    IMAGE_GIF,
+    IMAGE_JPEG,
+    IMAGE_PNG,
+    IMAGE_TIFF,
+    IMAGE_X_ICON,
+    IMAGE_SVG_XML,
+
+    VIDEO_MPEG,
+    VIDEO_MP4,
+    VIDEO_X_FLV,
+    VIDEO_WEBM,
+
+    MULTIPART_MIXED,
+    MULTIPART_ALTERNATIVE,
+    MULTIPART_RELATED,
+    MULTIPART_FORM_DATA,
+
+    AUDIO_MPEG,
+    AUDIO_X_MS_WMA,
+    AUDIO_X_WAV,
+
+    APPLICATION_JAVASCRIPT,
+    APPLICATION_OCTET_STREAM,
+    APPLICATION_OGG,
+    APPLICATION_PDF,
+    APPLICATION_XHTML_XML,
+    APPLICATION_X_SHOCKWAVE_FLASH,
+    APPLICATION_JSON,
+    APPLICATION_LD_JSON,
+    APPLICATION_XML,
+    APPLICATION_ZIP,
+    APPLICATION_X_WWW_FORM_URLENCODED
+};
+
+auto to_string(
+    ContentType content_type) -> const std::string&;
+
+enum class ConnectionType : uint64_t
+{
+    CLOSE,
+    KEEP_ALIVE,
+    UPGRADE
+};
+
+auto to_string(
+    ConnectionType connection_type) -> const std::string&;
+
 
 } // lift

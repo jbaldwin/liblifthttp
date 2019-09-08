@@ -49,9 +49,9 @@ public:
         uv_close(uv_type_cast<uv_handle_t>(&m_poll_handle), CurlContext::on_close);
     }
 
-    EventLoop& m_event_loop;
-    uv_poll_t m_poll_handle {};
-    curl_socket_t m_sock_fd { CURL_SOCKET_BAD };
+    inline auto GetEventLoop() -> EventLoop& { return m_event_loop; }
+    inline auto GetUvPollHandle() -> uv_poll_t& { return m_poll_handle; }
+    inline auto GetCurlSockFd() -> curl_socket_t { return m_sock_fd; }
 
     static auto on_close(
         uv_handle_t* handle) -> void
@@ -63,6 +63,11 @@ public:
          */
         curl_context->m_event_loop.m_curl_context_ready.emplace_back(curl_context);
     }
+
+private:
+    EventLoop& m_event_loop;
+    uv_poll_t m_poll_handle {};
+    curl_socket_t m_sock_fd { CURL_SOCKET_BAD };
 };
 
 auto curl_start_timeout(
@@ -92,7 +97,6 @@ auto requests_accept_async(
     uv_async_t* handle) -> void;
 
 EventLoop::EventLoop()
-    : m_curl_context_ready()
 {
     uv_async_init(m_loop, &m_async, requests_accept_async);
     m_async.data = this;
@@ -276,10 +280,10 @@ auto curl_handle_socket_actions(
 
     switch (action) {
     case CURL_POLL_IN:
-        uv_poll_start(&curl_context->m_poll_handle, UV_READABLE, on_uv_curl_perform_callback);
+        uv_poll_start(&curl_context->GetUvPollHandle(), UV_READABLE, on_uv_curl_perform_callback);
         break;
     case CURL_POLL_OUT:
-        uv_poll_start(&curl_context->m_poll_handle, UV_WRITABLE, on_uv_curl_perform_callback);
+        uv_poll_start(&curl_context->GetUvPollHandle(), UV_WRITABLE, on_uv_curl_perform_callback);
         break;
     case CURL_POLL_REMOVE:
         if (socketp != nullptr) {
@@ -318,7 +322,7 @@ auto on_uv_curl_perform_callback(
     int events) -> void
 {
     auto* curl_context = static_cast<CurlContext*>(req->data);
-    auto& event_loop = curl_context->m_event_loop;
+    auto& event_loop = curl_context->GetEventLoop();
 
     int32_t action = 0;
     if (status < 0) {
@@ -333,7 +337,7 @@ auto on_uv_curl_perform_callback(
         }
     }
 
-    event_loop.checkActions(curl_context->m_sock_fd, action);
+    event_loop.checkActions(curl_context->GetCurlSockFd(), action);
 }
 
 auto requests_accept_async(

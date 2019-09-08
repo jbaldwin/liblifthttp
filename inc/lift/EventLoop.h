@@ -49,6 +49,7 @@ public:
     /**
      * @return Gets the number of active HTTP requests currently running.
      */
+    [[nodiscard]]
     auto GetActiveRequestCount() const -> uint64_t;
 
     /**
@@ -123,7 +124,7 @@ private:
     std::thread m_background_thread {};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
-    std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
+    std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready{};
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
     std::atomic<bool> m_async_closed { false };

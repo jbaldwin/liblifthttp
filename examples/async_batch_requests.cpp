@@ -32,6 +32,9 @@ static auto on_complete(lift::RequestHandle request) -> void
     case lift::RequestStatus::DOWNLOAD_ERROR:
         std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
         break;
+    case lift::RequestStatus::ERROR_FAILED_TO_START:
+        std::cout << "Error trying to start a request: " << request->GetUrl() << std::endl;
+        break;
     case lift::RequestStatus::ERROR:
         std::cout << "RequestHandle had an unrecoverable error: " << request->GetUrl() << std::endl;
         break;

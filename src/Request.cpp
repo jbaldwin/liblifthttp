@@ -227,6 +227,10 @@ auto Request::SetRequestData(
         throw std::logic_error("Cannot SetRequestData on Request after using AddMimeField");
     }
 
+    if(data.empty()) {
+        return;
+    }
+
     // libcurl expects the data lifetime to be longer
     // than the request so require it to be moved into
     // the lifetime of the request object.
@@ -409,13 +413,16 @@ auto Request::setCompletionStatus(
         break;
     case CURLcode::CURLE_WRITE_ERROR:
         /**
-             * If there is a cURL write error, but the maximum number of bytes has been written,
-             * then we intentionally aborted, so let's set this to success.
-             * Otherwise, there was an error in the CURL write callback.
-             */
+         * If there is a cURL write error, but the maximum number of bytes has been written,
+         * then we intentionally aborted, so let's set this to success.
+         * Otherwise, there was an error in the CURL write callback.
+         */
         m_status_code = (getRemainingDownloadBytes() == 0)
             ? RequestStatus::SUCCESS
             : RequestStatus::DOWNLOAD_ERROR;
+        break;
+    case CURLcode::CURLE_SEND_ERROR:
+        m_status_code = RequestStatus::ERROR_FAILED_TO_START;
         break;
     default:
         m_status_code = RequestStatus::ERROR;

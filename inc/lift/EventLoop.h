@@ -229,7 +229,7 @@ private:
      * This function is a friend so it can pull pending requests and inject them into
      * the EventLoop.
      *
-     * @param async The async object trigger, this will always be m_async.
+     * @param handle The async object trigger, this will always be m_async.
      */
     friend auto requests_accept_async(
         uv_async_t* handle) -> void;

@@ -259,7 +259,7 @@ auto curl_handle_socket_actions(
     auto* event_loop = static_cast<EventLoop*>(user_data);
 
     CurlContext* curl_context = nullptr;
-    if (action == CURL_POLL_IN || action == CURL_POLL_OUT) {
+    if (action == CURL_POLL_IN || action == CURL_POLL_OUT || action == CURL_POLL_INOUT) {
         if (socketp != nullptr) {
             // existing request
             curl_context = static_cast<CurlContext*>(socketp);
@@ -284,6 +284,9 @@ auto curl_handle_socket_actions(
         break;
     case CURL_POLL_OUT:
         uv_poll_start(&curl_context->GetUvPollHandle(), UV_WRITABLE, on_uv_curl_perform_callback);
+        break;
+    case CURL_POLL_INOUT:
+        uv_poll_start(&curl_context->GetUvPollHandle(), UV_READABLE | UV_WRITABLE, on_uv_curl_perform_callback);
         break;
     case CURL_POLL_REMOVE:
         if (socketp != nullptr) {
@@ -360,14 +363,35 @@ auto requests_accept_async(
     }
 
     for (auto& request : event_loop->m_grabbed_requests) {
-        /**
-         * Drop the unique_ptr safety around the RequestHandle while it is being
-         * processed by curl.  When curl is finished completing the request
-         * it will be put back into a Request object for the client to use.
-         */
-        auto* raw_request_handle_ptr = request.m_request_handle.release();
+        auto& raw_request_handle = request.m_request_handle;
 
-        curl_multi_add_handle(event_loop->m_cmh, raw_request_handle_ptr->m_curl_handle);
+        auto curl_code = curl_multi_add_handle(event_loop->m_cmh, raw_request_handle->m_curl_handle);
+
+        if(curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM)
+        {
+            /**
+             * If curl_multi_add_handle fails then notify the user that the request failed to start
+             * immediately.
+             */
+            request->setCompletionStatus(CURLcode::CURLE_SEND_ERROR);
+            request->onComplete();
+        }
+        else
+        {
+            /**
+             * Immediately call curl's check action to get the current request moving.
+             * Curl appears to have an internal queue and if it gets too long it might
+             * drop requests.
+             */
+            event_loop->checkActions();
+
+            /**
+             * Drop the unique_ptr safety around the RequestHandle while it is being
+             * processed by curl.  When curl is finished completing the request
+             * it will be put back into a Request object for the client to use.
+             */
+            (void)raw_request_handle.release();
+        }
     }
 
     event_loop->m_active_request_count += event_loop->m_grabbed_requests.size();

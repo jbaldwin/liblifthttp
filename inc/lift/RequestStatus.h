@@ -18,6 +18,7 @@ enum class RequestStatus {
     RESPONSE_EMPTY, ///< The request has an empty response (socket severed).
 
     ERROR, ///< The request had an error and failed.
+    ERROR_FAILED_TO_START, ///< The request had an error and failed to start.
     DOWNLOAD_ERROR ///< The request had an error in the CURL write callback.
 };
 

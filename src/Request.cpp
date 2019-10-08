@@ -332,6 +332,12 @@ auto Request::GetCompletionStatus() const -> RequestStatus
     return m_status_code;
 }
 
+auto Request::SetVerifySSLHostAndPeer(long verify) -> void
+{
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, verify);
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, verify);
+}
+
 auto Request::Reset() -> void
 {
     m_url = std::string_view {};

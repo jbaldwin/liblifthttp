@@ -231,6 +231,12 @@ public:
     auto GetNumConnects() const -> uint64_t;
     
     /**
+     * Set the verify behavior of the CURLOPT_SSL_VERIFYPEER and CURLOPT_SSL_VERIFYHOST on the curl_handle
+     * @param verify the verify value to set the CURLOPT_SSL_VERIFYPEER and CURLOPT_SSL_VERIFYHOST options to
+     */
+    auto SetVerifySSLHostAndPeer(long verify) -> void;
+
+    /**
      * Resets the request to be re-used.  This will clear everything on the request.
      */
     auto Reset() -> void;

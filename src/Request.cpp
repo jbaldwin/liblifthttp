@@ -94,7 +94,7 @@ auto Request::SetUrl(const std::string& url) -> bool
 
 auto Request::GetNumConnects() const -> uint64_t
 {
-    long count;
+    long count = 0;
     curl_easy_getinfo(m_handle.GetValue(), CURLINFO_NUM_CONNECTS, &count);
 
     return static_cast<uint64_t>(count);

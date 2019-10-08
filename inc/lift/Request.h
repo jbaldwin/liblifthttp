@@ -224,7 +224,12 @@ public:
      */
     [[nodiscard]]
     auto GetCompletionStatus() const -> RequestStatus;
-
+    
+    /**
+     * @return  the number of connections made to make this request
+     */
+    auto GetNumConnects() const -> uint64_t;
+    
     /**
      * Resets the request to be re-used.  This will clear everything on the request.
      */

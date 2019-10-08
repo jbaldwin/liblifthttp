@@ -95,7 +95,7 @@ auto Request::SetUrl(const std::string& url) -> bool
 auto Request::GetNumConnects() const -> uint64_t
 {
     long count = 0;
-    curl_easy_getinfo(m_handle.GetValue(), CURLINFO_NUM_CONNECTS, &count);
+    curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &count);
 
     return static_cast<uint64_t>(count);
 }
@@ -330,6 +330,16 @@ auto Request::GetTotalTime() const -> std::chrono::milliseconds
 auto Request::GetCompletionStatus() const -> RequestStatus
 {
     return m_status_code;
+}
+
+auto Request::SetVerifySSLPeer(int64_t verify) -> void
+{
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, verify);
+}
+
+auto Request::SetVerifySSLHost(int64_t verify) -> void
+{
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, verify);
 }
 
 auto Request::Reset() -> void

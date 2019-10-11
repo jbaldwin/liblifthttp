@@ -3,8 +3,6 @@ liblifthttp - The fast asynchronous C++17 HTTP client library
 
 You're using curl? Do you even lift?
 
-Copyright (c) 2017, Josh Baldwin
-
 https://github.com/jbaldwin/liblifthttp
 
 **liblifthttp** is a C++17 client library that provides an easy to use high throughput asynchronous HTTP request client library.  This library was designed with an easy to use client API and maximum performance for thousands of asynchronous HTTP requests on a single (or multiple) worker threads.  Additional HTTP requests can be injected into one of the worker threads with different timeouts at any point in time safely.  The asynchronuos API can perform upwards of 30,000 HTTP requests / second on a single 2.8GHZ core.
@@ -80,4 +78,4 @@ while(loop.GetActiveRequestCount() > 0) {
 
 ## Support
 
-File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
+File bug reports, feature requests and questions using [GitHub Issues](https://github.com/spotx/liblifthttp/issues)

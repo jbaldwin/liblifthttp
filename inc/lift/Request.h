@@ -323,11 +323,6 @@ private:
     auto setCompletionStatus(
         CURLcode curl_code) -> void;
 
-    /**
-     * Called by the event loop when the request is completed.
-     */
-    auto onComplete() -> void;
-
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(
         char* buffer,

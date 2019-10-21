@@ -172,6 +172,9 @@ auto EventLoop::StartRequest(
         return false;
     }
 
+    // Do this now so that the event loop takes into account 'pending' requests as well.
+    ++m_active_request_count;
+
     // We'll prepare now since it won't block the event loop thread.
     request->prepareForPerform();
     {
@@ -221,11 +224,17 @@ auto EventLoop::checkActions(
             curl_multi_remove_handle(m_cmh, easy_handle);
 
             raw_request_handle_ptr->setCompletionStatus(easy_result);
-            raw_request_handle_ptr->onComplete();
-
-            --m_active_request_count;
+            completeRequest(RequestHandle { &m_request_pool, std::unique_ptr<Request> { raw_request_handle_ptr } });
         }
     }
+}
+
+auto EventLoop::completeRequest(
+    RequestHandle request) -> void
+{
+    auto& on_complete_handler = request->m_on_complete_handler;
+    on_complete_handler(std::move(request));
+    --m_active_request_count;
 }
 
 auto curl_start_timeout(
@@ -362,18 +371,18 @@ auto requests_accept_async(
             event_loop->m_pending_requests);
     }
 
-    for (auto& request : event_loop->m_grabbed_requests) {
-        auto& raw_request_handle = request.m_request_handle;
+    for (auto& request_handle : event_loop->m_grabbed_requests) {
+        auto& request_ptr = request_handle.m_request_handle;
 
-        auto curl_code = curl_multi_add_handle(event_loop->m_cmh, raw_request_handle->m_curl_handle);
+        auto curl_code = curl_multi_add_handle(event_loop->m_cmh, request_ptr->m_curl_handle);
 
         if (curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM) {
             /**
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            request->setCompletionStatus(CURLcode::CURLE_SEND_ERROR);
-            request->onComplete();
+            request_ptr->setCompletionStatus(CURLcode::CURLE_SEND_ERROR);
+            event_loop->completeRequest(std::move(request_handle));
         } else {
             /**
              * Immediately call curl's check action to get the current request moving.
@@ -387,11 +396,10 @@ auto requests_accept_async(
              * processed by curl.  When curl is finished completing the request
              * it will be put back into a Request object for the client to use.
              */
-            (void)raw_request_handle.release();
+            (void)request_ptr.release();
         }
     }
 
-    event_loop->m_active_request_count += event_loop->m_grabbed_requests.size();
     event_loop->m_grabbed_requests.clear();
 }
 

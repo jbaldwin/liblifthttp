@@ -10,6 +10,8 @@ auto EventLoop::StartRequests(
         request->prepareForPerform();
     }
 
+    m_active_request_count += std::size(requests);
+
     // Lock scope
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);

@@ -147,6 +147,9 @@ private:
         curl_socket_t socket,
         int event_bitmask) -> void;
 
+    auto completeRequest(
+        RequestHandle request) -> void;
+
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
      *

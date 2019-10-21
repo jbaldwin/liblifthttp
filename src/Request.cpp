@@ -190,13 +190,16 @@ auto Request::SetFollowRedirects(
 auto Request::SetVerifySslPeer(
     bool verify_ssl_peer) -> void
 {
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, (verify_ssl_peer) ? 1L : 0L);
 }
 
 auto Request::SetVerifySslHost(
     bool verify_ssl_host) -> void
 {
-    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 1L : 0L);
+    // Note that 1L is valid, but curl docs say its basically deprecated.
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYHOST.html
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 2L : 0L);
 }
 
 auto Request::AddHeader(
@@ -306,7 +309,7 @@ auto Request::AddMimeField(
 auto Request::SetTransferProgressHandler(
     std::optional<TransferProgressHandler> transfer_progress_handler) -> void
 {
-    if (transfer_progress_handler.has_value()) {
+    if (transfer_progress_handler.has_value() && transfer_progress_handler.value()) {
         m_on_transfer_progress_handler = std::move(transfer_progress_handler.value());
         curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFOFUNCTION, curl_xfer_info);
         curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFODATA, this);
@@ -453,12 +456,6 @@ auto Request::setCompletionStatus(
         break;
     }
 #pragma GCC diagnostic pop
-}
-
-auto Request::onComplete() -> void
-{
-    RequestHandle request(&m_request_pool, std::unique_ptr<Request>(this));
-    m_on_complete_handler(std::move(request));
 }
 
 auto curl_write_header(

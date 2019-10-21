@@ -100,7 +100,13 @@ auto Request::GetNumConnects() const -> uint64_t
 {
     long count = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &count);
+    return static_cast<uint64_t>(count);
+}
 
+auto Request::GetNumRedirects() const -> uint64_t
+{
+    long count = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_REDIRECT_COUNT, &count);
     return static_cast<uint64_t>(count);
 }
 

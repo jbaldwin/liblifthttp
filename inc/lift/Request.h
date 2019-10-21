@@ -102,6 +102,18 @@ public:
         int64_t max_redirects = -1) -> bool;
 
     /**
+     * @param verify_ssl_peer Should the peer be ssl verified?
+     */
+    auto SetVerifySslPeer(
+        bool verify_ssl_peer) -> void;
+
+    /**
+     * @param verify_ssl_host Should the host be ssl verified?
+     */
+    auto SetVerifySslHost(
+        bool verify_ssl_host) -> void;
+
+    /**
      * Adds a request header with an empty value.  This can be useful to manipulate cURL.
      * @param name The name of the header, e.g. 'Accept'.
      */
@@ -228,6 +240,7 @@ public:
     /**
      * @return  the number of connections made to make this request
      */
+    [[nodiscard]]
     auto GetNumConnects() const -> uint64_t;
     
     /**

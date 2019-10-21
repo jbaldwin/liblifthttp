@@ -95,7 +95,7 @@ auto Request::SetUrl(const std::string& url) -> bool
 auto Request::GetNumConnects() const -> uint64_t
 {
     long count = 0;
-    curl_easy_getinfo(m_handle.GetValue(), CURLINFO_NUM_CONNECTS, &count);
+    curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &count);
 
     return static_cast<uint64_t>(count);
 }
@@ -187,6 +187,18 @@ auto Request::SetFollowRedirects(
     auto error_code1 = curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
     auto error_code2 = curl_easy_setopt(m_curl_handle, CURLOPT_MAXREDIRS, static_cast<long>(max_redirects));
     return (error_code1 == CURLE_OK && error_code2 == CURLE_OK);
+}
+
+auto Request::SetVerifySslPeer(
+    bool verify_ssl_peer) -> void
+{
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, (verify_ssl_peer) ? 1L : 0L);
+}
+
+auto Request::SetVerifySslHost(
+    bool verify_ssl_host) -> void
+{
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 1L : 0L);
 }
 
 auto Request::AddHeader(

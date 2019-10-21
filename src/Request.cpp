@@ -30,11 +30,9 @@ Request::Request(
     RequestPool& request_pool,
     const std::string& url,
     std::chrono::milliseconds timeout_ms,
-    std::function<void(RequestHandle)> on_complete_handler,
-    ssize_t max_download_bytes)
+    std::function<void(RequestHandle)> on_complete_handler)
     : m_on_complete_handler(std::move(on_complete_handler))
     , m_request_pool(request_pool)
-    , m_max_download_bytes(max_download_bytes)
 {
     init();
     SetUrl(url);
@@ -62,8 +60,6 @@ auto Request::init() -> void
     curl_easy_setopt(m_curl_handle, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-
-    SetMaxDownloadBytes(m_max_download_bytes);
 
     m_request_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
     m_request_headers_idx.reserve(HEADER_DEFAULT_COUNT);
@@ -167,13 +163,6 @@ auto Request::SetVersion(
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
         break;
     }
-}
-
-auto Request::SetMaxDownloadBytes(
-    ssize_t max_download_bytes) -> void
-{
-    m_max_download_bytes = max_download_bytes;
-    m_bytes_written = 0;
 }
 
 auto Request::SetTimeout(
@@ -317,13 +306,13 @@ auto Request::AddMimeField(
 auto Request::SetTransferProgressHandler(
     std::optional<TransferProgressHandler> transfer_progress_handler) -> void
 {
-    m_on_transfer_progress_handler = std::move(transfer_progress_handler);
-
-    if (m_on_transfer_progress_handler.has_value()) {
+    if (transfer_progress_handler.has_value()) {
+        m_on_transfer_progress_handler = std::move(transfer_progress_handler.value());
         curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFOFUNCTION, curl_xfer_info);
         curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 0L);
     } else {
+        m_on_transfer_progress_handler = nullptr;
         curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 1L);
     }
 }
@@ -386,14 +375,11 @@ auto Request::Reset() -> void
 
     clearResponseBuffers();
 
-    m_on_transfer_progress_handler.reset();
+    m_on_transfer_progress_handler = nullptr;
 
     curl_easy_reset(m_curl_handle);
     init();
     m_status_code = RequestStatus::BUILDING;
-
-    m_max_download_bytes = -1; // Set max download bytes to default to download entire file
-    m_bytes_written = 0;
 }
 
 auto Request::prepareForPerform() -> void
@@ -457,14 +443,7 @@ auto Request::setCompletionStatus(
         m_status_code = RequestStatus::CONNECT_SSL_ERROR;
         break;
     case CURLcode::CURLE_WRITE_ERROR:
-        /**
-         * If there is a cURL write error, but the maximum number of bytes has been written,
-         * then we intentionally aborted, so let's set this to success.
-         * Otherwise, there was an error in the CURL write callback.
-         */
-        m_status_code = (getRemainingDownloadBytes() == 0)
-            ? RequestStatus::SUCCESS
-            : RequestStatus::DOWNLOAD_ERROR;
+        m_status_code = RequestStatus::DOWNLOAD_ERROR;
         break;
     case CURLcode::CURLE_SEND_ERROR:
         m_status_code = RequestStatus::ERROR_FAILED_TO_START;
@@ -480,11 +459,6 @@ auto Request::onComplete() -> void
 {
     RequestHandle request(&m_request_pool, std::unique_ptr<Request>(this));
     m_on_complete_handler(std::move(request));
-}
-
-auto Request::getRemainingDownloadBytes() -> ssize_t
-{
-    return m_max_download_bytes - m_bytes_written;
 }
 
 auto curl_write_header(
@@ -554,35 +528,7 @@ auto curl_write_data(
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
     size_t data_length = size * nitems;
 
-    // If m_max_download_bytes is greater than -1, we are performing partial download.
-    if (raw_request_ptr->m_max_download_bytes > -1) {
-        auto bytes_left_to_write = raw_request_ptr->getRemainingDownloadBytes();
-
-        /**
-         * If the max number of bytes left to write is less than the
-         * data_length of the current frame, just set that as the data_length
-         * when appending to the request's data string.
-         * This will also cause the download to stop, since CURL aborts
-         * when the length returned from the write callback does match the
-         * length (size * nitems) passed in.
-         **/
-        if (bytes_left_to_write > -1) {
-            auto ubytes_left_to_write = static_cast<size_t>(bytes_left_to_write);
-
-            if (ubytes_left_to_write < data_length) {
-                data_length = ubytes_left_to_write;
-            }
-        } else {
-            /**
-             * bytes_left_to_write should never be negative, but if it is,
-             * stop this request, because something is wrong.
-             */
-            data_length = 0;
-        }
-    }
-
     raw_request_ptr->m_response_data.append(static_cast<const char*>(buffer), data_length);
-    raw_request_ptr->m_bytes_written += data_length;
 
     return data_length;
 }
@@ -596,8 +542,8 @@ auto curl_xfer_info(
 {
     const auto* raw_request_ptr = static_cast<const Request*>(clientp);
 
-    if (raw_request_ptr != nullptr && __glibc_likely(raw_request_ptr->m_on_transfer_progress_handler.has_value())) {
-        if (raw_request_ptr->m_on_transfer_progress_handler.value()(
+    if (raw_request_ptr != nullptr && raw_request_ptr->m_on_transfer_progress_handler) {
+        if (raw_request_ptr->m_on_transfer_progress_handler(
                 *raw_request_ptr,
                 download_total_bytes,
                 download_now_bytes,

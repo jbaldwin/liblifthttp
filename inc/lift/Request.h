@@ -77,19 +77,6 @@ public:
         std::chrono::milliseconds timeout) -> bool;
 
     /**
-     * Sets the maximum number of bytes of data to write.
-     *
-     * To download a full file, set max_download_bytes to -1.
-     *
-     * The number of bytes downloaded may be greater than the set amount,
-     * but the number of bytes written for the response's data will not
-     * exceed this amount.
-     * @param max_download_bytes The maximum number of bytes to be written for this request.
-     */
-    auto SetMaxDownloadBytes(
-        ssize_t max_download_bytes) -> void;
-
-    /**
      * Sets if this request should follow redirects.  By default following redirects is
      * enabled.
      * @param follow_redirects True to follow redirects, false to stop.
@@ -269,23 +256,21 @@ private:
      * @param request_pool The request pool that generated this handle.
      * @param url          The url for the request.
      * @param timeout      The timeout for the request in milliseconds.
-     * @param on_complete_handler   Function to be called when the CURL request finishes.
-     * @param max_download_bytes    The maximum number of bytes to download, if -1, will download entire file.
+     * @param on_complete_handler Function to be called when the Request finishes.
      */
     explicit Request(
         RequestPool& request_pool,
         const std::string& url,
         std::chrono::milliseconds timeout,
-        std::function<void(RequestHandle)> on_complete_handler = nullptr,
-        ssize_t max_download_bytes = -1);
+        std::function<void(RequestHandle)> on_complete_handler = nullptr);
 
     auto init() -> void;
 
     /// The onComplete() handler for asynchronous requests.
-    std::function<void(RequestHandle)> m_on_complete_handler;
+    std::function<void(RequestHandle)> m_on_complete_handler { nullptr };
 
-    /// The transfer progress callback.
-    std::optional<TransferProgressHandler> m_on_transfer_progress_handler;
+    /// The transfer progress callback, this is optionally provided by the user.
+    TransferProgressHandler m_on_transfer_progress_handler { nullptr };
 
     /// The request pool this request was produced from.
     RequestPool& m_request_pool;
@@ -347,12 +332,6 @@ private:
      * Called by the event loop when the request is completed.
      */
     auto onComplete() -> void;
-
-    /**
-     * Helper function to find how many bytes are left to be downloaded for a request
-     * @return ssize_t found by subtracting total number of downloaded bytes from max_download_bytes
-     */
-    auto getRemainingDownloadBytes() -> ssize_t;
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(

@@ -8,19 +8,19 @@
 
 static auto on_complete(lift::RequestHandle request) -> void
 {
-    if (request->GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
-        std::cout
-            << "Completed " << request->GetUrl()
-            << " in " << request->GetTotalTime().count() << " ms with a "
-            << "result length of " << request->GetResponseData().length() << std::endl
-            << std::endl;
-    } else {
-        std::cout
-            << "Error: " << request->GetUrl() << " : "
-            << lift::to_string(request->GetCompletionStatus()) << std::endl
-            << "Result length: " << request->GetResponseData().length() << std::endl
-            << std::endl;
-    }
+    /**
+     * Note that because the requests are sometimes being stopped before the full
+     * document is downloaded, the library might return a status of ERROR since
+     * the transfer progress handler might 'abort' the request.  That doesn't mean
+     * in this case that there really was an error since we received the partial
+     * data that we requested.
+     */
+
+    std::cout
+        << "Completed " << request->GetUrl() << " status: " << lift::to_string(request->GetCompletionStatus())
+        << " in " << request->GetTotalTime().count() << " ms with a "
+        << "result length of " << request->GetResponseData().length() << std::endl
+        << std::endl;
 
     /**
      * When the Request destructs here it will return to the pool. To continue working
@@ -64,7 +64,11 @@ int main(int argc, char* argv[])
         std::cout << "Requesting " << url << " to download max byes of : " << bytes_to_download << std::endl;
 
         lift::RequestHandle request = request_pool.Produce(url, on_complete, 0ms);
-        request->SetMaxDownloadBytes(bytes_to_download);
+        request->SetTransferProgressHandler(
+            [bytes_to_download](const lift::Request&, int64_t, int64_t dlnow, int64_t, int64_t) -> bool {
+                return (dlnow < bytes_to_download); // continue until enough bytes are downloaded
+            });
+
         event_loop.StartRequest(std::move(request));
         timeout += 550ms;
         bytes_to_download += 1000;

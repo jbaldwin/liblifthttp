@@ -79,7 +79,7 @@ public:
      */
     template <typename Container>
     auto StartRequests(
-        Container requests) -> void;
+        Container requests) -> bool;
 
 private:
     /**
@@ -147,6 +147,12 @@ private:
         curl_socket_t socket,
         int event_bitmask) -> void;
 
+    /**
+     * Completes a request to pass ownership back to the user land.
+     * Manages internal state accordingly, always call this function rather
+     * than the Request->OnComplete() function directly.
+     * @param request The request handle to complete.
+     */
     auto completeRequest(
         RequestHandle request) -> void;
 
@@ -233,7 +239,7 @@ private:
      *
      * @param handle The async object trigger, this will always be m_async.
      */
-    friend auto requests_accept_async(
+    friend auto on_uv_requests_accept_async(
         uv_async_t* handle) -> void;
 };
 

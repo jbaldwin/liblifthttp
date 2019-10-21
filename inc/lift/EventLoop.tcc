@@ -2,8 +2,12 @@ namespace lift {
 
 template <typename Container>
 auto EventLoop::StartRequests(
-    Container requests) -> void
+    Container requests) -> bool
 {
+    if (m_is_stopping) {
+        return false;
+    }
+
     // We'll prepare now since it won't block the event loop thread.
     // Since this might not be cheap do it outside the lock
     for (auto& request : requests) {
@@ -21,6 +25,8 @@ auto EventLoop::StartRequests(
     }
 
     uv_async_send(&m_async);
+
+    return true;
 }
 
 } // lift

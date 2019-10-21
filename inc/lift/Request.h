@@ -346,8 +346,7 @@ private:
         curl_off_t upload_now_bytes) -> int;
 
     /// libuv will call this function when the AddRequest() function is called.
-    friend auto requests_accept_async(
-        uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 };
 
 } // namespace lift

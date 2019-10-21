@@ -93,12 +93,12 @@ auto on_uv_curl_perform_callback(
     int status,
     int events) -> void;
 
-auto requests_accept_async(
+auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void;
 
 EventLoop::EventLoop()
 {
-    uv_async_init(m_loop, &m_async, requests_accept_async);
+    uv_async_init(m_loop, &m_async, on_uv_requests_accept_async);
     m_async.data = this;
 
     uv_timer_init(m_loop, &m_timeout_timer);
@@ -352,7 +352,7 @@ auto on_uv_curl_perform_callback(
     event_loop.checkActions(curl_context->GetCurlSockFd(), action);
 }
 
-auto requests_accept_async(
+auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);

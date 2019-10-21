@@ -302,11 +302,6 @@ private:
     /// The response data if any.
     std::string m_response_data {};
 
-    /// Maximum number of bytes to be written.
-    ssize_t m_max_download_bytes { 0 };
-    /// Number of bytes that have been written so far.
-    ssize_t m_bytes_written { 0 };
-
     /**
      * Prepares the request to be performed.  This is called on a request
      * before it is sync or async executed.

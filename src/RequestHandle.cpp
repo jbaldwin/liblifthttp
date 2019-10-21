@@ -1,15 +1,13 @@
 #include "lift/RequestHandle.h"
 #include "lift/RequestPool.h"
 
-#include "lift/EventLoop.h"
-
 namespace lift {
 
 RequestHandle::RequestHandle(
     RequestPool* request_pool,
-    std::unique_ptr<Request> request_handle)
+    std::unique_ptr<Request> request_ptr)
     : m_request_pool(request_pool)
-    , m_request_handle(std::move(request_handle))
+    , m_request_ptr(std::move(request_ptr))
 {
 }
 
@@ -17,33 +15,33 @@ RequestHandle::~RequestHandle()
 {
     /**
      * Only move the request handle into the pool if this is the 'valid'
-     * request object that still owns the data.
+     * request handle object that still owns the data.
      */
-    if (m_request_handle != nullptr && m_request_pool != nullptr) {
-        m_request_pool->returnRequest(std::move(m_request_handle));
+    if (m_request_ptr != nullptr && m_request_pool != nullptr) {
+        m_request_pool->returnRequest(std::move(m_request_ptr));
         m_request_pool = nullptr;
-        m_request_handle = nullptr;
+        m_request_ptr = nullptr;
     }
 }
 
 auto RequestHandle::operator*() -> Request&
 {
-    return *m_request_handle;
+    return *m_request_ptr;
 }
 
 auto RequestHandle::operator*() const -> const Request&
 {
-    return *m_request_handle;
+    return *m_request_ptr;
 }
 
 auto RequestHandle::operator-> () -> Request*
 {
-    return m_request_handle.get();
+    return m_request_ptr.get();
 }
 
 auto RequestHandle::operator-> () const -> const Request*
 {
-    return m_request_handle.get();
+    return m_request_ptr.get();
 }
 
 } // lift

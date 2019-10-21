@@ -21,13 +21,9 @@ class EventLoop {
 
 public:
     /**
-     * Creates a new lift event loop.
+     * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
      */
     EventLoop();
-
-    /**
-     * Stops the EventLoop and shuts down all resources.
-     */
     ~EventLoop();
 
     EventLoop(const EventLoop& copy) = delete;
@@ -42,17 +38,21 @@ public:
 
     /**
      * Stops the event loop from accepting new requests.  It will continue to process
-     * existing requests.
+     * existing requests until they are completed.  Note that the ~EventLoop() will
+     * 'block' until all requests flush as the background even loop process thread
+     * won't exit until they are all completed/timed-out/error'ed/etc.
      */
     auto Stop() -> void;
 
     /**
-     * @return Gets the number of active HTTP requests currently running.
+     * @return Gets the number of active HTTP requests currently running.  This includes
+     *         the number of pending requests that haven't been started yet (if any).
      */
     [[nodiscard]] auto GetActiveRequestCount() const -> uint64_t;
 
     /**
-     * @return The request pool for this EventLoop.
+     * @return The request pool for this EventLoop.  All RequestHandles are returned to
+     *         this pool automatically upon completion for re-use.
      */
     auto GetRequestPool() -> RequestPool&;
 
@@ -62,8 +62,8 @@ public:
      * This function is thread safe.
      *
      * @param request The request to process.  This request
-     *                will have the IRequestCb called
-     *                when this request completes/timesout/errors.
+     *                will have its OnComplete() handler called
+     *                when its completed/error'ed/etc.
      */
     auto StartRequest(
         RequestHandle request) -> bool;
@@ -84,7 +84,7 @@ public:
 private:
     /**
      * Each event loop gets its own private request pool for efficiency.
-     * This needs to be first so it de-allocates all its RequestHandles on shutdown.
+     * This needs to be first so it de-allocates all its RequestHandles last on shutdown.
      */
     RequestPool m_request_pool {};
 
@@ -141,7 +141,7 @@ private:
     /**
      * Checks current pending curl actions for a specific socket/action (event_bitmask)
      * @param socket The socket to check current actions on.
-     * @param event_bitmask The type of action (IN|OUT|ERR).
+     * @param event_bitmask The type of action (IN|OUT|INOUT|ERR).
      */
     auto checkActions(
         curl_socket_t socket,

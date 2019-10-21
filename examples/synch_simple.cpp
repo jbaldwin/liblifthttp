@@ -25,6 +25,10 @@ int main(int argc, char* argv[])
         std::cout << "Requesting http://www.google.com" << std::endl;
         request->Perform();
         std::cout << request->GetResponseData() << std::endl;
+
+        for (const auto& header : request->GetResponseHeaders()) {
+            std::cout << header.GetName() << ": " << header.GetValue() << "\n";
+        }
     }
 
     return 0;

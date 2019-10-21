@@ -27,7 +27,7 @@ public:
     auto operator=(RequestHandle &&) -> RequestHandle& = default;
 
     /**
-     * @return Access to the underlying request handle.
+     * @return Access to the underlying Request.
      * @{
      */
     auto operator*() -> Request&;
@@ -37,17 +37,22 @@ public:
     /** @} */
 
 private:
+    /**
+     * @param request_pool The request pool this request will return to upon completion.
+     * @param request_ptr The HTTP request object that is being processed.
+     */
     RequestHandle(
         RequestPool* request_pool,
-        std::unique_ptr<Request> request_handle);
+        std::unique_ptr<Request> request_ptr);
 
     /// The request pool that owns this request.
     RequestPool* m_request_pool;
     /// The actual underlying request object.
-    std::unique_ptr<Request> m_request_handle;
+    std::unique_ptr<Request> m_request_ptr;
 
     /// Friend so it can release the m_request_handle appropriately.
-    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(
+        uv_async_t* handle) -> void;
 };
 
 } // lift

@@ -202,9 +202,11 @@ auto Request::SetVerifySslHost(
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 2L : 0L);
 }
 
-auto Request::AddHeader(
+auto Request::RemoveHeader(
     std::string_view name) -> void
 {
+    // Curl internally doesn't have a separate list, so just add it to the normal
+    // list of headers and let curl remove it.
     AddHeader(name, std::string_view {});
 }
 
@@ -351,7 +353,7 @@ auto Request::GetTotalTime() const -> std::chrono::milliseconds
 
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    return std::chrono::milliseconds(static_cast<int64_t>(total_time * SEC_2_MS));
+    return std::chrono::milliseconds { static_cast<int64_t>(total_time * SEC_2_MS) };
 }
 
 auto Request::GetCompletionStatus() const -> RequestStatus
@@ -396,7 +398,7 @@ auto Request::prepareForPerform() -> void
             m_curl_request_headers = nullptr;
         }
 
-        for (auto header : m_request_headers_idx) {
+        for (const auto& header : m_request_headers_idx) {
             m_curl_request_headers = curl_slist_append(
                 m_curl_request_headers,
                 header.GetHeader().data());
@@ -465,7 +467,7 @@ auto curl_write_header(
     void* user_ptr) -> size_t
 {
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
-    size_t data_length = size * nitems;
+    const size_t data_length = size * nitems;
 
     std::string_view data_view { buffer, data_length };
 
@@ -474,29 +476,25 @@ auto curl_write_header(
     }
 
     // Ignore empty header lines from curl.
-    if (data_view.length() == 2 && data_view == "\r\n") {
+    if (data_length == 2 && data_view == "\r\n") {
         return data_length;
     }
     // Ignore the HTTP/ 'header' line from curl.
     constexpr size_t HTTPSLASH_LEN = 5;
-    if (data_view.length() >= 4 && data_view.substr(0, HTTPSLASH_LEN) == "HTTP/") {
+    if (data_length >= 4 && data_view.substr(0, HTTPSLASH_LEN) == "HTTP/") {
         return data_length;
     }
 
     // Drop the trailing \r\n from the header.
-    if (data_view.length() >= 2) {
-        size_t rm_size = 0;
-        if (data_view[data_view.length() - 1] == '\n') {
-            ++rm_size;
-        }
-        if (data_view[data_view.length() - 2] == '\r') {
-            ++rm_size;
-        }
+    if (data_length >= 2) {
+        size_t rm_size = (data_view[data_length - 1] == '\n' && data_view[data_length - 2] == '\r') ? 2 : 0;
         data_view.remove_suffix(rm_size);
     }
 
+    const auto cleaned_up_length = data_view.length();
+
     size_t capacity = raw_request_ptr->m_response_headers.capacity();
-    size_t total_len = raw_request_ptr->m_response_headers.size() + data_view.length();
+    size_t total_len = raw_request_ptr->m_response_headers.size() + cleaned_up_length;
     if (capacity < total_len) {
         do {
             capacity *= 2;
@@ -505,15 +503,15 @@ auto curl_write_header(
     }
 
     // Append the entire header into the full header buffer.
-    raw_request_ptr->m_response_headers.append(data_view.data(), data_view.length());
+    raw_request_ptr->m_response_headers.append(data_view.data(), cleaned_up_length);
 
     // Calculate and append the Header view object.
     const char* start = raw_request_ptr->m_response_headers.c_str();
     auto total_length = raw_request_ptr->m_response_headers.length();
-    std::string_view request_data_view { (start + total_length) - data_view.length(), data_view.length() };
+    std::string_view request_data_view { (start + total_length) - cleaned_up_length, cleaned_up_length };
     raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
 
-    return data_length;
+    return data_length; // return original size for curl to continue processing
 }
 
 auto curl_write_data(

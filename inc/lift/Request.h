@@ -100,10 +100,10 @@ public:
         bool verify_ssl_host) -> void;
 
     /**
-     * Adds a request header with an empty value.  This can be useful to manipulate cURL.
+     * Specifically removes the header from the request.
      * @param name The name of the header, e.g. 'Accept'.
      */
-    auto AddHeader(
+    auto RemoveHeader(
         std::string_view name) -> void;
 
     /**

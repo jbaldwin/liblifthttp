@@ -24,6 +24,7 @@ auto EventLoop::StartRequests(
         }
     }
 
+    // Notify the even loop thread that there are requests waiting to be picked up.
     uv_async_send(&m_async);
 
     return true;

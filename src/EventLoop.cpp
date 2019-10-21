@@ -372,7 +372,7 @@ auto on_uv_requests_accept_async(
     }
 
     for (auto& request_handle : event_loop->m_grabbed_requests) {
-        auto& request_ptr = request_handle.m_request_handle;
+        auto& request_ptr = request_handle.m_request_ptr;
 
         auto curl_code = curl_multi_add_handle(event_loop->m_cmh, request_ptr->m_curl_handle);
 

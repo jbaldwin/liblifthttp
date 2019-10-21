@@ -27,7 +27,7 @@ public:
 
     /**
      * This can be useful to pre-allocate a large number of Request objects to be used
-     * immediately and incur expensives start up (like CURL* handles) before starting requests.
+     * immediately and incur expensive start up (like CURL* handles) before starting requests.
      * @param count Pre-allocates/reserves this many request objects.
      */
     auto Reserve(

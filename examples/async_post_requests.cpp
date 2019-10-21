@@ -5,53 +5,54 @@
 static auto on_complete(lift::RequestHandle request) -> void
 {
     switch (request->GetCompletionStatus()) {
-        case lift::RequestStatus::SUCCESS:
-            std::cout
-                << "Completed " << request->GetUrl()
-                << " ms:" << request->GetTotalTime().count() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_ERROR:
-            std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_DNS_ERROR:
-            std::cout << "Unable to lookup DNS entry for: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::CONNECT_SSL_ERROR:
-            std::cout << "SSL Error for: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::TIMEOUT:
-            std::cout << "Timeout: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::RESPONSE_EMPTY:
-            std::cout << "No response received: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::DOWNLOAD_ERROR:
-            std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::ERROR_FAILED_TO_START:
-            std::cout << "Error trying to start a request: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::ERROR:
-            std::cout << "RequestHandle had an unrecoverable error: " << request->GetUrl() << std::endl;
-            break;
-        case lift::RequestStatus::BUILDING:
-        case lift::RequestStatus::EXECUTING:
-            std::cout
-                << "RequestHandle is in an invalid state: "
-                << to_string(request->GetCompletionStatus()) << std::endl;
-            break;
+    case lift::RequestStatus::SUCCESS:
+        std::cout
+            << "Completed " << request->GetUrl()
+            << " ms:" << request->GetTotalTime().count() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_ERROR:
+        std::cout << "Unable to connect to: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_DNS_ERROR:
+        std::cout << "Unable to lookup DNS entry for: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::CONNECT_SSL_ERROR:
+        std::cout << "SSL Error for: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::TIMEOUT:
+        std::cout << "Timeout: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::RESPONSE_EMPTY:
+        std::cout << "No response received: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::DOWNLOAD_ERROR:
+        std::cout << "Error occurred in CURL write callback: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::ERROR_FAILED_TO_START:
+        std::cout << "Error trying to start a request: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::ERROR:
+        std::cout << "RequestHandle had an unrecoverable error: " << request->GetUrl() << std::endl;
+        break;
+    case lift::RequestStatus::BUILDING:
+    case lift::RequestStatus::EXECUTING:
+        std::cout
+            << "RequestHandle is in an invalid state: "
+            << to_string(request->GetCompletionStatus()) << std::endl;
+        break;
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     if (argc != 3) {
         std::cout << "Please include host and data." << std::endl;
         return 0;
     }
 
     using namespace std::chrono_literals;
-    std::string host{argv[1]};
-    std::string data{argv[2]};
+    std::string host { argv[1] };
+    std::string data { argv[2] };
 
     // Initialize must be called first before using the LiftHttp library.
     lift::GlobalScopeInitializer lift_init {};
@@ -61,8 +62,7 @@ int main(int argc, char** argv) {
 
     auto count = 0;
 
-    while (count < 100)
-    {
+    while (count < 100) {
         ++count;
 
         auto request = request_pool.Produce(host, on_complete, 60'000ms);
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         request->SetMethod(lift::http::Method::POST);
         request->SetFollowRedirects(true);
         request->SetVersion(lift::http::Version::V1_1);
-//        request->AddHeader("Expect", "");
+        //        request->AddHeader("Expect", "");
 
         /**
          * This will 'move' all of the Request objects into the event loop.

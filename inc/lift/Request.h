@@ -53,8 +53,7 @@ public:
     /**
      * @return The currently set URL for this HTTP request.
      */
-    [[nodiscard]]
-    auto GetUrl() const -> std::string_view;
+    [[nodiscard]] auto GetUrl() const -> std::string_view;
 
     /**
      * @param http_method Sets the HTTP method for this request.
@@ -132,8 +131,7 @@ public:
     /**
      * @return The list of headers applied to this request.
      */
-    [[nodiscard]]
-    auto GetRequestHeaders() const -> const std::vector<Header>&;
+    [[nodiscard]] auto GetRequestHeaders() const -> const std::vector<Header>&;
 
     /**
      * Sets the request to HTTP POST and the body of the request
@@ -152,8 +150,7 @@ public:
     /**
      * @return The request data.  If never set an empty string is returned.
      */
-    [[nodiscard]]
-    auto GetRequestData() const -> const std::string&;
+    [[nodiscard]] auto GetRequestData() const -> const std::string&;
 
     /**
      * Adds an additional mime field to the request. This is only valid for POST
@@ -197,6 +194,30 @@ public:
         const std::filesystem::path& field_filepath) -> void;
 
     /**
+     * Transfer progress handler callback signature.
+     * @param download_total_bytes Total number of bytes the application should expect to download.
+     * @param download_now_bytes Number of bytes that have been downloaded so far.
+     * @param upload_total_bytes Total number of bytes to upload.
+     * @param upload_now_bytes Number of bytes uploaded so far.
+     * @return True to continue the request, false to abort the request.
+     */
+    using TransferProgressHandler = std::function<bool(
+        const Request& request,
+        int64_t download_total_bytes,
+        int64_t download_now_bytes,
+        int64_t upload_total_bytes,
+        int64_t upload_now_bytes)>;
+
+    /**
+     * Sets or unsets a transfer progress handler callback.  Called periodically to update the
+     * application of the status of this requests in terms of uploaded bytes and downloaded bytes.
+     * @param transfer_progress_handler If an empty optional then transfer progress callbacks are disabled,
+     *                                  if set with a function then transfer progress callbacks are enabled.
+     */
+    auto SetTransferProgressHandler(
+        std::optional<TransferProgressHandler> transfer_progress_handler) -> void;
+
+    /**
      * Performs the HTTP request synchronously.  This call will block the calling thread.
      * @return True if the request was successful.
      */
@@ -205,26 +226,22 @@ public:
     /**
      * @return The HTTP response status code.
      */
-    [[nodiscard]]
-    auto GetResponseStatusCode() const -> http::StatusCode;
+    [[nodiscard]] auto GetResponseStatusCode() const -> http::StatusCode;
 
     /**
      * @return The HTTP response headers.
      */
-    [[nodiscard]]
-    auto GetResponseHeaders() const -> const std::vector<Header>&;
+    [[nodiscard]] auto GetResponseHeaders() const -> const std::vector<Header>&;
 
     /**
      * @return The HTTP download payload.
      */
-    [[nodiscard]]
-    auto GetResponseData() const -> const std::string&;
+    [[nodiscard]] auto GetResponseData() const -> const std::string&;
 
     /**
      * @return The total HTTP request time in milliseconds.
      */
-    [[nodiscard]]
-    auto GetTotalTime() const -> std::chrono::milliseconds;
+    [[nodiscard]] auto GetTotalTime() const -> std::chrono::milliseconds;
 
     /**
      * The completion status is how the request ended up in the event loop.
@@ -234,15 +251,13 @@ public:
      *
      * @return Gets the request completion status.
      */
-    [[nodiscard]]
-    auto GetCompletionStatus() const -> RequestStatus;
-    
+    [[nodiscard]] auto GetCompletionStatus() const -> RequestStatus;
+
     /**
      * @return  the number of connections made to make this request
      */
-    [[nodiscard]]
-    auto GetNumConnects() const -> uint64_t;
-    
+    [[nodiscard]] auto GetNumConnects() const -> uint64_t;
+
     /**
      * Resets the request to be re-used.  This will clear everything on the request.
      */
@@ -268,6 +283,9 @@ private:
 
     /// The onComplete() handler for asynchronous requests.
     std::function<void(RequestHandle)> m_on_complete_handler;
+
+    /// The transfer progress callback.
+    std::optional<TransferProgressHandler> m_on_transfer_progress_handler;
 
     /// The request pool this request was produced from.
     RequestPool& m_request_pool;
@@ -325,6 +343,9 @@ private:
     auto setCompletionStatus(
         CURLcode curl_code) -> void;
 
+    /**
+     * Called by the event loop when the request is completed.
+     */
     auto onComplete() -> void;
 
     /**
@@ -346,6 +367,14 @@ private:
         size_t size,
         size_t nitems,
         void* user_ptr) -> size_t;
+
+    /// libcurl will call this function if the user has requested transfer progress information.
+    friend auto curl_xfer_info(
+        void* clientp,
+        curl_off_t download_total_bytes,
+        curl_off_t download_now_bytes,
+        curl_off_t upload_total_bytes,
+        curl_off_t upload_now_bytes) -> int;
 
     /// libuv will call this function when the AddRequest() function is called.
     friend auto requests_accept_async(

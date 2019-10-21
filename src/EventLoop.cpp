@@ -367,17 +367,14 @@ auto requests_accept_async(
 
         auto curl_code = curl_multi_add_handle(event_loop->m_cmh, raw_request_handle->m_curl_handle);
 
-        if(curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM)
-        {
+        if (curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM) {
             /**
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
             request->setCompletionStatus(CURLcode::CURLE_SEND_ERROR);
             request->onComplete();
-        }
-        else
-        {
+        } else {
             /**
              * Immediately call curl's check action to get the current request moving.
              * Curl appears to have an internal queue and if it gets too long it might

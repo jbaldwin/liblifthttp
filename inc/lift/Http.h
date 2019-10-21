@@ -118,8 +118,7 @@ auto to_enum(
  * as many values as needed.  The design here is to recude
  * string copies/manipulation.
  */
-enum class ContentType : uint64_t
-{
+enum class ContentType : uint64_t {
     NO_CONTENT,
 
     TEXT_CSS,
@@ -165,8 +164,7 @@ enum class ContentType : uint64_t
 auto to_string(
     ContentType content_type) -> const std::string&;
 
-enum class ConnectionType : uint64_t
-{
+enum class ConnectionType : uint64_t {
     CLOSE,
     KEEP_ALIVE,
     UPGRADE
@@ -174,6 +172,5 @@ enum class ConnectionType : uint64_t
 
 auto to_string(
     ConnectionType connection_type) -> const std::string&;
-
 
 } // lift

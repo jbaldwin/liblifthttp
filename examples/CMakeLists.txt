@@ -84,3 +84,13 @@ add_executable(lift_user_data ${USER_DATA_SOURCE_FILES})
 target_link_libraries(lift_user_data PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
 target_compile_features(lift_user_data PRIVATE cxx_std_17)
 target_include_directories(lift_user_data SYSTEM PRIVATE ${CURL_INCLUDE})
+
+
+### transfer_progress_simple ###
+set(TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES
+    examples/transfer_progress_simple.cpp
+)
+add_executable(lift_transfer_progress_simple ${TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES})
+target_link_libraries(lift_transfer_progress_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_compile_features(lift_transfer_progress_simple PRIVATE cxx_std_17)
+target_include_directories(lift_transfer_progress_simple SYSTEM PRIVATE ${CURL_INCLUDE})

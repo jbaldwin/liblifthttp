@@ -16,6 +16,13 @@ auto curl_write_data(
     size_t nitems,
     void* user_ptr) -> size_t;
 
+auto curl_xfer_info(
+    void* clientp,
+    curl_off_t download_total_bytes,
+    curl_off_t download_now_bytes,
+    curl_off_t upload_total_bytes,
+    curl_off_t upload_now_bytes) -> int;
+
 static constexpr uint64_t HEADER_DEFAULT_MEMORY_BYTES = 16'384;
 static constexpr uint64_t HEADER_DEFAULT_COUNT = 16;
 
@@ -73,7 +80,8 @@ auto Request::SetOnCompleteHandler(
     m_on_complete_handler = std::move(on_complete_handler);
 }
 
-auto Request::SetUrl(const std::string& url) -> bool
+auto Request::SetUrl(
+    const std::string& url) -> bool
 {
     if (url.empty()) {
         return false;
@@ -161,7 +169,8 @@ auto Request::SetVersion(
     }
 }
 
-auto Request::SetMaxDownloadBytes(ssize_t max_download_bytes) -> void
+auto Request::SetMaxDownloadBytes(
+    ssize_t max_download_bytes) -> void
 {
     m_max_download_bytes = max_download_bytes;
     m_bytes_written = 0;
@@ -247,7 +256,7 @@ auto Request::SetRequestData(
         throw std::logic_error("Cannot SetRequestData on Request after using AddMimeField");
     }
 
-    if(data.empty()) {
+    if (data.empty()) {
         return;
     }
 
@@ -303,6 +312,20 @@ auto Request::AddMimeField(
 
     curl_mime_filename(field, field_name.data());
     curl_mime_filedata(field, field_filepath.c_str());
+}
+
+auto Request::SetTransferProgressHandler(
+    std::optional<TransferProgressHandler> transfer_progress_handler) -> void
+{
+    m_on_transfer_progress_handler = std::move(transfer_progress_handler);
+
+    if (m_on_transfer_progress_handler.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFOFUNCTION, curl_xfer_info);
+        curl_easy_setopt(m_curl_handle, CURLOPT_XFERINFODATA, this);
+        curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 0L);
+    } else {
+        curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 1L);
+    }
 }
 
 auto Request::Perform() -> bool
@@ -362,6 +385,8 @@ auto Request::Reset() -> void
     }
 
     clearResponseBuffers();
+
+    m_on_transfer_progress_handler.reset();
 
     curl_easy_reset(m_curl_handle);
     init();
@@ -560,6 +585,31 @@ auto curl_write_data(
     raw_request_ptr->m_bytes_written += data_length;
 
     return data_length;
+}
+
+auto curl_xfer_info(
+    void* clientp,
+    curl_off_t download_total_bytes,
+    curl_off_t download_now_bytes,
+    curl_off_t upload_total_bytes,
+    curl_off_t upload_now_bytes) -> int
+{
+    const auto* raw_request_ptr = static_cast<const Request*>(clientp);
+
+    if (raw_request_ptr != nullptr && __glibc_likely(raw_request_ptr->m_on_transfer_progress_handler.has_value())) {
+        if (raw_request_ptr->m_on_transfer_progress_handler.value()(
+                *raw_request_ptr,
+                download_total_bytes,
+                download_now_bytes,
+                upload_total_bytes,
+                upload_now_bytes)) {
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        return 0; // continue the request.
+    }
 }
 
 } // lift

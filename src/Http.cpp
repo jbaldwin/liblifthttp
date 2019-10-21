@@ -16,26 +16,25 @@ static const std::string METHOD_PATCH = "PATCH"s;
 auto to_string(
     Method method) -> const std::string&
 {
-    switch(method)
-    {
-        case Method::GET:
-            return METHOD_GET;
-        case Method::HEAD:
-            return METHOD_HEAD;
-        case Method::POST:
-            return METHOD_POST;
-        case Method::PUT:
-            return METHOD_PUT;
-        case Method::DELETE:
-            return METHOD_DELETE;
-        case Method::CONNECT:
-            return METHOD_CONNECT;
-        case Method::OPTIONS:
-            return METHOD_OPTIONS;
-        case Method::PATCH:
-            return METHOD_PATCH;
-        default:
-            return METHOD_GET;
+    switch (method) {
+    case Method::GET:
+        return METHOD_GET;
+    case Method::HEAD:
+        return METHOD_HEAD;
+    case Method::POST:
+        return METHOD_POST;
+    case Method::PUT:
+        return METHOD_PUT;
+    case Method::DELETE:
+        return METHOD_DELETE;
+    case Method::CONNECT:
+        return METHOD_CONNECT;
+    case Method::OPTIONS:
+        return METHOD_OPTIONS;
+    case Method::PATCH:
+        return METHOD_PATCH;
+    default:
+        return METHOD_GET;
     }
 }
 
@@ -287,48 +286,81 @@ const static std::string APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-
 auto to_string(
     ContentType content_type) -> const std::string&
 {
-    switch(content_type)
-    {
-        case ContentType::NO_CONTENT: return NO_CONTENT;
+    switch (content_type) {
+    case ContentType::NO_CONTENT:
+        return NO_CONTENT;
 
-        case ContentType::TEXT_CSS: return TEXT_CSS;
-        case ContentType::TEXT_CSV: return TEXT_CSV;
-        case ContentType::TEXT_HTML: return TEXT_HTML;
-        case ContentType::TEXT_PLAIN: return TEXT_PLAIN;
-        case ContentType::TEXT_XML: return TEXT_XML;
+    case ContentType::TEXT_CSS:
+        return TEXT_CSS;
+    case ContentType::TEXT_CSV:
+        return TEXT_CSV;
+    case ContentType::TEXT_HTML:
+        return TEXT_HTML;
+    case ContentType::TEXT_PLAIN:
+        return TEXT_PLAIN;
+    case ContentType::TEXT_XML:
+        return TEXT_XML;
 
-        case ContentType::IMAGE_GIF: return IMAGE_GIF;
-        case ContentType::IMAGE_JPEG: return IMAGE_JPEG;
-        case ContentType::IMAGE_PNG: return IMAGE_PNG;
-        case ContentType::IMAGE_TIFF: return IMAGE_TIFF;
-        case ContentType::IMAGE_X_ICON: return IMAGE_X_ICON;
-        case ContentType::IMAGE_SVG_XML: return IMAGE_SVG_XML;
+    case ContentType::IMAGE_GIF:
+        return IMAGE_GIF;
+    case ContentType::IMAGE_JPEG:
+        return IMAGE_JPEG;
+    case ContentType::IMAGE_PNG:
+        return IMAGE_PNG;
+    case ContentType::IMAGE_TIFF:
+        return IMAGE_TIFF;
+    case ContentType::IMAGE_X_ICON:
+        return IMAGE_X_ICON;
+    case ContentType::IMAGE_SVG_XML:
+        return IMAGE_SVG_XML;
 
-        case ContentType::VIDEO_MPEG: return VIDEO_MPEG;
-        case ContentType::VIDEO_MP4: return VIDEO_MP4;
-        case ContentType::VIDEO_X_FLV: return VIDEO_X_FLV;
-        case ContentType::VIDEO_WEBM: return VIDEO_WEBM;
+    case ContentType::VIDEO_MPEG:
+        return VIDEO_MPEG;
+    case ContentType::VIDEO_MP4:
+        return VIDEO_MP4;
+    case ContentType::VIDEO_X_FLV:
+        return VIDEO_X_FLV;
+    case ContentType::VIDEO_WEBM:
+        return VIDEO_WEBM;
 
-        case ContentType::MULTIPART_MIXED: return MULTIPART_MIXED;
-        case ContentType::MULTIPART_ALTERNATIVE: return MULTIPART_ALTERNATIVE;
-        case ContentType::MULTIPART_RELATED: return MULTIPART_RELATED;
-        case ContentType::MULTIPART_FORM_DATA: return MULTIPART_FORM_DATA;
+    case ContentType::MULTIPART_MIXED:
+        return MULTIPART_MIXED;
+    case ContentType::MULTIPART_ALTERNATIVE:
+        return MULTIPART_ALTERNATIVE;
+    case ContentType::MULTIPART_RELATED:
+        return MULTIPART_RELATED;
+    case ContentType::MULTIPART_FORM_DATA:
+        return MULTIPART_FORM_DATA;
 
-        case ContentType::AUDIO_MPEG: return AUDIO_MPEG;
-        case ContentType::AUDIO_X_MS_WMA: return AUDIO_X_MS_WMA;
-        case ContentType::AUDIO_X_WAV: return AUDIO_X_WAV;
+    case ContentType::AUDIO_MPEG:
+        return AUDIO_MPEG;
+    case ContentType::AUDIO_X_MS_WMA:
+        return AUDIO_X_MS_WMA;
+    case ContentType::AUDIO_X_WAV:
+        return AUDIO_X_WAV;
 
-        case ContentType::APPLICATION_JAVASCRIPT: return APPLICATION_JAVASCRIPT;
-        case ContentType::APPLICATION_OCTET_STREAM: return APPLICATION_OCTET_STREAM;
-        case ContentType::APPLICATION_OGG: return APPLICATION_OGG;
-        case ContentType::APPLICATION_PDF: return APPLICATION_PDF;
-        case ContentType::APPLICATION_XHTML_XML: return APPLICATION_XHTML_XML;
-        case ContentType::APPLICATION_X_SHOCKWAVE_FLASH: return APPLICATION_X_SHOCKWAVE_FLASH;
-        case ContentType::APPLICATION_JSON: return APPLICATION_JSON;
-        case ContentType::APPLICATION_LD_JSON: return APPLICATION_LD_JSON;
-        case ContentType::APPLICATION_XML: return APPLICATION_XML;
-        case ContentType::APPLICATION_ZIP: return APPLICATION_ZIP;
-        case ContentType::APPLICATION_X_WWW_FORM_URLENCODED: return APPLICATION_X_WWW_FORM_URLENCODED;
+    case ContentType::APPLICATION_JAVASCRIPT:
+        return APPLICATION_JAVASCRIPT;
+    case ContentType::APPLICATION_OCTET_STREAM:
+        return APPLICATION_OCTET_STREAM;
+    case ContentType::APPLICATION_OGG:
+        return APPLICATION_OGG;
+    case ContentType::APPLICATION_PDF:
+        return APPLICATION_PDF;
+    case ContentType::APPLICATION_XHTML_XML:
+        return APPLICATION_XHTML_XML;
+    case ContentType::APPLICATION_X_SHOCKWAVE_FLASH:
+        return APPLICATION_X_SHOCKWAVE_FLASH;
+    case ContentType::APPLICATION_JSON:
+        return APPLICATION_JSON;
+    case ContentType::APPLICATION_LD_JSON:
+        return APPLICATION_LD_JSON;
+    case ContentType::APPLICATION_XML:
+        return APPLICATION_XML;
+    case ContentType::APPLICATION_ZIP:
+        return APPLICATION_ZIP;
+    case ContentType::APPLICATION_X_WWW_FORM_URLENCODED:
+        return APPLICATION_X_WWW_FORM_URLENCODED;
     }
 }
 
@@ -339,11 +371,13 @@ const static std::string CT_UPGRADE = "upgrade"s;
 auto to_string(
     ConnectionType connection_type) -> const std::string&
 {
-    switch(connection_type)
-    {
-        case ConnectionType::CLOSE: return CT_CLOSE;
-        case ConnectionType::KEEP_ALIVE: return CT_KEEP_ALIVE;
-        case ConnectionType::UPGRADE: return CT_UPGRADE;
+    switch (connection_type) {
+    case ConnectionType::CLOSE:
+        return CT_CLOSE;
+    case ConnectionType::KEEP_ALIVE:
+        return CT_KEEP_ALIVE;
+    case ConnectionType::UPGRADE:
+        return CT_UPGRADE;
     }
 }
 

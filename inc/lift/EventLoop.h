@@ -49,8 +49,7 @@ public:
     /**
      * @return Gets the number of active HTTP requests currently running.
      */
-    [[nodiscard]]
-    auto GetActiveRequestCount() const -> uint64_t;
+    [[nodiscard]] auto GetActiveRequestCount() const -> uint64_t;
 
     /**
      * @return The request pool for this EventLoop.

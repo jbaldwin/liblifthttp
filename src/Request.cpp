@@ -208,6 +208,13 @@ auto Request::SetVerifySslHost(
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 2L : 0L);
 }
 
+auto Request::AddResolveHost(
+    ResolveHost resolve_host) -> void
+{
+    m_resolve_hosts.emplace_back(std::move(resolve_host));
+    m_resolve_hosts_committed = false;
+}
+
 auto Request::RemoveHeader(
     std::string_view name) -> void
 {
@@ -376,6 +383,11 @@ auto Request::Reset() -> void
         curl_slist_free_all(m_curl_request_headers);
         m_curl_request_headers = nullptr;
     }
+    if (m_curl_resolve_hosts != nullptr) {
+        curl_slist_free_all(m_curl_resolve_hosts);
+        m_curl_resolve_hosts = nullptr;
+    }
+
     // replace rather than clear() since this buffer is 'moved' into the RequestHandle and will free up memory.
     m_request_data = std::string {};
 
@@ -416,6 +428,22 @@ auto Request::prepareForPerform() -> void
 
     if (m_mime_handle != nullptr) {
         curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, m_mime_handle);
+    }
+
+    if(!m_resolve_hosts_committed && !m_resolve_hosts.empty()) {
+        if(m_curl_resolve_hosts != nullptr) {
+            curl_slist_free_all(m_curl_resolve_hosts);
+            m_curl_resolve_hosts = nullptr;
+        }
+
+        for(const auto& resolve_host : m_resolve_hosts)
+        {
+            m_curl_resolve_hosts = curl_slist_append(
+                m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
+        }
+
+        curl_easy_setopt(m_curl_handle, CURLOPT_RESOLVE, m_curl_resolve_hosts);
+        m_resolve_hosts_committed = true;
     }
 
     m_status_code = RequestStatus::EXECUTING;

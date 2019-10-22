@@ -3,6 +3,7 @@
 #include "lift/Header.h"
 #include "lift/Http.h"
 #include "lift/RequestStatus.h"
+#include "lift/ResolveHost.h"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -98,6 +99,12 @@ public:
      */
     auto SetVerifySslHost(
         bool verify_ssl_host) -> void;
+
+    /**
+     * @param resolve_host Adds a host to ip address dns resolver.
+     */
+    auto AddResolveHost(
+        ResolveHost resolve_host) -> void;
 
     /**
      * Specifically removes the header from the request.
@@ -263,7 +270,7 @@ private:
      * @param timeout      The timeout for the request in milliseconds.
      * @param on_complete_handler Function to be called when the Request finishes.
      */
-    explicit Request(
+    Request(
         RequestPool& request_pool,
         const std::string& url,
         std::chrono::milliseconds timeout,
@@ -306,6 +313,13 @@ private:
     std::vector<Header> m_response_headers_idx {};
     /// The response data if any.
     std::string m_response_data {};
+
+    /// A set of host:port to ip addresses that will be resolved before DNS
+    std::vector<ResolveHost> m_resolve_hosts;
+    /// The curl resolve hosts list.
+    curl_slist* m_curl_resolve_hosts { nullptr };
+    /// Have the resolve hosts been updated recently?
+    bool m_resolve_hosts_committed{false};
 
     /**
      * Prepares the request to be performed.  This is called on a request

@@ -56,6 +56,7 @@ set(SOURCE_FILES
     inc/lift/RequestHandle.h src/RequestHandle.cpp
     inc/lift/RequestPool.h src/RequestPool.cpp
     inc/lift/RequestStatus.h src/RequestStatus.cpp
+    inc/lift/ResolveHost.h src/ResolveHost.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})

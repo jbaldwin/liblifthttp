@@ -319,7 +319,7 @@ private:
     /// The curl resolve hosts list.
     curl_slist* m_curl_resolve_hosts { nullptr };
     /// Have the resolve hosts been updated recently?
-    bool m_resolve_hosts_committed{false};
+    bool m_resolve_hosts_committed { false };
 
     /**
      * Prepares the request to be performed.  This is called on a request

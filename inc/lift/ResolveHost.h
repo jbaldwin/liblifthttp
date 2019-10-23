@@ -2,13 +2,12 @@
 
 #include <string>
 
-namespace lift
-{
+namespace lift {
 class Request;
 
-class ResolveHost
-{
+class ResolveHost {
     friend Request;
+
 public:
     /**
      * Sets a host and port combination to DNS resolve to the given IP Address.
@@ -41,6 +40,7 @@ public:
      * @return Gets the given IP Address that is being resolved to.
      */
     [[nodiscard]] auto GetResolvedIpAddr() const noexcept -> const std::string&;
+
 private:
     /// The given input resolve host.
     std::string m_resolve_host;

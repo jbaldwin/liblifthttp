@@ -2,6 +2,7 @@
 
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
+#include "lift/ResolveHost.h"
 
 #include <chrono>
 #include <deque>
@@ -14,10 +15,15 @@ namespace lift {
 class CurlPool;
 
 class RequestPool {
-    friend class RequestHandle;
+    friend class RequestHandle; // for returning into the pool
+    friend class Request; // for resolve hosts
 
 public:
-    RequestPool() = default;
+    /**
+     * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
+     */
+    explicit RequestPool(
+        std::vector<ResolveHost> resolve_hosts = {});
     ~RequestPool() = default;
 
     RequestPool(const RequestPool&) = delete;
@@ -34,28 +40,17 @@ public:
         size_t count) -> void;
 
     /**
-     * Produces a new Request with infinite timeout.
-     *
-     * This produce method is best used for synchronous requests.
-     *
-     * @param url The url of the Request.
-     * @return A request object setup for the URL.
-     */
-    auto Produce(
-        const std::string& url) -> RequestHandle;
-
-    /**
      * Produces a new Request with the specified timeout.
      *
      * This produce method is best used for synchronous requests.
      *
      * @param url The url of the Request.
-     * @param timeout The timeout of the request.
+     * @param timeout The timeout of the request, a timeout of 0 means infinite.
      * @return A Request object setup for the URL + Timeout.
      */
     auto Produce(
         const std::string& url,
-        std::chrono::milliseconds timeout) -> RequestHandle;
+        std::chrono::milliseconds timeout = std::chrono::milliseconds { 0 }) -> RequestHandle;
 
     /**
      * Produces a new Request.  This function is thread safe.
@@ -72,21 +67,30 @@ public:
         std::function<void(RequestHandle)> on_complete_handler,
         std::chrono::milliseconds timeout) -> RequestHandle;
 
+    /**
+     * @return The set of host:port combinations that bypass DNS lookup,
+     *         all requests that are produced from this pool will have this
+     *         set of resolve hosts automatically applied.
+     */
+    [[nodiscard]] auto GetPoolResolveHosts() const noexcept -> const std::vector<ResolveHost>&;
+
 private:
     /// Used for thread safe calls.
     std::mutex m_lock {};
     /// Pool of un-used Request handles.
     std::deque<std::unique_ptr<Request>> m_requests {};
+    /// The set of resolve hosts to apply to all requests in this pool.
+    std::vector<ResolveHost> m_resolve_hosts {};
 
     /**
      * Returns a Request object to the pool to be re-used.
      *
      * This function is thread safe.
      *
-     * @param request The request to return to the pool to be re-used.
+     * @param request_ptr The request to return to the pool to be re-used.
      */
     auto returnRequest(
-        std::unique_ptr<Request> request) -> void;
+        std::unique_ptr<Request> request_ptr) -> void;
 };
 
 } // lift

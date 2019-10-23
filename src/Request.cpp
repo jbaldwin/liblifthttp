@@ -1,5 +1,6 @@
 #include "lift/Request.h"
 #include "lift/RequestHandle.h"
+#include "lift/RequestPool.h"
 
 #include <cstring>
 
@@ -430,14 +431,19 @@ auto Request::prepareForPerform() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, m_mime_handle);
     }
 
-    if(!m_resolve_hosts_committed && !m_resolve_hosts.empty()) {
-        if(m_curl_resolve_hosts != nullptr) {
+    // Commit the resolve hosts from the request + any pool level resolve hosts.
+    if (!m_resolve_hosts_committed && (!m_resolve_hosts.empty() || !m_request_pool.m_resolve_hosts.empty())) {
+        if (m_curl_resolve_hosts != nullptr) {
             curl_slist_free_all(m_curl_resolve_hosts);
             m_curl_resolve_hosts = nullptr;
         }
 
-        for(const auto& resolve_host : m_resolve_hosts)
-        {
+        for (const auto& resolve_host : m_resolve_hosts) {
+            m_curl_resolve_hosts = curl_slist_append(
+                m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
+        }
+
+        for (const auto& resolve_host : m_request_pool.m_resolve_hosts) {
             m_curl_resolve_hosts = curl_slist_append(
                 m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
         }

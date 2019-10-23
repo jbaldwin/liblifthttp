@@ -2,6 +2,12 @@
 
 namespace lift {
 
+RequestPool::RequestPool(
+    std::vector<ResolveHost> resolve_hosts)
+    : m_resolve_hosts(std::move(resolve_hosts))
+{
+}
+
 auto RequestPool::Reserve(
     size_t count) -> void
 {
@@ -16,13 +22,6 @@ auto RequestPool::Reserve(
                 [](RequestHandle r) { (void)r; }));
         m_requests.emplace_back(std::move(request_handle_ptr));
     }
-}
-
-auto RequestPool::Produce(
-    const std::string& url) -> RequestHandle
-{
-    using namespace std::chrono_literals;
-    return Produce(url, nullptr, 0ms);
 }
 
 auto RequestPool::Produce(
@@ -43,7 +42,7 @@ auto RequestPool::Produce(
         m_lock.unlock();
 
         // Cannot use std::make_unique here since Request ctor is private friend.
-        auto request_handle_ptr = std::unique_ptr<Request> {
+        auto request_ptr = std::unique_ptr<Request> {
             new Request {
                 *this,
                 url,
@@ -51,27 +50,32 @@ auto RequestPool::Produce(
                 std::move(on_complete_handler) }
         };
 
-        return RequestHandle { this, std::move(request_handle_ptr) };
+        return RequestHandle { this, std::move(request_ptr) };
     } else {
-        auto request_handle_ptr = std::move(m_requests.back());
+        auto request_ptr = std::move(m_requests.back());
         m_requests.pop_back();
         m_lock.unlock();
 
-        request_handle_ptr->SetOnCompleteHandler(std::move(on_complete_handler));
-        request_handle_ptr->SetUrl(url);
-        request_handle_ptr->SetTimeout(timeout);
+        request_ptr->SetOnCompleteHandler(std::move(on_complete_handler));
+        request_ptr->SetUrl(url);
+        request_ptr->SetTimeout(timeout);
 
-        return RequestHandle { this, std::move(request_handle_ptr) };
+        return RequestHandle { this, std::move(request_ptr) };
     }
 }
 
-auto RequestPool::returnRequest(
-    std::unique_ptr<Request> request) -> void
+auto RequestPool::GetPoolResolveHosts() const noexcept -> const std::vector<ResolveHost>&
 {
-    request->Reset(); // Reset the request if it is returned to the pool.
+    return m_resolve_hosts;
+}
+
+auto RequestPool::returnRequest(
+    std::unique_ptr<Request> request_ptr) -> void
+{
+    request_ptr->Reset(); // Reset the request if it is returned to the pool.
     {
         std::lock_guard<std::mutex> guard { m_lock };
-        m_requests.emplace_back(std::move(request));
+        m_requests.emplace_back(std::move(request_ptr));
     }
 }
 

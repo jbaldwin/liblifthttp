@@ -22,8 +22,10 @@ class EventLoop {
 public:
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
+     * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
      */
-    EventLoop();
+    explicit EventLoop(
+        std::vector<ResolveHost> resolve_hosts = {});
     ~EventLoop();
 
     EventLoop(const EventLoop& copy) = delete;
@@ -86,7 +88,7 @@ private:
      * Each event loop gets its own private request pool for efficiency.
      * This needs to be first so it de-allocates all its RequestHandles last on shutdown.
      */
-    RequestPool m_request_pool {};
+    RequestPool m_request_pool;
 
     /// Set to true if the EventLoop is currently running.
     std::atomic<bool> m_is_running { false };

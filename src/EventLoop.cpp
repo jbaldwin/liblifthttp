@@ -96,7 +96,9 @@ auto on_uv_curl_perform_callback(
 auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void;
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(
+    std::vector<ResolveHost> resolve_hosts)
+    : m_request_pool(std::move(resolve_hosts))
 {
     uv_async_init(m_loop, &m_async, on_uv_requests_accept_async);
     m_async.data = this;

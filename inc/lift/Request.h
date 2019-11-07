@@ -241,7 +241,18 @@ public:
      * @param verify the verify value to set the CURLOPT_SSL_VERIFYHOST option to
      */
     auto SetVerifySSLHost(int64_t verify) -> void;
-
+    
+    /**
+     * Method to allow users to set any CURLoption with any value type
+     * @tparam OptionValueType Type of the option value to set in curl_easy_setopt
+     * @param curl_option_name CURLoption enum indicating what CURL option will be changed
+     * @param option_value     The value to set the CULR option to
+     */
+    template<typename OptionValueType>
+    inline auto SetCurlEasySetOpt(CURLoption curl_option_name, OptionValueType option_value) -> void {
+        curl_easy_setopt(m_curl_handle, curl_option_name, option_value);
+    }
+    
     /**
      * Resets the request to be re-used.  This will clear everything on the request.
      */

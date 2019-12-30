@@ -30,14 +30,14 @@ static constexpr uint64_t HEADER_DEFAULT_COUNT = 16;
 Request::Request(
     RequestPool& request_pool,
     const std::string& url,
-    std::chrono::milliseconds timeout_ms,
+    std::chrono::milliseconds timeout,
     std::function<void(RequestHandle)> on_complete_handler)
     : m_on_complete_handler(std::move(on_complete_handler))
     , m_request_pool(request_pool)
 {
     init();
     SetUrl(url);
-    SetTimeout(timeout_ms);
+    SetTimeout(timeout);
 }
 
 Request::~Request()

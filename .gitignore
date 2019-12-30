@@ -1,10 +1,6 @@
 .idea/
-
 /cmake-build-debug/
-Release
-Debug
-/build-g++/
-/build-clang++/
-
-bin/*
-lib/*
+/Release/
+/Debug/
+/build-release-g++/
+/build-release-clang++/

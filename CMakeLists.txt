@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(lifthttp CXX)
 
-# Create a Debug/lib or Release/lib output directory.
-set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/bin)
-
 find_program(CLANG_TIDY_BIN NAMES "clang-tidy" DOC "clang-tidy binary location")
 if(CLANG_TIDY_BIN)
     set(CLANG_TIDY_COMMAND "${CLANG_TIDY_BIN}" "-checks=*,-cppcoreguidelines-pro-type-union-access,-hicpp-signed-bitwise,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-google-runtime-int,-hicpp-vararg,-cppcoreguidelines-pro-type-vararg,-cert-err58-cpp,-clang-analyzer-alpha.*,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-fuchsia-trailing-return,-fuchsia-default-arguments,-readability-else-after-return,-google-readability-namespace-comments,-llvm-namespace-comment,-hicpp-no-array-decay,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-google-default-arguments,-llvm-header-guard,-google-runtime-references,-misc-macro-parentheses,-bugprone-macro-parentheses,-bugprone-unused-return-value" "-header-filter=.*")

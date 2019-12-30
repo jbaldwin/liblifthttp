@@ -3,46 +3,53 @@ jobs:
   build:
     docker:
       - image: ubuntu:rolling
-
+      - image: nginx:stable
     steps:
       - run: 
           name: update
           command: apt-get -y update 
-
       - run:
           name: install dependencies
           command: |
             apt-get -y install \
               git \
               cmake \
+              ninja-build \
               g++ \
               clang \
               zlib1g-dev \
               libcurl4-openssl-dev \
               libuv1-dev
-      
-      - run:
-          name: nginx
-          command: |
-            apt-get -y install nginx
-            service nginx start
-
       - checkout
-
       - run:
-          name: build-g++
+          name: build release g++
           command: |
-            mkdir build-g++ && 
-            cd build-g++ && 
-            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ .. && 
-            make &&
-            ctest
-
+            mkdir build-release-g++
+            cd build-release-g++ 
+            cmake \
+                -GNinja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_C_COMPILER=gcc \
+                -DCMAKE_CXX_COMPILER=g++ .. 
+            ninja
       - run:
-          name: build-clang++
+          name: build release clang++
           command: |
-            mkdir build-clang++ && 
-            cd build-clang++ && 
-            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && 
-            make &&
-            ctest
+            mkdir build-release-clang++
+            cd build-release-clang++ 
+            cmake \
+              -GNinja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ .. 
+            ninja
+      - run:
+          name: test release g++
+          command: |
+            cd build-release-g++
+            ctest -v
+      - run:
+          name: test release clang++
+          command: |
+            cd build-release-clang++
+            ctest -v

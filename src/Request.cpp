@@ -1,6 +1,6 @@
-#include "lift/Request.h"
-#include "lift/RequestHandle.h"
-#include "lift/RequestPool.h"
+#include "lift/Request.hpp"
+#include "lift/RequestHandle.hpp"
+#include "lift/RequestPool.hpp"
 
 #include <cstring>
 

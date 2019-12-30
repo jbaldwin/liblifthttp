@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project(liblifthttp_tests)
 
-add_executable(${PROJECT_NAME} main.cpp)
+set(LIBLIFT_TEST_SOURCE_FILES
+    EscapeTest.hpp
+    SyncRequestTest.hpp
+)
+
+add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${LIFT_CURL_LIBRARY_DEPENDENCIES}

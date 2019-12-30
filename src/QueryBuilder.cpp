@@ -1,5 +1,5 @@
-#include "lift/QueryBuilder.h"
-#include "lift/Escape.h"
+#include "lift/QueryBuilder.hpp"
+#include "lift/Escape.hpp"
 
 namespace lift {
 

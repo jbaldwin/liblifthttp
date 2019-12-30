@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lift/Request.h"
-#include "lift/RequestHandle.h"
-#include "lift/ResolveHost.h"
+#include "lift/Request.hpp"
+#include "lift/RequestHandle.hpp"
+#include "lift/ResolveHost.hpp"
 
 #include <chrono>
 #include <deque>

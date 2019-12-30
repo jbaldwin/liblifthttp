@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/Request.h"
+#include "lift/Request.hpp"
 
 #include <memory>
 

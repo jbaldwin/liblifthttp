@@ -1,3 +1,7 @@
+#pragma once
+
+#include "lift/EventLoop.hpp"
+
 namespace lift {
 
 template <typename Container>

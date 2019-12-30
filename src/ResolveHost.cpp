@@ -1,4 +1,4 @@
-#include "lift/ResolveHost.h"
+#include "lift/ResolveHost.hpp"
 
 namespace lift {
 

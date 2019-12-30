@@ -1,4 +1,4 @@
-#include "lift/RequestStatus.h"
+#include "lift/RequestStatus.hpp"
 
 namespace lift {
 

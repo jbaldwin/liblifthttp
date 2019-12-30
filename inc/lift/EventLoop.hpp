@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/RequestPool.h"
+#include "lift/RequestPool.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>

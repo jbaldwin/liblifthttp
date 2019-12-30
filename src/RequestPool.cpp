@@ -1,4 +1,4 @@
-#include "lift/RequestPool.h"
+#include "lift/RequestPool.hpp"
 
 namespace lift {
 

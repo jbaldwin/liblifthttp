@@ -1,5 +1,5 @@
-#include "lift/RequestHandle.h"
-#include "lift/RequestPool.h"
+#include "lift/RequestHandle.hpp"
+#include "lift/RequestPool.hpp"
 
 namespace lift {
 

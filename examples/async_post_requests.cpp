@@ -1,4 +1,4 @@
-#include <lift/Lift.h>
+#include <lift/Lift.hpp>
 
 #include <iostream>
 

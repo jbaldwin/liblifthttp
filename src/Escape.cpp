@@ -1,4 +1,4 @@
-#include "lift/Escape.h"
+#include "lift/Escape.hpp"
 
 #include <curl/curl.h>
 

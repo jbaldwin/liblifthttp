@@ -1,9 +1,9 @@
 #pragma once
 
-#include "lift/Header.h"
-#include "lift/Http.h"
-#include "lift/RequestStatus.h"
-#include "lift/ResolveHost.h"
+#include "lift/Header.hpp"
+#include "lift/Http.hpp"
+#include "lift/RequestStatus.hpp"
+#include "lift/ResolveHost.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>

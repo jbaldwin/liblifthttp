@@ -43,17 +43,17 @@ set(LIFT_CURL_LIBRARY_DEPENDENCIES
 )
 
 set(LIBLIFT_SOURCE_FILES
-    inc/lift/Escape.h src/Escape.cpp
-    inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
-    inc/lift/Header.h src/Header.cpp
-    inc/lift/Lift.h src/Lift.cpp
-    inc/lift/Http.h src/Http.cpp
-    inc/lift/QueryBuilder.h src/QueryBuilder.cpp
-    inc/lift/Request.h src/Request.cpp
-    inc/lift/RequestHandle.h src/RequestHandle.cpp
-    inc/lift/RequestPool.h src/RequestPool.cpp
-    inc/lift/RequestStatus.h src/RequestStatus.cpp
-    inc/lift/ResolveHost.h src/ResolveHost.cpp
+    inc/lift/Escape.hpp src/Escape.cpp
+    inc/lift/EventLoop.hpp inc/lift/EventLoop.tcc src/EventLoop.cpp
+    inc/lift/Header.hpp src/Header.cpp
+    inc/lift/Lift.hpp src/Lift.cpp
+    inc/lift/Http.hpp src/Http.cpp
+    inc/lift/QueryBuilder.hpp src/QueryBuilder.cpp
+    inc/lift/Request.hpp src/Request.cpp
+    inc/lift/RequestHandle.hpp src/RequestHandle.cpp
+    inc/lift/RequestPool.hpp src/RequestPool.cpp
+    inc/lift/RequestStatus.hpp src/RequestStatus.cpp
+    inc/lift/ResolveHost.hpp src/ResolveHost.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIBLIFT_SOURCE_FILES})

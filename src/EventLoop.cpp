@@ -1,4 +1,4 @@
-#include "lift/EventLoop.h"
+#include "lift/EventLoop.hpp"
 
 #include <curl/multi.h>
 

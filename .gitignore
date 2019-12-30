@@ -1,10 +1,10 @@
 .idea/
 
 /cmake-build-debug/
-/Release/
-/Debug/
+Release
+Debug
 /build-g++/
 /build-clang++/
 
-/bin/*
-/lib/*
+bin/*
+lib/*

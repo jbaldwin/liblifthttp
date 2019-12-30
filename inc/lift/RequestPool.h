@@ -50,7 +50,7 @@ public:
      */
     auto Produce(
         const std::string& url,
-        std::chrono::milliseconds timeout = std::chrono::milliseconds { 0 }) -> RequestHandle;
+        std::chrono::milliseconds timeout = std::chrono::milliseconds{ 0 }) -> RequestHandle;
 
     /**
      * Produces a new Request.  This function is thread safe.
@@ -76,11 +76,11 @@ public:
 
 private:
     /// Used for thread safe calls.
-    std::mutex m_lock {};
+    std::mutex m_lock{};
     /// Pool of un-used Request handles.
-    std::deque<std::unique_ptr<Request>> m_requests {};
+    std::deque<std::unique_ptr<Request>> m_requests{};
     /// The set of resolve hosts to apply to all requests in this pool.
-    std::vector<ResolveHost> m_resolve_hosts {};
+    std::vector<ResolveHost> m_resolve_hosts{};
 
     /**
      * Returns a Request object to the pool to be re-used.

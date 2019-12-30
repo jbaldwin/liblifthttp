@@ -51,11 +51,11 @@ int main(int argc, char** argv)
     }
 
     using namespace std::chrono_literals;
-    std::string host { argv[1] };
-    std::string data { argv[2] };
+    std::string host{ argv[1] };
+    std::string data{ argv[2] };
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
+    lift::GlobalScopeInitializer lift_init{};
 
     lift::EventLoop event_loop;
     auto& request_pool = event_loop.GetRequestPool();

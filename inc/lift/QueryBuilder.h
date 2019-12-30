@@ -109,7 +109,7 @@ private:
     /// The url hostname.
     std::string_view m_hostname;
     /// The url port.
-    uint16_t m_port { 0 };
+    uint16_t m_port{ 0 };
     /// The path parts in order.
     std::vector<std::string_view> m_path_parts;
     /// The query parameters (unescaped), they are escaped in Build().

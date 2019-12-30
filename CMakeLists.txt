@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.0.2)
 project(lifthttp CXX)
 
 # Create a Debug/lib or Release/lib output directory.
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/lib)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/bin)
 
 find_program(CLANG_TIDY_BIN NAMES "clang-tidy" DOC "clang-tidy binary location")
 if(CLANG_TIDY_BIN)
@@ -81,4 +82,6 @@ if(CLANG_TIDY_BIN)
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
 endif()
 
-include(examples/CMakeLists.txt)
+add_subdirectory(examples)
+enable_testing()
+add_subdirectory(test)

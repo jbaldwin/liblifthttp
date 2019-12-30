@@ -14,12 +14,12 @@ auto escape(
         static_cast<int32_t>(data.length()));
 
     if (escaped_data != nullptr) {
-        std::string value { escaped_data };
+        std::string value{ escaped_data };
         curl_free(escaped_data);
         return value;
     }
 
-    return std::string {};
+    return std::string{};
 }
 
 auto unescape_recurse(
@@ -41,12 +41,12 @@ auto unescape(
         static_cast<int32_t>(escaped_data.length()));
 
     if (decoded_data != nullptr) {
-        std::string value { decoded_data };
+        std::string value{ decoded_data };
         curl_free(decoded_data);
         return value;
     }
 
-    return std::string {};
+    return std::string{};
 }
 
 } // lift

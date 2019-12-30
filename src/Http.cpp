@@ -381,7 +381,7 @@ auto to_string(
         return CT_KEEP_ALIVE;
     case ConnectionType::UPGRADE:
         return CT_UPGRADE;
-    
+
     default:
         return CT_KEEP_ALIVE;
     }

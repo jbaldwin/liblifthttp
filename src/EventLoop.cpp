@@ -66,8 +66,8 @@ public:
 
 private:
     EventLoop& m_event_loop;
-    uv_poll_t m_poll_handle {};
-    curl_socket_t m_sock_fd { CURL_SOCKET_BAD };
+    uv_poll_t m_poll_handle{};
+    curl_socket_t m_sock_fd{ CURL_SOCKET_BAD };
 };
 
 auto curl_start_timeout(
@@ -111,7 +111,7 @@ EventLoop::EventLoop(
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION, curl_start_timeout);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA, this);
 
-    m_background_thread = std::thread { [this] { run(); } };
+    m_background_thread = std::thread{ [this] { run(); } };
 
     /**
      * Wait for the thread to spin-up and run the event loop,
@@ -180,7 +180,7 @@ auto EventLoop::StartRequest(
     // We'll prepare now since it won't block the event loop thread.
     request->prepareForPerform();
     {
-        std::lock_guard<std::mutex> guard { m_pending_requests_lock };
+        std::lock_guard<std::mutex> guard{ m_pending_requests_lock };
         m_pending_requests.emplace_back(std::move(request));
     }
     uv_async_send(&m_async);
@@ -226,7 +226,7 @@ auto EventLoop::checkActions(
             curl_multi_remove_handle(m_cmh, easy_handle);
 
             raw_request_handle_ptr->setCompletionStatus(easy_result);
-            completeRequest(RequestHandle { &m_request_pool, std::unique_ptr<Request> { raw_request_handle_ptr } });
+            completeRequest(RequestHandle{ &m_request_pool, std::unique_ptr<Request>{ raw_request_handle_ptr } });
         }
     }
 }
@@ -367,7 +367,7 @@ auto on_uv_requests_accept_async(
      * to the Request objects on the EventLoop thread.
      */
     {
-        std::lock_guard<std::mutex> guard { event_loop->m_pending_requests_lock };
+        std::lock_guard<std::mutex> guard{ event_loop->m_pending_requests_lock };
         // swap so we can release the lock as quickly as possible
         event_loop->m_grabbed_requests.swap(
             event_loop->m_pending_requests);

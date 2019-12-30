@@ -5,7 +5,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/bin)
 
 ### synch_simple ###
 set(SYNCH_SIMPLE_SOURCE_FILES
-    examples/synch_simple.cpp
+    synch_simple.cpp
 )
 add_executable(lift_synch_simple ${SYNCH_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_synch_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -14,7 +14,7 @@ target_include_directories(lift_synch_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### async_simple ###
 set(ASYNC_SIMPLE_SOURCE_FILES
-    examples/async_simple.cpp
+    async_simple.cpp
 )
 add_executable(lift_async_simple ${ASYNC_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_async_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -23,7 +23,7 @@ target_include_directories(lift_async_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### async_simple_max_bytes ###
 set(ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES
-    examples/async_simple_max_bytes.cpp
+    async_simple_max_bytes.cpp
 )
 add_executable(lift_async_simple_max_bytes ${ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES})
 target_link_libraries(lift_async_simple_max_bytes PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -32,7 +32,7 @@ target_include_directories(lift_async_simple_max_bytes SYSTEM PRIVATE ${CURL_INC
 
 ### async_batch_requests ###
 set(ASYNC_BATCH_REQUESTS_SOURCE_FILES
-    examples/async_batch_requests.cpp
+    async_batch_requests.cpp
 )
 add_executable(lift_async_batch_requests ${ASYNC_BATCH_REQUESTS_SOURCE_FILES})
 target_link_libraries(lift_async_batch_requests PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -42,7 +42,7 @@ target_include_directories(lift_async_batch_requests SYSTEM PRIVATE ${CURL_INCLU
 
 ### async_post_requests ###
 set(ASYNC_POST_REQUESTS_SOURCE_FILES
-    examples/async_post_requests.cpp
+    async_post_requests.cpp
 )
 add_executable(lift_async_post_requests ${ASYNC_POST_REQUESTS_SOURCE_FILES})
 target_link_libraries(lift_async_post_requests PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -51,7 +51,7 @@ target_include_directories(lift_async_post_requests SYSTEM PRIVATE ${CURL_INCLUD
 
 ### query_builder ###
 set(QUERY_BUILDER_SOURCE_FILES
-    examples/query_builder.cpp
+    query_builder.cpp
 )
 add_executable(lift_query_builder ${QUERY_BUILDER_SOURCE_FILES})
 target_link_libraries(lift_query_builder PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -60,7 +60,7 @@ target_include_directories(lift_query_builder SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### request_headers ###
 set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
-    examples/request_headers_simple.cpp
+    request_headers_simple.cpp
 )
 add_executable(lift_request_headers_simple ${REQUEST_HEADERS_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_request_headers_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -69,7 +69,7 @@ target_include_directories(lift_request_headers_simple SYSTEM PRIVATE ${CURL_INC
 
 ### benchmark_simple ###
 set(BENCHMARK_SIMPLE_SOURCE_FILES
-    examples/benchmark_simple.cpp
+    benchmark_simple.cpp
 )
 add_executable(lift_benchmark_simple ${BENCHMARK_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_benchmark_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -78,7 +78,7 @@ target_include_directories(lift_benchmark_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### user_data ###
 set(USER_DATA_SOURCE_FILES
-    examples/user_data.cpp
+    user_data.cpp
 )
 add_executable(lift_user_data ${USER_DATA_SOURCE_FILES})
 target_link_libraries(lift_user_data PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
@@ -88,7 +88,7 @@ target_include_directories(lift_user_data SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### transfer_progress_simple ###
 set(TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES
-    examples/transfer_progress_simple.cpp
+    transfer_progress_simple.cpp
 )
 add_executable(lift_transfer_progress_simple ${TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_transfer_progress_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})

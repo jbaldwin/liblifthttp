@@ -11,14 +11,38 @@ jobs:
 
       - run:
           name: install dependencies
-          command: apt-get -y install git cmake g++ clang zlib1g-dev libcurl4-openssl-dev libuv1-dev
+          command: |
+            apt-get -y install \
+              git \
+              cmake \
+              g++ \
+              clang \
+              zlib1g-dev \
+              libcurl4-openssl-dev \
+              libuv1-dev
+      
+      - run:
+          name: nginx
+          command: |
+            apt-get -y install nginx
+            service nginx start
 
       - checkout
 
       - run:
           name: build-g++
-          command: mkdir build-g++ && cd build-g++ && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ .. && make
+          command: |
+            mkdir build-g++ && 
+            cd build-g++ && 
+            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ .. && 
+            make &&
+            ctest
 
       - run:
           name: build-clang++
-          command: mkdir build-clang++ && cd build-clang++ && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make
+          command: |
+            mkdir build-clang++ && 
+            cd build-clang++ && 
+            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && 
+            make &&
+            ctest

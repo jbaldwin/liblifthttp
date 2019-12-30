@@ -30,8 +30,8 @@ static auto print_stats(
     std::cout << "Requests/sec: " << (total / static_cast<double>(duration_s)) << "\n";
 }
 
-static std::atomic<uint64_t> g_success { 0 };
-static std::atomic<uint64_t> g_error { 0 };
+static std::atomic<uint64_t> g_success{ 0 };
+static std::atomic<uint64_t> g_error{ 0 };
 
 static auto on_complete(lift::RequestHandle request, lift::EventLoop& event_loop) -> void
 {
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
     uint64_t threads = std::stoul(argv[4]);
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
+    lift::GlobalScopeInitializer lift_init{};
 
     {
         std::vector<std::unique_ptr<lift::EventLoop>> loops;

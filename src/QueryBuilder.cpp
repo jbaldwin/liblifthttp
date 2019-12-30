@@ -90,12 +90,12 @@ auto QueryBuilder::reset() -> void
 {
     m_query.clear();
     m_query.str("");
-    m_scheme = std::string_view {};
-    m_hostname = std::string_view {};
+    m_scheme = std::string_view{};
+    m_hostname = std::string_view{};
     m_port = 0;
     m_path_parts.clear();
     m_query_parameters.clear();
-    m_fragment = std::string_view {};
+    m_fragment = std::string_view{};
 }
 
 } // lift

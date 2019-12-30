@@ -89,7 +89,7 @@ auto Request::SetUrl(
         char* curl_url = nullptr;
         curl_easy_getinfo(m_curl_handle, CURLINFO_EFFECTIVE_URL, &curl_url);
         if (curl_url != nullptr) {
-            m_url = std::string_view { curl_url, std::strlen(curl_url) };
+            m_url = std::string_view{ curl_url, std::strlen(curl_url) };
             return true;
         }
     }
@@ -221,7 +221,7 @@ auto Request::RemoveHeader(
 {
     // Curl internally doesn't have a separate list, so just add it to the normal
     // list of headers and let curl remove it.
-    AddHeader(name, std::string_view {});
+    AddHeader(name, std::string_view{});
 }
 
 auto Request::AddHeader(
@@ -248,7 +248,7 @@ auto Request::AddHeader(
     }
     m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
 
-    std::string_view full_header { start, header_len - 1 }; // subtract off the null byte
+    std::string_view full_header{ start, header_len - 1 }; // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);
 }
 
@@ -367,7 +367,7 @@ auto Request::GetTotalTime() const -> std::chrono::milliseconds
 
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    return std::chrono::milliseconds { static_cast<int64_t>(total_time * SEC_2_MS) };
+    return std::chrono::milliseconds{ static_cast<int64_t>(total_time * SEC_2_MS) };
 }
 
 auto Request::GetCompletionStatus() const -> RequestStatus
@@ -377,7 +377,7 @@ auto Request::GetCompletionStatus() const -> RequestStatus
 
 auto Request::Reset() -> void
 {
-    m_url = std::string_view {};
+    m_url = std::string_view{};
     m_request_headers.clear();
     m_request_headers_idx.clear();
     if (m_curl_request_headers != nullptr) {
@@ -390,7 +390,7 @@ auto Request::Reset() -> void
     }
 
     // replace rather than clear() since this buffer is 'moved' into the RequestHandle and will free up memory.
-    m_request_data = std::string {};
+    m_request_data = std::string{};
 
     if (m_mime_handle != nullptr) {
         curl_mime_free(m_mime_handle);
@@ -509,7 +509,7 @@ auto curl_write_header(
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
     const size_t data_length = size * nitems;
 
-    std::string_view data_view { buffer, data_length };
+    std::string_view data_view{ buffer, data_length };
 
     if (data_view.empty()) {
         return data_length;
@@ -548,7 +548,7 @@ auto curl_write_header(
     // Calculate and append the Header view object.
     const char* start = raw_request_ptr->m_response_headers.c_str();
     auto total_length = raw_request_ptr->m_response_headers.length();
-    std::string_view request_data_view { (start + total_length) - cleaned_up_length, cleaned_up_length };
+    std::string_view request_data_view{ (start + total_length) - cleaned_up_length, cleaned_up_length };
     raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
 
     return data_length; // return original size for curl to continue processing

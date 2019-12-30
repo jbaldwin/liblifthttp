@@ -91,23 +91,23 @@ private:
     RequestPool m_request_pool;
 
     /// Set to true if the EventLoop is currently running.
-    std::atomic<bool> m_is_running { false };
+    std::atomic<bool> m_is_running{ false };
     /// Set to true if the EventLoop is currently shutting down.
-    std::atomic<bool> m_is_stopping { false };
+    std::atomic<bool> m_is_stopping{ false };
     /// The active number of requests running.
-    std::atomic<uint64_t> m_active_request_count { 0 };
+    std::atomic<uint64_t> m_active_request_count{ 0 };
 
     /// The UV event loop to drive libcurl.
-    uv_loop_t* m_loop { uv_loop_new() };
+    uv_loop_t* m_loop{ uv_loop_new() };
     /// The async trigger for injecting new requests into the event loop.
-    uv_async_t m_async {};
+    uv_async_t m_async{};
     /// libcurl requires a single timer to drive timeouts/wake-ups.
-    uv_timer_t m_timeout_timer {};
+    uv_timer_t m_timeout_timer{};
     /// The libcurl multi handle for driving multiple easy handles at once.
-    CURLM* m_cmh { curl_multi_init() };
+    CURLM* m_cmh{ curl_multi_init() };
 
     /// Pending requests are safely queued via this lock.
-    std::mutex m_pending_requests_lock {};
+    std::mutex m_pending_requests_lock{};
     /**
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
@@ -117,20 +117,20 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<RequestHandle> m_pending_requests {};
+    std::vector<RequestHandle> m_pending_requests{};
     /// Only accessible from within the EventLoop thread.
-    std::vector<RequestHandle> m_grabbed_requests {};
+    std::vector<RequestHandle> m_grabbed_requests{};
 
     /// The background thread spawned to drive the event loop.
-    std::thread m_background_thread {};
+    std::thread m_background_thread{};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
-    std::atomic<bool> m_async_closed { false };
+    std::atomic<bool> m_async_closed{ false };
     /// Flag to denote that the m_timeout_timer has been closed on shutdown.
-    std::atomic<bool> m_timeout_timer_closed { false };
+    std::atomic<bool> m_timeout_timer_closed{ false };
 
     /// The background thread runs from this function.
     auto run() -> void;

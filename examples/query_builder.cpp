@@ -8,11 +8,11 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
+    lift::GlobalScopeInitializer lift_init{};
 
-    lift::RequestPool request_pool {};
+    lift::RequestPool request_pool{};
 
-    lift::QueryBuilder query_builder {};
+    lift::QueryBuilder query_builder{};
     query_builder
         .SetScheme("https")
         .SetHostname("www.example.com")

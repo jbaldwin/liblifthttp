@@ -3,6 +3,8 @@
 /cmake-build-debug/
 /Release/
 /Debug/
+/build-g++/
+/build-clang++/
 
 /bin/*
 /lib/*

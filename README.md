@@ -1,13 +1,15 @@
 liblifthttp - The fast asynchronous C++17 HTTP client library
 =============================================================
 
+[![CircleCI](https://circleci.com/gh/jbaldwin/liblifthttp/tree/master.svg?style=svg)](https://circleci.com/gh/jbaldwin/liblifthttp/tree/master)
+
 You're using curl? Do you even lift?
 
-Copyright (c) 2017, Josh Baldwin
+Copyright (c) 2017-2019, Josh Baldwin
 
 https://github.com/jbaldwin/liblifthttp
 
-**liblifthttp** is a C++17 client library that provides an easy to use high throughput asynchronous HTTP request client library.  This library was designed with an easy to use client API and maximum performance for thousands of asynchronous HTTP requests on a single (or multiple) worker threads.  Additional HTTP requests can be injected into one of the worker threads with different timeouts at any point in time safely.  The asynchronuos API can perform upwards of 30,000 HTTP requests / second on a single 2.8GHZ core.
+**liblifthttp** is a C++17 client library that provides an easy to use high throughput asynchronous HTTP request client library.  This library was designed with an easy to use client API and maximum performance for thousands of asynchronous HTTP requests on a single (or multiple) worker threads.  Additional HTTP requests can be injected into one of the worker threads with different timeouts at any point in time safely.
 
 **liblifthttp** is licensed under the Apache 2.0 license.
 
@@ -23,8 +25,8 @@ https://github.com/jbaldwin/liblifthttp
     C++17 compiler (g++/clang++)
     CMake
     pthreads/std::thread
-    libcurl
-    libuv
+    libcurl devel
+    libuv devel
 
 ## Instructions
 
@@ -77,6 +79,10 @@ while(loop.GetActiveRequestCount() > 0) {
 
 // When loop goes out of scope here it will automatically stop the background thread.
 ```
+
+## Benchmarks
+
+WIP
 
 ## Support
 

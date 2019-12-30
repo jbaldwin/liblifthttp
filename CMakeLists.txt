@@ -45,7 +45,7 @@ set(LIFT_CURL_LIBRARY_DEPENDENCIES
     "-Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group"
 )
 
-set(SOURCE_FILES
+set(LIBLIFT_SOURCE_FILES
     inc/lift/Escape.h src/Escape.cpp
     inc/lift/EventLoop.h inc/lift/EventLoop.tcc src/EventLoop.cpp
     inc/lift/Header.h src/Header.cpp
@@ -59,7 +59,7 @@ set(SOURCE_FILES
     inc/lift/ResolveHost.h src/ResolveHost.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+add_library(${PROJECT_NAME} STATIC ${LIBLIFT_SOURCE_FILES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CURL_INCLUDE})
@@ -70,10 +70,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES}
 )
 
-if(UNIX)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Weffc++ -Wpedantic -pedantic-errors)
-endif()
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(
         ${PROJECT_NAME} PRIVATE
@@ -83,26 +79,6 @@ endif()
 
 if(CLANG_TIDY_BIN)
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
-endif()
-
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    target_compile_options(
-        ${PROJECT_NAME} PRIVATE
-        -Weverything
-        -Wno-c++98-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-padded
-        -Wno-weak-vtables
-        -Wno-gnu-anonymous-struct
-        -Wno-nested-anon-types
-        -Wno-exit-time-destructors
-        -Wno-global-constructors
-        -Wno-error=deprecated-declarations
-        -Wno-disabled-macro-expansion
-        -Wno-covered-switch-default
-        -fcolor-diagnostics
-        -ferror-limit=128
-    )
 endif()
 
 include(examples/CMakeLists.txt)

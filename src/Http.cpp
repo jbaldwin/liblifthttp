@@ -361,6 +361,9 @@ auto to_string(
         return APPLICATION_ZIP;
     case ContentType::APPLICATION_X_WWW_FORM_URLENCODED:
         return APPLICATION_X_WWW_FORM_URLENCODED;
+
+    default:
+        return NO_CONTENT;
     }
 }
 
@@ -378,6 +381,9 @@ auto to_string(
         return CT_KEEP_ALIVE;
     case ConnectionType::UPGRADE:
         return CT_UPGRADE;
+    
+    default:
+        return CT_KEEP_ALIVE;
     }
 }
 

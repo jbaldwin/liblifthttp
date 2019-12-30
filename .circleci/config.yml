@@ -2,15 +2,23 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: ubuntu:rolling
 
     steps:
+      - run: 
+          name: update
+          command: apt-get -y update 
+
+      - run:
+          name: install dependencies
+          command: apt-get -y install git cmake g++ clang zlib1g-dev libcurl4-openssl-dev libuv1-dev
+
       - checkout
 
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: build-g++
+          command: mkdir build-g++ && cd build-g++ && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ .. && make
 
       - run:
-          name: Print the Current Time
-          command: date
+          name: build-clang++
+          command: mkdir build-clang++ && cd build-clang++ && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make

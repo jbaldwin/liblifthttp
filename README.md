@@ -166,13 +166,20 @@ Note in this final test the box is fully utilized and is competing for CPU time 
       3,781,388 requests in 30s
       Req/sec: 126,046
 
-## Testing
+## Contributing and Testing
 
-This project has a [CircleCI](https://circleci.com/) implementation to compile and run tests
-against Ubuntu g++ and clang++.  More distros might be added in the future.
+This project has a [CircleCI](https://circleci.com/) implementation to compile and run unit tests as well as simple integration tests against a local `nginx` instance.
 
-Any patchests or features added should include relevant tests to increase the coverage of the library.
-Examples are also welcome if understanding how the feature works is difficult or provide some additional value the tests cannot.
+Currently tested distros:
+* ubuntu:rolling
+* fedora:latest
+
+Currently tested compilers:
+* g++
+* clang
+
+Contributing should ideally be a single commit if possible.  Any new feature should include relevant tests and examples 
+are welcome if understanding how the feature works is difficult or provides some additional value the tests otherwise cannot.
 
 CMake is setup to understand how to run the tests.  Building and then running `ctest` will
 execute the tests locally.  Note that the integration tests that make HTTP calls require a webserver

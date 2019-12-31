@@ -90,11 +90,13 @@ while(loop.GetActiveRequestCount() > 0) {
     cmake --build .
 
 ### CMake Projects
-To use within your cmake project you can clone the project or use git submodules and then add subdirectory in the parent projects `CMakeList.txt`,
+To use within your cmake project you can clone the project or use git submodules and then add subdirectory in the parent project's `CMakeList.txt`,
 assuming the lift code is in a `liblifthttp/` subdirectory of the parent project:
+    
     add_subdirectory(liblifthttp)
 
 To link to the `<project_name>` then use the following:
+    
     add_executable(<project_name> main.cpp)
     target_link_libraries(<project_name> PRIVATE lifthttp ${LIFT_LIB_DEPS})
     target_compile_features(<project_name> PRIVATE cxx_std_17)
@@ -104,14 +106,14 @@ Include lift in the project's code by simply including `#include <lift/lift.hpp>
 
 Note that by default liblifthttp will attempt to use system versions of `libcurl-dev` 
 and `libuv-dev`.  If your project, like some of mine do, require a custom built version 
-of `libcurl` then you can specify the following cmake variables to override where liblifthttp
-will link `libcurl` development libraries: (custom libuv not supported yet)
+of `libcurl` then you can specify the following `cmake` variables to override where liblifthttp
+will link `libcurl` development libraries: (custom `libuv` not supported yet)
 
     ${CURL_INCLUDE} # The curl.h header location, default is empty.
     ${LIBSSL}       # The ssl library to link against, default is empty.
     ${LIBCRYPTO}    # The crypto library to link against, default is empty.
     ${LIBCURL}      # The curl library to link against, default is '-lcurl'.
-    ${LIBCARES}     # The cares (dns) library to link against, default is empty.
+    ${LIBCARES}     # The c-ares (dns) library to link against, default is empty.
 
 ## Benchmarks
 Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.
@@ -126,6 +128,7 @@ Here is how the benchmark application is called (similiar to `wrk`):
 
     $ ./examples/lift_benchmark_simple 
     ./examples/lift_benchmark_simple <url> <duration_seconds> <connections> <threads>
+
 
     $ ./examples/lift_benchmark_simple http://localhost:80 30 1 1
     Thread Stats    Avg
@@ -163,9 +166,9 @@ This project has a [CircleCI](https://circleci.com/) implementation to compile a
 against Ubuntu g++ and clang++.  More distros might be added in the future.
 
 Any patchests or features added should include relevant tests to increase the coverage of the library.
-Examples are also welcome if they are interesting or more difficult to understand how to use the feature.
+Examples are also welcome if understanding how the feature works is difficult or provide some additional value the tests cannot.
 
-CMake is setup to understand how to run the tests.  A simple build and then running `ctest` will
+CMake is setup to understand how to run the tests.  Building and then running `ctest` will
 execute the tests locally.  Note that the integration tests that make HTTP calls require a webserver
 on http://localhost:80/ that will respond with a 200 on the root directory and 404 on any other url.
 A future iteration might include an embedded server that responds with more sophisticated tests.

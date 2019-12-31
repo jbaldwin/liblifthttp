@@ -4,34 +4,42 @@
 
 namespace lift {
 
-class Header {
+class HeaderView {
 public:
     /**
      * Creates a view into the header data.
      * @param header_data The full header data to split into name/value pair.
      */
-    explicit Header(
+    explicit HeaderView(
         std::string_view header_data);
 
     /**
      * @return The entire header, e.g. "Connection: Keep-Alive"
      */
-    [[nodiscard]] auto GetHeader() const -> std::string_view;
+    [[nodiscard]] auto GetHeader() const -> std::string_view {
+        return m_header;
+    }
 
     /**
      * @return A view into the header's name.
      */
-    [[nodiscard]] auto GetName() const -> std::string_view;
+    [[nodiscard]] auto GetName() const -> std::string_view {
+        return m_name;
+    }
 
     /**
      * @return True if this header has a value.
      */
-    [[nodiscard]] auto HasValue() const -> bool;
+    [[nodiscard]] auto HasValue() const -> bool {
+        return !m_value.empty();
+    }
 
     /**
      * @return A view into the header's value or empty if it doesn't have a value.
      */
-    [[nodiscard]] auto GetValue() const -> std::string_view;
+    [[nodiscard]] auto GetValue() const -> std::string_view {
+        return m_value;
+    }
 
 private:
     /// The full header data.

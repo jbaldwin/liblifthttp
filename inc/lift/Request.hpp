@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/Header.hpp"
+#include "lift/HeaderView.hpp"
 #include "lift/Http.hpp"
 #include "lift/RequestStatus.hpp"
 #include "lift/ResolveHost.hpp"
@@ -125,7 +125,7 @@ public:
     /**
      * @return The list of headers applied to this request.
      */
-    [[nodiscard]] auto GetRequestHeaders() const -> const std::vector<Header>&;
+    [[nodiscard]] auto GetRequestHeaders() const -> const std::vector<HeaderView>&;
 
     /**
      * Sets the request to HTTP POST and the body of the request
@@ -225,7 +225,7 @@ public:
     /**
      * @return The HTTP response headers.
      */
-    [[nodiscard]] auto GetResponseHeaders() const -> const std::vector<Header>&;
+    [[nodiscard]] auto GetResponseHeaders() const -> const std::vector<HeaderView>&;
 
     /**
      * @return The HTTP download payload.
@@ -295,7 +295,7 @@ private:
     /// The request headers.
     std::string m_request_headers{};
     /// The request headers index.  Used to generate the curl slist.
-    std::vector<Header> m_request_headers_idx{};
+    std::vector<HeaderView> m_request_headers_idx{};
     /// The curl request headers.
     curl_slist* m_curl_request_headers{ nullptr };
     /// Have the headers been committed into cURL?
@@ -310,7 +310,7 @@ private:
     /// The response headers.
     std::string m_response_headers{};
     /// Views into each header.
-    std::vector<Header> m_response_headers_idx{};
+    std::vector<HeaderView> m_response_headers_idx{};
     /// The response data if any.
     std::string m_response_data{};
 

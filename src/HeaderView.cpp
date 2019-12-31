@@ -1,10 +1,10 @@
-#include "lift/Header.hpp"
+#include "lift/HeaderView.hpp"
 
 #include <string>
 
 namespace lift {
 
-Header::Header(
+HeaderView::HeaderView(
     std::string_view header_data)
     : m_header(header_data)
     , m_name(header_data)
@@ -26,26 +26,6 @@ Header::Header(
             m_value.remove_prefix(1);
         }
     }
-}
-
-auto Header::GetHeader() const -> std::string_view
-{
-    return m_header;
-}
-
-auto Header::GetName() const -> std::string_view
-{
-    return m_name;
-}
-
-auto Header::HasValue() const -> bool
-{
-    return !m_value.empty();
-}
-
-auto Header::GetValue() const -> std::string_view
-{
-    return m_value;
 }
 
 } // lift

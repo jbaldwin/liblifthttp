@@ -47,7 +47,7 @@ set(LIFT_LIB_DEPS "${LIFT_SYSTEM_LIBRARY_DEPENDENCIES} ${LIFT_CURL_LIBRARY_DEPEN
 set(LIBLIFT_SOURCE_FILES
     inc/lift/Escape.hpp src/Escape.cpp
     inc/lift/EventLoop.hpp inc/lift/EventLoop.tcc src/EventLoop.cpp
-    inc/lift/Header.hpp src/Header.cpp
+    inc/lift/HeaderView.hpp src/HeaderView.cpp
     inc/lift/Lift.hpp src/Lift.cpp
     inc/lift/Http.hpp src/Http.cpp
     inc/lift/QueryBuilder.hpp src/QueryBuilder.cpp

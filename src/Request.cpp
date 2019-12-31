@@ -252,7 +252,7 @@ auto Request::AddHeader(
     m_request_headers_idx.emplace_back(full_header);
 }
 
-auto Request::GetRequestHeaders() const -> const std::vector<Header>&
+auto Request::GetRequestHeaders() const -> const std::vector<HeaderView>&
 {
     return m_request_headers_idx;
 }
@@ -351,7 +351,7 @@ auto Request::GetResponseStatusCode() const -> http::StatusCode
     return http::to_enum(static_cast<uint32_t>(http_response_code));
 }
 
-auto Request::GetResponseHeaders() const -> const std::vector<Header>&
+auto Request::GetResponseHeaders() const -> const std::vector<HeaderView>&
 {
     return m_response_headers_idx;
 }

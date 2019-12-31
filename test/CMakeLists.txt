@@ -4,6 +4,7 @@ project(liblifthttp_tests)
 set(LIBLIFT_TEST_SOURCE_FILES
     AsyncRequestTest.hpp
     EscapeTest.hpp
+    QueryBuilderTest.hpp
     SyncRequestTest.hpp
     TransferProgressRequest.hpp
 )

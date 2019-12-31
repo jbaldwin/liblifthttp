@@ -2,24 +2,9 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:rolling
+      - image: blackjacktheviking/liblifthttpbuilder:0.2
       - image: nginx:stable
     steps:
-      - run: 
-          name: update
-          command: apt-get -y update 
-      - run:
-          name: install dependencies
-          command: |
-            apt-get -y install \
-              git \
-              cmake \
-              ninja-build \
-              g++ \
-              clang \
-              zlib1g-dev \
-              libcurl4-openssl-dev \
-              libuv1-dev
       - checkout
       - run:
           name: build release g++

@@ -64,10 +64,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ${LIFT_CURL_LIBRARY_DEPENDENCIES}
-    ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES}
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIFT_LIB_DEPS})
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(

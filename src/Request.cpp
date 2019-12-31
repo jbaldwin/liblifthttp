@@ -64,6 +64,7 @@ auto Request::init() -> void
 
     m_request_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
     m_request_headers_idx.reserve(HEADER_DEFAULT_COUNT);
+    m_curl_request_headers.reserve(HEADER_DEFAULT_COUNT);
     m_headers_committed = false;
 
     m_response_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
@@ -380,10 +381,8 @@ auto Request::Reset() -> void
     m_url = std::string_view{};
     m_request_headers.clear();
     m_request_headers_idx.clear();
-    if (m_curl_request_headers != nullptr) {
-        curl_slist_free_all(m_curl_request_headers);
-        m_curl_request_headers = nullptr;
-    }
+    // No need to clear m_curl_request_headers
+
     if (m_curl_resolve_hosts != nullptr) {
         curl_slist_free_all(m_curl_resolve_hosts);
         m_curl_resolve_hosts = nullptr;
@@ -410,20 +409,28 @@ auto Request::prepareForPerform() -> void
 {
     clearResponseBuffers();
     if (!m_headers_committed && !m_request_headers_idx.empty()) {
-        // Its possible the headers have been previous committed -- this will re-commit them all
-        // in the event additional headers have been added between requests.
-        if (m_curl_request_headers != nullptr) {
-            curl_slist_free_all(m_curl_request_headers);
-            m_curl_request_headers = nullptr;
+        // Make sure we've got enough items allocated.
+        if (m_curl_request_headers.size() < m_request_headers_idx.size()) {
+            m_curl_request_headers.resize(m_request_headers_idx.size());
         }
 
-        for (const auto& header : m_request_headers_idx) {
-            m_curl_request_headers = curl_slist_append(
-                m_curl_request_headers,
-                header.GetHeader().data());
+        curl_slist* prev = nullptr;
+        for (std::size_t i = 0; i < m_request_headers_idx.size(); ++i) {
+            const auto& header = m_request_headers_idx[i];
+
+            auto& item = m_curl_request_headers[i];
+            // WOOF! curl shouldn't edit this...
+            item.data = const_cast<char*>(header.GetHeader().data());
+            item.next = nullptr;
+
+            if (prev != nullptr) {
+                prev->next = &item;
+            }
+
+            prev = &item;
         }
 
-        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, &m_curl_request_headers.front());
         m_headers_committed = true;
     }
 

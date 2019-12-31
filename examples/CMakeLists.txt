@@ -19,11 +19,11 @@ target_link_libraries(lift_async_simple PRIVATE lifthttp ${LIFT_LIB_DEPS})
 target_compile_features(lift_async_simple PRIVATE cxx_std_17)
 target_include_directories(lift_async_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
-### benchmark_simple ###
-set(LIBLIFTHTTP_BENCHMARK_SIMPLE_SOURCE_FILES
-    benchmark_simple.cpp
+### benchmark ###
+set(LIBLIFTHTTP_BENCHMARK_SOURCE_FILES
+    benchmark.cpp
 )
-add_executable(lift_benchmark_simple ${LIBLIFTHTTP_BENCHMARK_SIMPLE_SOURCE_FILES})
-target_link_libraries(lift_benchmark_simple PRIVATE lifthttp ${LIFT_LIB_DEPS})
-target_compile_features(lift_benchmark_simple PRIVATE cxx_std_17)
-target_include_directories(lift_benchmark_simple SYSTEM PRIVATE ${CURL_INCLUDE})
+add_executable(lift_benchmark ${LIBLIFTHTTP_BENCHMARK_SOURCE_FILES})
+target_link_libraries(lift_benchmark PRIVATE lifthttp ${LIFT_LIB_DEPS})
+target_compile_features(lift_benchmark PRIVATE cxx_std_17)
+target_include_directories(lift_benchmark SYSTEM PRIVATE ${CURL_INCLUDE})

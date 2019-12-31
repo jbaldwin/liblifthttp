@@ -23,7 +23,7 @@ static auto print_stats(
     std::cout << "Thread Stats    Avg\n";
     std::cout << "  Req/sec     " << (total / static_cast<double>(threads) / duration_s) << "\n";
 
-    std::cout << "\nGlobal Stats\n";
+    std::cout << "Global Stats\n";
     std::cout << "  " << total << " requests in " << duration_s << "s\n";
     if (total_error > 0) {
         std::cout << "  " << total_error << " errors\n";

@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:rolling
+      - image: blackjacktheviking/liblifthttpbuilder:0.1
       - image: nginx:stable
     steps:
       - run: 

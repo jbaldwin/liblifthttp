@@ -8,7 +8,7 @@
 # https://github.com/jbaldwin/liblifthttp
 
 # Pull base image.
-FROM ubuntu:latest
+FROM ubuntu:rolling
 
 # Install build dependencies.
 RUN \
@@ -27,4 +27,4 @@ RUN \
 COPY docker-entrypoint.d/docker-entrypoint.sh /
 
 # Define default command.
-ENTRYPOINT ["/docker-entrypoint.sh", "tail -f /dev/null"]
+ENTRYPOINT ["/docker-entrypoint.sh", "/bin/bash"]

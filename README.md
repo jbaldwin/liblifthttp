@@ -2,6 +2,14 @@ liblifthttp - Safe Easy to use C++17 HTTP client library.
 =========================================================
 
 [![CircleCI](https://circleci.com/gh/jbaldwin/liblifthttp/tree/master.svg?style=svg)](https://circleci.com/gh/jbaldwin/liblifthttp/tree/master)
+[![language][badge.language]][language]
+[![license][badge.license]][license]
+
+[badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
+[badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue
+
+[language]: https://en.wikipedia.org/wiki/C%2B%2B17
+[license]: https://en.wikipedia.org/wiki/Apache_License
 
 You're using curl? Do you even lift?
 

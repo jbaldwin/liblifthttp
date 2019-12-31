@@ -297,7 +297,7 @@ private:
     /// The request headers index.  Used to generate the curl slist.
     std::vector<HeaderView> m_request_headers_idx{};
     /// The curl request headers.
-    curl_slist* m_curl_request_headers{ nullptr };
+    std::vector<curl_slist> m_curl_request_headers{};
     /// Have the headers been committed into cURL?
     bool m_headers_committed{ false };
     /// The request data if any. Mutually exclusive with m_mime_handle.

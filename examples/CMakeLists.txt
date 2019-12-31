@@ -6,15 +6,15 @@ set(SYNCH_SIMPLE_SOURCE_FILES
     synch_simple.cpp
 )
 add_executable(lift_synch_simple ${SYNCH_SIMPLE_SOURCE_FILES})
-target_link_libraries(lift_synch_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
+target_link_libraries(lift_synch_simple PRIVATE lifthttp ${LIFT_LIB_DEPS})
 target_compile_features(lift_synch_simple PRIVATE cxx_std_17)
 target_include_directories(lift_synch_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
 ### async_simple ###
-set(ASYNC_SIMPLE_SOURCE_FILES
+set(LIBLIFTHTTP_ASYNC_SIMPLE_SOURCE_FILES
     async_simple.cpp
 )
-add_executable(lift_async_simple ${ASYNC_SIMPLE_SOURCE_FILES})
+add_executable(lift_async_simple ${LIBLIFTHTTP_ASYNC_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_async_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
 target_compile_features(lift_async_simple PRIVATE cxx_std_17)
 target_include_directories(lift_async_simple SYSTEM PRIVATE ${CURL_INCLUDE})
@@ -27,16 +27,6 @@ add_executable(lift_async_simple_max_bytes ${ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES
 target_link_libraries(lift_async_simple_max_bytes PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
 target_compile_features(lift_async_simple_max_bytes PRIVATE cxx_std_17)
 target_include_directories(lift_async_simple_max_bytes SYSTEM PRIVATE ${CURL_INCLUDE})
-
-### async_batch_requests ###
-set(ASYNC_BATCH_REQUESTS_SOURCE_FILES
-    async_batch_requests.cpp
-)
-add_executable(lift_async_batch_requests ${ASYNC_BATCH_REQUESTS_SOURCE_FILES})
-target_link_libraries(lift_async_batch_requests PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
-target_compile_features(lift_async_batch_requests PRIVATE cxx_std_17)
-target_include_directories(lift_async_batch_requests SYSTEM PRIVATE ${CURL_INCLUDE})
-
 
 ### async_post_requests ###
 set(ASYNC_POST_REQUESTS_SOURCE_FILES

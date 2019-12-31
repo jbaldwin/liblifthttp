@@ -42,6 +42,8 @@ set(LIFT_CURL_LIBRARY_DEPENDENCIES
     "-Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group"
 )
 
+set(LIFT_LIB_DEPS "${LIFT_SYSTEM_LIBRARY_DEPENDENCIES} ${LIFT_CURL_LIBRARY_DEPENDENCIES}")
+
 set(LIBLIFT_SOURCE_FILES
     inc/lift/Escape.hpp src/Escape.cpp
     inc/lift/EventLoop.hpp inc/lift/EventLoop.tcc src/EventLoop.cpp

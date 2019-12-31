@@ -5,7 +5,7 @@ liblifthttp - Safe Easy to use C++17 HTTP client library.
 
 You're using curl? Do you even lift?
 
-Copyright (c) 2017-2019, Josh Baldwin
+Copyright (c) 2017-2020, Josh Baldwin
 
 https://github.com/jbaldwin/liblifthttp
 
@@ -15,42 +15,11 @@ https://github.com/jbaldwin/liblifthttp
 
 # Overview #
 * Easy to use Synchronous and Asynchronous HTTP Request APIs.
-* Safe C++17 Client library API, modern memory move semantics.
-* Optional background IO thread(s) for sending and receiving Async HTTP requests.
+* Safe C++17 client library API, modern memory move semantics.
+* Background IO thread(s) for sending and receiving Async HTTP requests.
 * Request pooling for re-using HTTP requests.
 
 # Usage #
-
-## Requirements
-    C++17 compiler (g++/clang++)
-    CMake
-    make and/or ninja
-    pthreads/std::thread
-    libcurl devel
-    libuv devel
-
-## Instructions
-
-### Building
-    # This will produce a static library to link against your project.
-    mkdir Release && cd Release
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    cmake --build .
-
-### CMake Projects
-To use within your cmake project you can checkout the code locally and then use
-`add_subdirectory(liblifthttp)` to include the project.  
-
-Note that by default liblifthttp will attempt to use system versions of `libcurl` 
-and `libuv`.  If your project, like some of mine do, require a custom built version 
-of `libcurl` then you can specify the following cmake variables to override where liblifthttp
-will link `libcurl` development libraries: (custom libuv not supported yet)
-
-    ${CURL_INCLUDE} # The curl.h header location, default is empty.
-    ${LIBSSL}       # The ssl library to link against, default is empty.
-    ${LIBCRYPTO}    # The crypto library to link against, default is empty.
-    ${LIBCURL}      # The curl library to link against, default is '-lcurl'.
-    ${LIBCARES}     # The cares (dns) library to link against, default is empty.
 
 ## Examples
 
@@ -104,13 +73,53 @@ while(loop.GetActiveRequestCount() > 0) {
 // When loop goes out of scope here it will automatically stop the background thread and cleanup all resources.
 ```
 
+## Requirements
+    C++17 compiler (g++/clang++)
+    CMake
+    make and/or ninja
+    pthreads/std::thread
+    libcurl devel
+    libuv devel
+
+## Instructions
+
+### Building
+    # This will produce a static library to link against your project.
+    mkdir Release && cd Release
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    cmake --build .
+
+### CMake Projects
+To use within your cmake project you can clone the project or use git submodules and then add subdirectory in the parent projects `CMakeList.txt`,
+assuming the lift code is in a `liblifthttp/` subdirectory of the parent project:
+    add_subdirectory(liblifthttp)
+
+To link to the `<project_name>` then use the following:
+    add_executable(<project_name> main.cpp)
+    target_link_libraries(<project_name> PRIVATE lifthttp ${LIFT_LIB_DEPS})
+    target_compile_features(<project_name> PRIVATE cxx_std_17)
+    target_include_directories(<project_name> SYSTEM PRIVATE ${CURL_INCLUDE})
+
+Include lift in the project's code by simply including `#include <lift/lift.hpp>` as needed.
+
+Note that by default liblifthttp will attempt to use system versions of `libcurl-dev` 
+and `libuv-dev`.  If your project, like some of mine do, require a custom built version 
+of `libcurl` then you can specify the following cmake variables to override where liblifthttp
+will link `libcurl` development libraries: (custom libuv not supported yet)
+
+    ${CURL_INCLUDE} # The curl.h header location, default is empty.
+    ${LIBSSL}       # The ssl library to link against, default is empty.
+    ${LIBCRYPTO}    # The crypto library to link against, default is empty.
+    ${LIBCURL}      # The curl library to link against, default is '-lcurl'.
+    ${LIBCARES}     # The cares (dns) library to link against, default is empty.
+
 ## Benchmarks
 
 WIP
 
 ## Testing
 
-This project has a simple [CircleCI](https://circleci.com/) implementation to compile and run tests
+This project has a [CircleCI](https://circleci.com/) implementation to compile and run tests
 against Ubuntu g++ and clang++.  More distros might be added in the future.
 
 Any patchests or features added should include relevant tests to increase the coverage of the library.

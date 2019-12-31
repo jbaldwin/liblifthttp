@@ -19,15 +19,6 @@ target_link_libraries(lift_async_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEP
 target_compile_features(lift_async_simple PRIVATE cxx_std_17)
 target_include_directories(lift_async_simple SYSTEM PRIVATE ${CURL_INCLUDE})
 
-### async_simple_max_bytes ###
-set(ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES
-    async_simple_max_bytes.cpp
-)
-add_executable(lift_async_simple_max_bytes ${ASYNC_SIMPLE_MAX_BYTES_SOURCE_FILES})
-target_link_libraries(lift_async_simple_max_bytes PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
-target_compile_features(lift_async_simple_max_bytes PRIVATE cxx_std_17)
-target_include_directories(lift_async_simple_max_bytes SYSTEM PRIVATE ${CURL_INCLUDE})
-
 ### async_post_requests ###
 set(ASYNC_POST_REQUESTS_SOURCE_FILES
     async_post_requests.cpp
@@ -72,13 +63,3 @@ add_executable(lift_user_data ${USER_DATA_SOURCE_FILES})
 target_link_libraries(lift_user_data PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
 target_compile_features(lift_user_data PRIVATE cxx_std_17)
 target_include_directories(lift_user_data SYSTEM PRIVATE ${CURL_INCLUDE})
-
-
-### transfer_progress_simple ###
-set(TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES
-    transfer_progress_simple.cpp
-)
-add_executable(lift_transfer_progress_simple ${TRANSFER_PROGRESS_SIMPLE_SOURCE_FILES})
-target_link_libraries(lift_transfer_progress_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
-target_compile_features(lift_transfer_progress_simple PRIVATE cxx_std_17)
-target_include_directories(lift_transfer_progress_simple SYSTEM PRIVATE ${CURL_INCLUDE})

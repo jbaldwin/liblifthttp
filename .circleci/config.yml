@@ -47,9 +47,9 @@ jobs:
           name: test release g++
           command: |
             cd build-release-g++
-            ctest -v
+            ctest -V
       - run:
           name: test release clang++
           command: |
             cd build-release-clang++
-            ctest -v
+            ctest -V

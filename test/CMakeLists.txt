@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 project(liblifthttp_tests)
 
 set(LIBLIFT_TEST_SOURCE_FILES
+    AsyncRequestTest.hpp
     EscapeTest.hpp
     SyncRequestTest.hpp
+    TransferProgressRequest.hpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})

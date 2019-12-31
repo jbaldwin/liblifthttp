@@ -7,6 +7,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     QueryBuilderTest.hpp
     SyncRequestTest.hpp
     TransferProgressRequest.hpp
+    UserDataRequestTest.hpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})

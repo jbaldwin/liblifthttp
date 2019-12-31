@@ -28,15 +28,6 @@ target_link_libraries(lift_async_post_requests PRIVATE lifthttp ${LIFT_CURL_LIBR
 target_compile_features(lift_async_post_requests PRIVATE cxx_std_17)
 target_include_directories(lift_async_post_requests SYSTEM PRIVATE ${CURL_INCLUDE})
 
-### query_builder ###
-set(QUERY_BUILDER_SOURCE_FILES
-    query_builder.cpp
-)
-add_executable(lift_query_builder ${QUERY_BUILDER_SOURCE_FILES})
-target_link_libraries(lift_query_builder PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
-target_compile_features(lift_query_builder PRIVATE cxx_std_17)
-target_include_directories(lift_query_builder SYSTEM PRIVATE ${CURL_INCLUDE})
-
 ### request_headers ###
 set(REQUEST_HEADERS_SIMPLE_SOURCE_FILES
     request_headers_simple.cpp
@@ -54,12 +45,3 @@ add_executable(lift_benchmark_simple ${BENCHMARK_SIMPLE_SOURCE_FILES})
 target_link_libraries(lift_benchmark_simple PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
 target_compile_features(lift_benchmark_simple PRIVATE cxx_std_17)
 target_include_directories(lift_benchmark_simple SYSTEM PRIVATE ${CURL_INCLUDE})
-
-### user_data ###
-set(USER_DATA_SOURCE_FILES
-    user_data.cpp
-)
-add_executable(lift_user_data ${USER_DATA_SOURCE_FILES})
-target_link_libraries(lift_user_data PRIVATE lifthttp ${LIFT_CURL_LIBRARY_DEPENDENCIES} ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES})
-target_compile_features(lift_user_data PRIVATE cxx_std_17)
-target_include_directories(lift_user_data SYSTEM PRIVATE ${CURL_INCLUDE})

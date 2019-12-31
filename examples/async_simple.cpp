@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     std::chrono::milliseconds timeout = 250ms;
     for (auto& url : urls) {
         std::cout << "Requesting " << url << std::endl;
-        lift::RequestHandle request = request_pool.Produce(url, on_complete, timeout);
+        auto request = request_pool.Produce(url, on_complete, timeout);
         event_loop.StartRequest(std::move(request));
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);

@@ -114,8 +114,48 @@ will link `libcurl` development libraries: (custom libuv not supported yet)
     ${LIBCARES}     # The cares (dns) library to link against, default is empty.
 
 ## Benchmarks
+Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.
 
-WIP
+Here is the CPU the benchmarks were run on:
+
+    cat /proc/cpuinfo 
+    ...
+    Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+
+Here is how the benchmark application is called (similiar to `wrk`):
+
+    $ ./examples/lift_benchmark_simple 
+    ./examples/lift_benchmark_simple <url> <duration_seconds> <connections> <threads>
+
+    $ ./examples/lift_benchmark_simple http://localhost:80 30 1 1
+    Thread Stats    Avg
+      Req/sec     18,962.3
+    Global Stats
+      568,869 requests in 30s
+      Req/sec: 18,962.3
+
+    $ ./examples/lift_benchmark_simple http://localhost:80 30 100 1
+    Thread Stats    Avg
+      Req/sec     43,917.9
+    Global Stats
+      1,317,538 requests in 30s
+      Req/sec: 43,917.9
+
+    $ ./examples/lift_benchmark_simple http://localhost:80 30 100 4
+    Thread Stats    Avg
+      Req/sec     26,685.9
+    Global Stats
+      3,202,308 requests in 30s
+      Req/sec: 106,744
+
+Note in this final test the box is fully utilized and is competing for CPU time with nginx.
+
+    $ ./examples/lift_benchmark_simple http://localhost:80 30 100 6
+    Thread Stats    Avg
+      Req/sec     21,007.7
+    Global Stats
+      3,781,388 requests in 30s
+      Req/sec: 126,046
 
 ## Testing
 

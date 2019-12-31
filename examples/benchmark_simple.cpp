@@ -20,14 +20,15 @@ static auto print_stats(
     uint64_t total_error) -> void
 {
     auto total = total_success + total_error;
-    std::cout << "  Thread Stats    Avg\n";
-    std::cout << "    Req/sec     " << (total / static_cast<double>(threads) / duration_s) << "\n";
+    std::cout << "Thread Stats    Avg\n";
+    std::cout << "  Req/sec     " << (total / static_cast<double>(threads) / duration_s) << "\n";
 
+    std::cout << "\nGlobal Stats\n";
     std::cout << "  " << total << " requests in " << duration_s << "s\n";
     if (total_error > 0) {
         std::cout << "  " << total_error << " errors\n";
     }
-    std::cout << "Requests/sec: " << (total / static_cast<double>(duration_s)) << "\n";
+    std::cout << "  Req/sec: " << (total / static_cast<double>(duration_s)) << "\n";
 }
 
 static std::atomic<uint64_t> g_success{ 0 };

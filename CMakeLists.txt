@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 2.8)
 project(lifthttp CXX)
 
 find_program(CLANG_TIDY_BIN NAMES "clang-tidy" DOC "clang-tidy binary location")
@@ -58,13 +58,13 @@ set(LIBLIFT_SOURCE_FILES
     inc/lift/ResolveHost.hpp src/ResolveHost.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${LIBLIFT_SOURCE_FILES})
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+add_library(${PROJECT_NAME} STATIC SHARED ${LIBLIFT_SOURCE_FILES})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CURL_INCLUDE})
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LIFT_LIB_DEPS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LIB_DEPS})
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(

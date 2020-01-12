@@ -86,11 +86,12 @@ while(loop.GetActiveRequestCount() > 0) {
     pthreads/std::thread
     libcurl devel
     libuv devel
+    zlib devel
 
 ## Instructions
 
 ### Building
-    # This will produce a static library to link against your project.
+    # This will produce a shared and static library to link against your project.
     mkdir Release && cd Release
     cmake -DCMAKE_BUILD_TYPE=Release ..
     cmake --build .
@@ -104,16 +105,13 @@ assuming the lift code is in a `liblifthttp/` subdirectory of the parent project
 To link to the `<project_name>` then use the following:
     
     add_executable(<project_name> main.cpp)
-    target_link_libraries(<project_name> PRIVATE lifthttp ${LIFT_LIB_DEPS})
-    target_compile_features(<project_name> PRIVATE cxx_std_17)
-    target_include_directories(<project_name> SYSTEM PRIVATE ${CURL_INCLUDE})
+    target_link_libraries(<project_name> PRIVATE lifthttp)
 
 Include lift in the project's code by simply including `#include <lift/lift.hpp>` as needed.
 
-Note that by default liblifthttp will attempt to use system versions of `libcurl-dev` 
-and `libuv-dev`.  If your project, like some of mine do, require a custom built version 
-of `libcurl` then you can specify the following `cmake` variables to override where liblifthttp
-will link `libcurl` development libraries: (custom `libuv` not supported yet)
+Note that by default liblifthttp will attempt to use system versions of `libcurl-dev`, `libuv-dev`, `libcrypto-dev`, `libssl-dev`, and `libcares-dev`.  If your project, like some of mine do, require a custom built version 
+of `libcurl` or any of the other libraries that curl links to then you can specify the following `cmake` variables to override where liblifthttp
+will link `libcurl` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-dev` link is not currently supported.
 
     ${CURL_INCLUDE} # The curl.h header location, default is empty.
     ${LIBSSL}       # The ssl library to link against, default is empty.

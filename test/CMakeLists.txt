@@ -11,10 +11,6 @@ set(LIBLIFT_TEST_SOURCE_FILES
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ${LIFT_CURL_LIBRARY_DEPENDENCIES}
-    ${LIFT_SYSTEM_LIBRARY_DEPENDENCIES}
-    lifthttp
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE lifthttp)
+
 add_test(NAME LiftHttpTest COMMAND ${PROJECT_NAME})

@@ -101,6 +101,16 @@ public:
         bool verify_ssl_host) -> void;
 
     /**
+     * IMPORTANT: Using this is mutually exclusive with adding your own Accept-Encoding header.
+     * 
+     * @param encodings A list of accept encodings to send in the request.
+     *                  If std::nullopt is used then all available encodings
+     *                  are set on the request.
+     */
+    auto SetAcceptEncoding(
+        const std::optional<std::vector<std::string>>& encodings) -> void;
+
+    /**
      * @param resolve_host Adds a host to ip address dns resolver.
      */
     auto AddResolveHost(

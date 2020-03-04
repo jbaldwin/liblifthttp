@@ -210,6 +210,46 @@ auto Request::SetVerifySslHost(
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (verify_ssl_host) ? 2L : 0L);
 }
 
+auto Request::SetAcceptEncoding(
+    const std::optional<std::vector<std::string>>& encodings) -> void
+{
+    if(encodings.has_value() && !encodings.value().empty())
+    {
+        std::size_t length{0};
+        for(const auto& e : encodings.value())
+        {
+            length += e.length() + 2; // for ", "
+        }
+
+        std::string joined{};
+        joined.reserve(length);
+
+        bool first{true};
+        for(auto& e : encodings.value())
+        {
+            if(first)
+            {
+                first = false;
+            }
+            else
+            {
+                joined.append(", ");
+            }
+            joined.append(e);
+        }
+
+        curl_easy_setopt(m_curl_handle, CURLOPT_ACCEPT_ENCODING, joined.c_str());
+    }
+    else
+    {
+        // From the CURL docs (https://curl.haxx.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html):
+        // 'To aid applications not having to bother about what specific algorithms this particular
+        // libcurl build supports, libcurl allows a zero-length string to be set ("") to ask for an
+        // Accept-Encoding: header to be used that contains all built-in supported encodings.'
+        curl_easy_setopt(m_curl_handle, CURLOPT_ACCEPT_ENCODING, "");
+    }
+}
+
 auto Request::AddResolveHost(
     ResolveHost resolve_host) -> void
 {

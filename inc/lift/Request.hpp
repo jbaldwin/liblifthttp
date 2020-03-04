@@ -349,8 +349,8 @@ private:
      * Converts a CURLcode into a RequestStatus.
      * @param curl_code The CURLcode to convert.
      */
-    auto setCompletionStatus(
-        CURLcode curl_code) -> void;
+    static auto convert_completion_status(
+        CURLcode curl_code) -> RequestStatus;
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(

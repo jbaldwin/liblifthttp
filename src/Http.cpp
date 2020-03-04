@@ -38,6 +38,7 @@ auto to_string(
     }
 }
 
+static const std::string STATUS_CODE_HTTP_UNKNOWN = "UNKNOWN"s;
 static const std::string STATUS_CODE_HTTP_100_CONTINUE = "100 Continue"s;
 static const std::string STATUS_CODE_HTTP_101_SWITCHING_PROTOCOLS = "101 Switching Protocols"s;
 static const std::string STATUS_CODE_HTTP_102_PROCESSING = "102 Processing"s;
@@ -84,8 +85,9 @@ static const std::string STATUS_CODE_HTTP_421_MISDIRECTED_REQUEST = "421 Misdire
 static const std::string STATUS_CODE_HTTP_422_UNPROCESSABLE_ENTITY = "422 Unprocessable Entity"s;
 static const std::string STATUS_CODE_HTTP_423_LOCKED = "423 Locked"s;
 static const std::string STATUS_CODE_HTTP_424_FAILED_DEPENDENCY = "424 Failed Dependency"s;
+static const std::string STATUS_CODE_HTTP_425_TOO_EARLY = "425 Too Early"s;
 static const std::string STATUS_CODE_HTTP_426_UPGRADE_REQUIRED = "426 Upgrade Required"s;
-static const std::string STATUS_CODE_HTTP_428_PRECONDITION_FAILED = "428 Precondition Required"s;
+static const std::string STATUS_CODE_HTTP_428_PRECONDITION_REQUIRED = "428 Precondition Required"s;
 static const std::string STATUS_CODE_HTTP_429_TOO_MANY_REQUESTS = "429 Too Many Requests"s;
 static const std::string STATUS_CODE_HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = "431 Request Header Fields Too Large"s;
 static const std::string STATUS_CODE_HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = "451 Unavailable For Legal Reasons"s;
@@ -101,12 +103,12 @@ static const std::string STATUS_CODE_HTTP_508_LOOP_DETECTED = "508 Loop Detected
 static const std::string STATUS_CODE_HTTP_510_NOT_EXTENDED = "510 Not Extended"s;
 static const std::string STATUS_CODE_HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required"s;
 
-static const std::string STATUS_CODE_HTTP_UNKNOWN = "UNKNOWN"s;
-
 auto to_string(
     StatusCode code) -> const std::string&
 {
     switch (code) {
+    case StatusCode::HTTP_UNKNOWN:
+        return STATUS_CODE_HTTP_UNKNOWN;
     case StatusCode::HTTP_100_CONTINUE:
         return STATUS_CODE_HTTP_100_CONTINUE;
     case StatusCode::HTTP_101_SWITCHING_PROTOCOLS:
@@ -199,10 +201,12 @@ auto to_string(
         return STATUS_CODE_HTTP_423_LOCKED;
     case StatusCode::HTTP_424_FAILED_DEPENDENCY:
         return STATUS_CODE_HTTP_424_FAILED_DEPENDENCY;
+    case StatusCode::HTTP_425_TOO_EARLY:
+        return STATUS_CODE_HTTP_425_TOO_EARLY;
     case StatusCode::HTTP_426_UPGRADE_REQUIRED:
         return STATUS_CODE_HTTP_426_UPGRADE_REQUIRED;
-    case StatusCode::HTTP_428_PRECONDITION_FAILED:
-        return STATUS_CODE_HTTP_428_PRECONDITION_FAILED;
+    case StatusCode::HTTP_428_PRECONDITION_REQUIRED:
+        return STATUS_CODE_HTTP_428_PRECONDITION_REQUIRED;
     case StatusCode::HTTP_429_TOO_MANY_REQUESTS:
         return STATUS_CODE_HTTP_429_TOO_MANY_REQUESTS;
     case StatusCode::HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE:
@@ -237,9 +241,145 @@ auto to_string(
 }
 
 auto to_enum(
-    uint32_t code) -> StatusCode
+    int32_t code) -> StatusCode
 {
-    return static_cast<StatusCode>(code);
+        switch (code)
+    {
+        case 100:
+            return StatusCode::HTTP_100_CONTINUE;
+        case 101:
+            return StatusCode::HTTP_101_SWITCHING_PROTOCOLS;
+        case 102:
+            return StatusCode::HTTP_102_PROCESSING;
+        case 103:
+            return StatusCode::HTTP_103_EARLY_HINTS;
+
+        case 200:
+            return StatusCode::HTTP_200_OK;
+        case 201:
+            return StatusCode::HTTP_201_CREATED;
+        case 202:
+            return StatusCode::HTTP_202_ACCEPTED;
+        case 203:
+            return StatusCode::HTTP_203_NON_AUTHORITATIVE_INFORMATION;
+        case 204:
+            return StatusCode::HTTP_204_NO_CONTENT;
+        case 205:
+            return StatusCode::HTTP_205_RESET_CONTENT;
+        case 206:
+            return StatusCode::HTTP_206_PARTIAL_CONTENT;
+        case 207:
+            return StatusCode::HTTP_207_MULTI_STATUS;
+        case 208:
+            return StatusCode::HTTP_208_ALREADY_REPORTED;
+        case 226:
+            return StatusCode::HTTP_226_IM_USED;
+
+        case 300:
+            return StatusCode::HTTP_300_MULTIPLE_CHOICES;
+        case 301:
+            return StatusCode::HTTP_301_MOVED_PERMANENTLY;
+        case 302:
+            return StatusCode::HTTP_302_FOUND;
+        case 303:
+            return StatusCode::HTTP_303_SEE_OTHER;
+        case 304:
+            return StatusCode::HTTP_304_NOT_MODIFIED;
+        case 305:
+            return StatusCode::HTTP_305_USE_PROXY;
+        case 306:
+            return StatusCode::HTTP_306_SWITCH_PROXY;
+        case 307:
+            return StatusCode::HTTP_307_TEMPORARY_REDIRECT;
+        case 308:
+            return StatusCode::HTTP_308_PERMANENT_REDIRECT;
+
+        case 400:
+            return StatusCode::HTTP_400_BAD_REQUEST;
+        case 401:
+            return StatusCode::HTTP_401_UNAUTHORIZED;
+        case 402:
+            return StatusCode::HTTP_402_PAYMENT_REQUIRED;
+        case 403:
+            return StatusCode::HTTP_403_FORBIDDEN;
+        case 404:
+            return StatusCode::HTTP_404_NOT_FOUND;
+        case 405:
+            return StatusCode::HTTP_405_METHOD_NOT_ALLOWED;
+        case 406:
+            return StatusCode::HTTP_406_NOT_ACCEPTABLE;
+        case 407:
+            return StatusCode::HTTP_407_PROXY_AUTHENTICATION_REQUIRED;
+        case 408:
+            return StatusCode::HTTP_408_REQUEST_TIMEOUT;
+        case 409:
+            return StatusCode::HTTP_409_CONFLICT;
+        case 410:
+            return StatusCode::HTTP_410_GONE;
+        case 411:
+            return StatusCode::HTTP_411_LENGTH_REQUIRED;
+        case 412:
+            return StatusCode::HTTP_412_PRECONDITION_FAILED;
+        case 413:
+            return StatusCode::HTTP_413_PAYLOAD_TOO_LARGE;
+        case 414:
+            return StatusCode::HTTP_414_URI_TOO_LONG;
+        case 415:
+            return StatusCode::HTTP_415_UNSUPPORTED_MEDIA_TYPE;
+        case 416:
+            return StatusCode::HTTP_416_RANGE_NOT_SATISFIABLE;
+        case 417:
+            return StatusCode::HTTP_417_EXPECTATION_FAILED;
+        case 418:
+            return StatusCode::HTTP_418_IM_A_TEAPOT_;
+        case 421:
+            return StatusCode::HTTP_421_MISDIRECTED_REQUEST;
+        case 422:
+            return StatusCode::HTTP_422_UNPROCESSABLE_ENTITY;
+        case 423:
+            return StatusCode::HTTP_423_LOCKED;
+        case 424:
+            return StatusCode::HTTP_424_FAILED_DEPENDENCY;
+        case 425:
+            return StatusCode::HTTP_425_TOO_EARLY;
+        case 426:
+            return StatusCode::HTTP_426_UPGRADE_REQUIRED;
+        case 428:
+            return StatusCode::HTTP_428_PRECONDITION_REQUIRED;
+        case 429:
+            return StatusCode::HTTP_429_TOO_MANY_REQUESTS;
+        case 431:
+            return StatusCode::HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE;
+        case 451:
+            return StatusCode::HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS;
+
+        case 500:
+            return StatusCode::HTTP_500_INTERNAL_SERVER_ERROR;
+        case 501:
+            return StatusCode::HTTP_501_NOT_IMPLEMENTED;
+        case 502:
+            return StatusCode::HTTP_502_BAD_GATEWAY;
+        case 503:
+            return StatusCode::HTTP_503_SERVICE_UNAVAILABLE;
+        case 504:
+            return StatusCode::HTTP_504_GATEWAY_TIMEOUT;
+        case 505:
+            return StatusCode::HTTP_505_HTTP_VERSION_NOT_SUPPORTED;
+        case 506:
+            return StatusCode::HTTP_506_VARIANT_ALSO_NEGOTIATES;
+        case 507:
+            return StatusCode::HTTP_507_INSUFFICIENT_STORAGE;
+        case 508:
+            return StatusCode::HTTP_508_LOOP_DETECTED;
+        case 510:
+            return StatusCode::HTTP_510_NOT_EXTENDED;
+        case 511:
+            return StatusCode::HTTP_511_NETWORK_AUTHENTICATION_REQUIRED;
+
+        case 0:
+        default:
+            return StatusCode::HTTP_UNKNOWN;
+    }
 }
 
 const static std::string NO_CONTENT = ""s;

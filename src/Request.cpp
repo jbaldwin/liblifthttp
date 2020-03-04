@@ -381,7 +381,7 @@ auto Request::Perform() -> bool
 {
     prepareForPerform();
     auto curl_error_code = curl_easy_perform(m_curl_handle);
-    setCompletionStatus(curl_error_code);
+    m_status_code = convert_completion_status(curl_error_code);
     return (m_status_code == RequestStatus::SUCCESS);
 }
 
@@ -389,7 +389,7 @@ auto Request::GetResponseStatusCode() const -> http::StatusCode
 {
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
-    return http::to_enum(static_cast<uint32_t>(http_response_code));
+    return http::to_enum(static_cast<int32_t>(http_response_code));
 }
 
 auto Request::GetResponseHeaders() const -> const std::vector<HeaderView>&
@@ -404,11 +404,10 @@ auto Request::GetResponseData() const -> const std::string&
 
 auto Request::GetTotalTime() const -> std::chrono::milliseconds
 {
-    constexpr uint64_t SEC_2_MS = 1000;
-
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    return std::chrono::milliseconds{ static_cast<int64_t>(total_time * SEC_2_MS) };
+    // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{total_time});
 }
 
 auto Request::GetCompletionStatus() const -> RequestStatus
@@ -509,40 +508,31 @@ auto Request::clearResponseBuffers() -> void
     m_response_data.clear();
 }
 
-auto Request::setCompletionStatus(
-    CURLcode curl_code) -> void
+auto Request::convert_completion_status(
+    CURLcode curl_code) -> RequestStatus
 {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
     switch (curl_code) {
     case CURLcode::CURLE_OK:
-        m_status_code = RequestStatus::SUCCESS;
-        break;
+        return RequestStatus::SUCCESS;
     case CURLcode::CURLE_GOT_NOTHING:
-        m_status_code = RequestStatus::RESPONSE_EMPTY;
-        break;
+        return RequestStatus::RESPONSE_EMPTY;
     case CURLcode::CURLE_OPERATION_TIMEDOUT:
-        m_status_code = RequestStatus::TIMEOUT;
-        break;
+        return RequestStatus::TIMEOUT;
     case CURLcode::CURLE_COULDNT_CONNECT:
-        m_status_code = RequestStatus::CONNECT_ERROR;
-        break;
+        return RequestStatus::CONNECT_ERROR;
     case CURLcode::CURLE_COULDNT_RESOLVE_HOST:
-        m_status_code = RequestStatus::CONNECT_DNS_ERROR;
-        break;
+        return RequestStatus::CONNECT_DNS_ERROR;
     case CURLcode::CURLE_SSL_CONNECT_ERROR:
-        m_status_code = RequestStatus::CONNECT_SSL_ERROR;
-        break;
+        return RequestStatus::CONNECT_SSL_ERROR;
     case CURLcode::CURLE_WRITE_ERROR:
-        m_status_code = RequestStatus::DOWNLOAD_ERROR;
-        break;
+        return RequestStatus::DOWNLOAD_ERROR;
     case CURLcode::CURLE_SEND_ERROR:
-        m_status_code = RequestStatus::ERROR_FAILED_TO_START;
-        break;
+        return RequestStatus::ERROR_FAILED_TO_START;
     default:
-        m_status_code = RequestStatus::ERROR;
-        break;
+        return RequestStatus::ERROR;
     }
 #pragma GCC diagnostic pop
 }

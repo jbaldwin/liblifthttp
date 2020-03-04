@@ -22,9 +22,13 @@ class EventLoop {
 public:
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
+     * @param max_connections The maximum number of connections this event loop should 
+     *                        hold open at any given time.  If exceeded the oldest connection
+     *                        not in use will be removed.
      * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
      */
     explicit EventLoop(
+        std::optional<uint64_t> max_connections = std::nullopt,
         std::vector<ResolveHost> resolve_hosts = {});
     ~EventLoop();
 
@@ -82,6 +86,15 @@ public:
     template <typename Container>
     auto StartRequests(
         Container requests) -> bool;
+
+    /**
+     * Sets the maximum number of connections for this event loop to keep open at any given
+     * point in time.  If the maximum number of connections is exceeded then the oldest
+     * connection that is not currently in use will be removed.
+     * @param max_connections The maximum number of connections this event loop should keep open.
+     */
+    auto SetMaxConnections(
+        uint64_t max_connections) -> void;
 
 private:
     /**

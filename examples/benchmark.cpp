@@ -31,21 +31,6 @@ static auto print_stats(
     std::cout << "  Req/sec: " << (total / static_cast<double>(duration_s)) << "\n";
 }
 
-static std::atomic<uint64_t> g_success{ 0 };
-static std::atomic<uint64_t> g_error{ 0 };
-
-static auto on_complete(lift::RequestHandle request, lift::EventLoop& event_loop) -> void
-{
-    if (request->GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
-        ++g_success;
-    } else {
-        ++g_error;
-    }
-
-    // And request again until we are shutting down.
-    event_loop.StartRequest(std::move(request));
-}
-
 int main(int argc, char* argv[])
 {
     if (argc < 5) {
@@ -63,6 +48,9 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::GlobalScopeInitializer lift_init{};
 
+    std::atomic<uint64_t> success{ 0 };
+    std::atomic<uint64_t> error{ 0 };
+
     {
         std::vector<std::unique_ptr<lift::EventLoop>> loops;
         for (uint64_t i = 0; i < threads; ++i) {
@@ -74,10 +62,18 @@ int main(int argc, char* argv[])
 
                 auto request = request_pool.Produce(
                     url,
-                    [&event_loop](lift::RequestHandle r) {
-                        on_complete(std::move(r), event_loop);
+                    [&event_loop, &success, &error](lift::RequestHandle request, lift::Response response) {
+                        if (response.GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
+                            ++success;
+                        } else {
+                            ++error;
+                        }
+
+                        // And request again until we are shutting down.
+                        event_loop.StartRequest(std::move(request));
                     },
                     1s);
+
                 request->SetFollowRedirects(false);
                 request->AddHeader("Connection", "Keep-Alive");
                 event_loop_ptr->StartRequest(std::move(request));
@@ -94,7 +90,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    print_stats(duration_s, threads, g_success, g_error);
+    print_stats(duration_s, threads, success, error);
 
     return 0;
 }

@@ -31,7 +31,7 @@ Request::Request(
     RequestPool& request_pool,
     const std::string& url,
     std::chrono::milliseconds timeout,
-    std::function<void(RequestHandle)> on_complete_handler)
+    OnCompleteHandler on_complete_handler)
     : m_on_complete_handler(std::move(on_complete_handler))
     , m_request_pool(request_pool)
 {
@@ -67,13 +67,13 @@ auto Request::init() -> void
     m_curl_request_headers.reserve(HEADER_DEFAULT_COUNT);
     m_headers_committed = false;
 
-    m_response_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
-    m_response_headers_idx.reserve(HEADER_DEFAULT_COUNT);
-    m_response_data.reserve(HEADER_DEFAULT_MEMORY_BYTES);
+    m_response.m_response_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
+    m_response.m_response_headers_idx.reserve(HEADER_DEFAULT_COUNT);
+    m_response.m_response_data.reserve(HEADER_DEFAULT_MEMORY_BYTES);
 }
 
 auto Request::SetOnCompleteHandler(
-    std::function<void(RequestHandle)> on_complete_handler) -> void
+    OnCompleteHandler on_complete_handler) -> void
 {
     m_on_complete_handler = std::move(on_complete_handler);
 }
@@ -96,20 +96,6 @@ auto Request::SetUrl(
     }
 
     return false;
-}
-
-auto Request::GetNumConnects() const -> uint64_t
-{
-    long count = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &count);
-    return static_cast<uint64_t>(count);
-}
-
-auto Request::GetNumRedirects() const -> uint64_t
-{
-    long count = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_REDIRECT_COUNT, &count);
-    return static_cast<uint64_t>(count);
 }
 
 auto Request::GetUrl() const -> std::string_view
@@ -213,35 +199,27 @@ auto Request::SetVerifySslHost(
 auto Request::SetAcceptEncoding(
     const std::optional<std::vector<std::string>>& encodings) -> void
 {
-    if(encodings.has_value() && !encodings.value().empty())
-    {
-        std::size_t length{0};
-        for(const auto& e : encodings.value())
-        {
+    if (encodings.has_value() && !encodings.value().empty()) {
+        std::size_t length{ 0 };
+        for (const auto& e : encodings.value()) {
             length += e.length() + 2; // for ", "
         }
 
         std::string joined{};
         joined.reserve(length);
 
-        bool first{true};
-        for(auto& e : encodings.value())
-        {
-            if(first)
-            {
+        bool first{ true };
+        for (auto& e : encodings.value()) {
+            if (first) {
                 first = false;
-            }
-            else
-            {
+            } else {
                 joined.append(", ");
             }
             joined.append(e);
         }
 
         curl_easy_setopt(m_curl_handle, CURLOPT_ACCEPT_ENCODING, joined.c_str());
-    }
-    else
-    {
+    } else {
         // From the CURL docs (https://curl.haxx.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html):
         // 'To aid applications not having to bother about what specific algorithms this particular
         // libcurl build supports, libcurl allows a zero-length string to be set ("") to ask for an
@@ -377,42 +355,13 @@ auto Request::SetTransferProgressHandler(
     }
 }
 
-auto Request::Perform() -> bool
+auto Request::Perform() -> const Response&
 {
     prepareForPerform();
     auto curl_error_code = curl_easy_perform(m_curl_handle);
-    m_status_code = convert_completion_status(curl_error_code);
-    return (m_status_code == RequestStatus::SUCCESS);
-}
-
-auto Request::GetResponseStatusCode() const -> http::StatusCode
-{
-    long http_response_code = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
-    return http::to_enum(static_cast<int32_t>(http_response_code));
-}
-
-auto Request::GetResponseHeaders() const -> const std::vector<HeaderView>&
-{
-    return m_response_headers_idx;
-}
-
-auto Request::GetResponseData() const -> const std::string&
-{
-    return m_response_data;
-}
-
-auto Request::GetTotalTime() const -> std::chrono::milliseconds
-{
-    double total_time = 0;
-    curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
-    // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{total_time});
-}
-
-auto Request::GetCompletionStatus() const -> RequestStatus
-{
-    return m_status_code;
+    m_response.m_completions_status = convert_completion_status(curl_error_code);
+    copyCurlFieldsToResponse();
+    return m_response;
 }
 
 auto Request::Reset() -> void
@@ -441,7 +390,7 @@ auto Request::Reset() -> void
 
     curl_easy_reset(m_curl_handle);
     init();
-    m_status_code = RequestStatus::BUILDING;
+    m_response.m_completions_status = RequestStatus::BUILDING;
 }
 
 auto Request::prepareForPerform() -> void
@@ -498,14 +447,34 @@ auto Request::prepareForPerform() -> void
         m_resolve_hosts_committed = true;
     }
 
-    m_status_code = RequestStatus::EXECUTING;
+    m_response.m_completions_status = RequestStatus::EXECUTING;
 }
 
 auto Request::clearResponseBuffers() -> void
 {
-    m_response_headers.clear();
-    m_response_headers_idx.clear();
-    m_response_data.clear();
+    m_response.m_response_headers.clear();
+    m_response.m_response_headers_idx.clear();
+    m_response.m_response_data.clear();
+}
+
+auto Request::copyCurlFieldsToResponse() -> void
+{
+    long http_response_code = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
+    m_response.m_status_code = http::to_enum(static_cast<int32_t>(http_response_code));
+
+    double total_time = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
+    // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.
+    m_response.m_total_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{ total_time });
+
+    long connect_count = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &connect_count);
+    m_response.m_num_connects = static_cast<uint64_t>(connect_count);
+
+    long redirect_count = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_REDIRECT_COUNT, &redirect_count);
+    m_response.m_num_redircts = static_cast<uint64_t>(redirect_count);
 }
 
 auto Request::convert_completion_status(
@@ -544,6 +513,7 @@ auto curl_write_header(
     void* user_ptr) -> size_t
 {
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
+    auto& response = raw_request_ptr->m_response;
     const size_t data_length = size * nitems;
 
     std::string_view data_view{ buffer, data_length };
@@ -570,23 +540,23 @@ auto curl_write_header(
 
     const auto cleaned_up_length = data_view.length();
 
-    size_t capacity = raw_request_ptr->m_response_headers.capacity();
-    size_t total_len = raw_request_ptr->m_response_headers.size() + cleaned_up_length;
+    size_t capacity = response.m_response_headers.capacity();
+    size_t total_len = response.m_response_headers.size() + cleaned_up_length;
     if (capacity < total_len) {
         do {
             capacity *= 2;
         } while (capacity < total_len);
-        raw_request_ptr->m_response_headers.reserve(capacity);
+        response.m_response_headers.reserve(capacity);
     }
 
     // Append the entire header into the full header buffer.
-    raw_request_ptr->m_response_headers.append(data_view.data(), cleaned_up_length);
+    response.m_response_headers.append(data_view.data(), cleaned_up_length);
 
     // Calculate and append the Header view object.
-    const char* start = raw_request_ptr->m_response_headers.c_str();
-    auto total_length = raw_request_ptr->m_response_headers.length();
+    const char* start = response.m_response_headers.c_str();
+    auto total_length = response.m_response_headers.length();
     std::string_view request_data_view{ (start + total_length) - cleaned_up_length, cleaned_up_length };
-    raw_request_ptr->m_response_headers_idx.emplace_back(request_data_view);
+    response.m_response_headers_idx.emplace_back(request_data_view);
 
     return data_length; // return original size for curl to continue processing
 }
@@ -600,7 +570,7 @@ auto curl_write_data(
     auto* raw_request_ptr = static_cast<Request*>(user_ptr);
     size_t data_length = size * nitems;
 
-    raw_request_ptr->m_response_data.append(static_cast<const char*>(buffer), data_length);
+    raw_request_ptr->m_response.m_response_data.append(static_cast<const char*>(buffer), data_length);
 
     return data_length;
 }

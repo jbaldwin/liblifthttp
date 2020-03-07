@@ -64,7 +64,7 @@ public:
      */
     auto Produce(
         const std::string& url,
-        std::function<void(RequestHandle)> on_complete_handler,
+        Request::OnCompleteHandler on_complete_handler,
         std::chrono::milliseconds timeout) -> RequestHandle;
 
     /**

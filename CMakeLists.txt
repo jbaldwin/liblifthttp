@@ -56,6 +56,7 @@ set(LIBLIFT_SOURCE_FILES
     inc/lift/RequestPool.hpp src/RequestPool.cpp
     inc/lift/RequestStatus.hpp src/RequestStatus.cpp
     inc/lift/ResolveHost.hpp src/ResolveHost.cpp
+    inc/lift/Response.hpp src/Response.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC SHARED ${LIBLIFT_SOURCE_FILES})

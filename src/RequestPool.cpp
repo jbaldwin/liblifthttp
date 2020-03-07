@@ -19,7 +19,7 @@ auto RequestPool::Reserve(
                 *this,
                 "",
                 std::chrono::milliseconds{ 0 },
-                [](RequestHandle r) { (void)r; }));
+                [](RequestHandle, Response) {}));
         m_requests.emplace_back(std::move(request_handle_ptr));
     }
 }
@@ -33,7 +33,7 @@ auto RequestPool::Produce(
 
 auto RequestPool::Produce(
     const std::string& url,
-    std::function<void(RequestHandle)> on_complete_handler,
+    Request::OnCompleteHandler on_complete_handler,
     std::chrono::milliseconds timeout) -> RequestHandle
 {
     m_lock.lock();

@@ -18,11 +18,11 @@ TEST_CASE("Transfer Progress synchronous")
             return true; // continue the request
         });
 
-    request->Perform();
+    const auto& response = request->Perform();
 
     REQUIRE(handler_called > 0);
-    REQUIRE(request->GetCompletionStatus() == lift::RequestStatus::SUCCESS);
-    REQUIRE(request->GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.GetCompletionStatus() == lift::RequestStatus::SUCCESS);
+    REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
 }
 
 TEST_CASE("Download <N> bytes test synchronous")
@@ -35,24 +35,20 @@ TEST_CASE("Download <N> bytes test synchronous")
 
     request->SetTransferProgressHandler(
         [&](const lift::Request& r, int64_t dltotal, int64_t dlnow, int64_t, int64_t) -> bool {
-            if(dlnow >= BYTES_TO_DOWNLOAD)
-            {
+            if (dlnow >= BYTES_TO_DOWNLOAD) {
                 should_failed = true;
                 return false;
-            }
-            else
-            {
-                if(dlnow >= dltotal)
-                {
+            } else {
+                if (dlnow >= dltotal) {
                     should_failed = false;
                 }
                 return true;
             }
         });
 
-    request->Perform();
+    const auto& response = request->Perform();
 
     // Its possible the test downloads the entire file before finishing, take the appropriate action.
-    REQUIRE(request->GetCompletionStatus() == ((should_failed) ? lift::RequestStatus::ERROR : lift::RequestStatus::SUCCESS));
-    REQUIRE(request->GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.GetCompletionStatus() == ((should_failed) ? lift::RequestStatus::ERROR : lift::RequestStatus::SUCCESS));
+    REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
 }

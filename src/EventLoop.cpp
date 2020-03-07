@@ -112,8 +112,7 @@ EventLoop::EventLoop(
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION, curl_start_timeout);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA, this);
 
-    if(max_connections.has_value())
-    {
+    if (max_connections.has_value()) {
         SetMaxConnections(max_connections.value());
     }
 
@@ -237,7 +236,7 @@ auto EventLoop::checkActions(
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            raw_request_handle_ptr->m_status_code = Request::convert_completion_status(easy_result);
+            raw_request_handle_ptr->m_response.m_completions_status = Request::convert_completion_status(easy_result);
             completeRequest(RequestHandle{ &m_request_pool, std::unique_ptr<Request>{ raw_request_handle_ptr } });
         }
     }
@@ -247,7 +246,9 @@ auto EventLoop::completeRequest(
     RequestHandle request) -> void
 {
     auto& on_complete_handler = request->m_on_complete_handler;
-    on_complete_handler(std::move(request));
+    request->copyCurlFieldsToResponse();
+    auto response = std::move(request->m_response);
+    on_complete_handler(std::move(request), std::move(response));
     --m_active_request_count;
 }
 
@@ -395,7 +396,7 @@ auto on_uv_requests_accept_async(
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            request_ptr->m_status_code = Request::convert_completion_status(CURLcode::CURLE_SEND_ERROR);
+            request_ptr->m_response.m_completions_status = Request::convert_completion_status(CURLcode::CURLE_SEND_ERROR);
             event_loop->completeRequest(std::move(request_handle));
         } else {
             /**

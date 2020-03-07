@@ -14,22 +14,20 @@ TEST_CASE("Async 100 requests")
     lift::EventLoop ev{};
     auto& rp = ev.GetRequestPool();
 
-    for(std::size_t i = 0; i < COUNT; ++i)
-    {
+    for (std::size_t i = 0; i < COUNT; ++i) {
         auto r = rp.Produce(
             "http://localhost:80/",
-            [](lift::RequestHandle rh) -> void {
-                REQUIRE(rh->GetCompletionStatus() == lift::RequestStatus::SUCCESS);
-                REQUIRE(rh->GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            [](lift::RequestHandle rh, lift::Response response) -> void {
+                REQUIRE(response.GetCompletionStatus() == lift::RequestStatus::SUCCESS);
+                REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
             },
-            std::chrono::seconds{1}
-        );
+            std::chrono::seconds{ 1 });
 
         ev.StartRequest(std::move(r));
     }
 
     while (ev.GetActiveRequestCount() > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
     }
 }
 
@@ -43,16 +41,14 @@ TEST_CASE("Async batch 100 requests")
     std::vector<lift::RequestHandle> handles{};
     handles.reserve(COUNT);
 
-    for(std::size_t i = 0; i < COUNT; ++i)
-    {
+    for (std::size_t i = 0; i < COUNT; ++i) {
         auto r = rp.Produce(
             "http://localhost:80/",
-            [](lift::RequestHandle rh) -> void {
-                REQUIRE(rh->GetCompletionStatus() == lift::RequestStatus::SUCCESS);
-                REQUIRE(rh->GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            [](lift::RequestHandle rh, lift::Response response) -> void {
+                REQUIRE(response.GetCompletionStatus() == lift::RequestStatus::SUCCESS);
+                REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_200_OK);
             },
-            std::chrono::seconds{1}
-        );
+            std::chrono::seconds{ 1 });
 
         handles.emplace_back(std::move(r));
     }
@@ -60,7 +56,7 @@ TEST_CASE("Async batch 100 requests")
     ev.StartRequests(std::move(handles));
 
     while (ev.GetActiveRequestCount() > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
     }
 }
 
@@ -73,28 +69,26 @@ TEST_CASE("Async POST request")
 
     auto request = rp.Produce(
         "http://localhost:80/",
-        [&](lift::RequestHandle rh) {
-            REQUIRE(rh->GetCompletionStatus() == lift::RequestStatus::SUCCESS);
-            REQUIRE(rh->GetResponseStatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
-        }, 
-        std::chrono::seconds{60}
-    );
+        [&](lift::RequestHandle rh, lift::Response response) {
+            REQUIRE(response.GetCompletionStatus() == lift::RequestStatus::SUCCESS);
+            REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
+        },
+        std::chrono::seconds{ 60 });
     request->SetRequestData(data);
     request->SetMethod(lift::http::Method::POST);
     request->SetFollowRedirects(true);
     request->SetVersion(lift::http::Version::V1_1);
-        //        request->AddHeader("Expect", "");
+    //        request->AddHeader("Expect", "");
 
     ev.StartRequest(std::move(request));
 
     request = rp.Produce(
         "http://localhost:80/",
-        [&](lift::RequestHandle rh) {
-            REQUIRE(rh->GetCompletionStatus() == lift::RequestStatus::SUCCESS);
-            REQUIRE(rh->GetResponseStatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
-        }, 
-        std::chrono::seconds{60}
-    );
+        [&](lift::RequestHandle rh, lift::Response response) {
+            REQUIRE(response.GetCompletionStatus() == lift::RequestStatus::SUCCESS);
+            REQUIRE(response.GetResponseStatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
+        },
+        std::chrono::seconds{ 60 });
     request->SetRequestData(data);
     request->SetMethod(lift::http::Method::POST);
     request->SetFollowRedirects(true);

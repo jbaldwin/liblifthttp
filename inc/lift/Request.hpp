@@ -4,6 +4,7 @@
 #include "lift/Http.hpp"
 #include "lift/RequestStatus.hpp"
 #include "lift/ResolveHost.hpp"
+#include "lift/Response.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -26,6 +27,8 @@ class Request {
 public:
     ~Request();
 
+    using OnCompleteHandler = std::function<void(RequestHandle, Response)>;
+
     /**
      * Do not move or copy these objects anywhere, they should always be wrapped in
      * a unique_ptr for cheapness of moving their internals as well as maintaining
@@ -42,7 +45,7 @@ public:
      * @param on_complete_handler When this request completes this handle is called.
      */
     auto SetOnCompleteHandler(
-        std::function<void(RequestHandle)> on_complete_handler) -> void;
+        OnCompleteHandler on_complete_handler) -> void;
 
     /**
      * @param url The URL of the HTTP request.
@@ -225,47 +228,7 @@ public:
      * Performs the HTTP request synchronously.  This call will block the calling thread.
      * @return True if the request was successful.
      */
-    auto Perform() -> bool;
-
-    /**
-     * @return The HTTP response status code.
-     */
-    [[nodiscard]] auto GetResponseStatusCode() const -> http::StatusCode;
-
-    /**
-     * @return The HTTP response headers.
-     */
-    [[nodiscard]] auto GetResponseHeaders() const -> const std::vector<HeaderView>&;
-
-    /**
-     * @return The HTTP download payload.
-     */
-    [[nodiscard]] auto GetResponseData() const -> const std::string&;
-
-    /**
-     * @return The total HTTP request time in milliseconds.
-     */
-    [[nodiscard]] auto GetTotalTime() const -> std::chrono::milliseconds;
-
-    /**
-     * The completion status is how the request ended up in the event loop.
-     * It might have completed successfully, or timed out, or had an SSL error, etc.
-     *
-     * This is not the HTTP status code returned by the remote server.
-     *
-     * @return Gets the request completion status.
-     */
-    [[nodiscard]] auto GetCompletionStatus() const -> RequestStatus;
-
-    /**
-     * @return The number of connections made to make this request
-     */
-    [[nodiscard]] auto GetNumConnects() const -> uint64_t;
-
-    /**
-     * @return The number of redirects made during this request.
-     */
-    [[nodiscard]] auto GetNumRedirects() const -> uint64_t;
+    [[nodiscard]] auto Perform() -> const Response&;
 
     /**
      * Resets the request to be re-used.  This will clear everything on the request.
@@ -284,12 +247,12 @@ private:
         RequestPool& request_pool,
         const std::string& url,
         std::chrono::milliseconds timeout,
-        std::function<void(RequestHandle)> on_complete_handler = nullptr);
+        OnCompleteHandler on_complete_handler = nullptr);
 
     auto init() -> void;
 
     /// The onComplete() handler for asynchronous requests.
-    std::function<void(RequestHandle)> m_on_complete_handler{ nullptr };
+    OnCompleteHandler m_on_complete_handler{ nullptr };
 
     /// The transfer progress callback, this is optionally provided by the user.
     TransferProgressHandler m_on_transfer_progress_handler{ nullptr };
@@ -315,21 +278,15 @@ private:
     /// The mime handle, if any (only created when needed). Mutually exclusive with m_request_data.
     curl_mime* m_mime_handle{ nullptr };
 
-    /// The status of this HTTP request.
-    RequestStatus m_status_code{ RequestStatus::BUILDING };
-    /// The response headers.
-    std::string m_response_headers{};
-    /// Views into each header.
-    std::vector<HeaderView> m_response_headers_idx{};
-    /// The response data if any.
-    std::string m_response_data{};
-
     /// A set of host:port to ip addresses that will be resolved before DNS
     std::vector<ResolveHost> m_resolve_hosts;
     /// The curl resolve hosts list.
     curl_slist* m_curl_resolve_hosts{ nullptr };
     /// Have the resolve hosts been updated recently?
     bool m_resolve_hosts_committed{ false };
+
+    /// The current response for this request.
+    Response m_response{};
 
     /**
      * Prepares the request to be performed.  This is called on a request
@@ -344,6 +301,11 @@ private:
      * to make the exact same request multiple times.
      */
     auto clearResponseBuffers() -> void;
+
+    /**
+     * Copies fields from the CURL* handle into the Response upon request completion.
+     */
+    auto copyCurlFieldsToResponse() -> void;
 
     /**
      * Converts a CURLcode into a RequestStatus.
@@ -375,7 +337,8 @@ private:
         curl_off_t upload_now_bytes) -> int;
 
     /// libuv will call this function when the AddRequest() function is called.
-    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(
+        uv_async_t* handle) -> void;
 };
 
 } // namespace lift

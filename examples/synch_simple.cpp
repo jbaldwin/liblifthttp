@@ -14,8 +14,8 @@ int main(int argc, char* argv[])
     {
         auto request = request_pool.Produce("http://www.example.com");
         std::cout << "Requesting http://www.example.com" << std::endl;
-        request->Perform();
-        std::cout << request->GetResponseData() << std::endl;
+        const auto& response = request->Perform();
+        std::cout << response.GetResponseData() << std::endl;
         // when the request destructs it will return to the pool automatically
     }
 
@@ -23,10 +23,10 @@ int main(int argc, char* argv[])
         // this request object will be the same one as above recycled through the pool
         auto request = request_pool.Produce("http://www.google.com");
         std::cout << "Requesting http://www.google.com" << std::endl;
-        request->Perform();
-        std::cout << request->GetResponseData() << std::endl;
+        const auto& response = request->Perform();
+        std::cout << response.GetResponseData() << std::endl;
 
-        for (const auto& header : request->GetResponseHeaders()) {
+        for (const auto& header : response.GetResponseHeaders()) {
             std::cout << header.GetName() << ": " << header.GetValue() << "\n";
         }
     }

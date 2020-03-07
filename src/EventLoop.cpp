@@ -97,6 +97,7 @@ auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void;
 
 EventLoop::EventLoop(
+    std::optional<uint64_t> max_connections,
     std::vector<ResolveHost> resolve_hosts)
     : m_request_pool(std::move(resolve_hosts))
 {
@@ -110,6 +111,11 @@ EventLoop::EventLoop(
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA, this);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERFUNCTION, curl_start_timeout);
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA, this);
+
+    if(max_connections.has_value())
+    {
+        SetMaxConnections(max_connections.value());
+    }
 
     m_background_thread = std::thread{ [this] { run(); } };
 
@@ -188,6 +194,12 @@ auto EventLoop::StartRequest(
     return true;
 }
 
+auto EventLoop::SetMaxConnections(
+    uint64_t max_connections) -> void
+{
+    curl_multi_setopt(m_cmh, CURLMOPT_MAXCONNECTS, static_cast<long>(max_connections));
+}
+
 auto EventLoop::run() -> void
 {
     m_is_running = true;
@@ -225,7 +237,7 @@ auto EventLoop::checkActions(
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            raw_request_handle_ptr->setCompletionStatus(easy_result);
+            raw_request_handle_ptr->m_status_code = Request::convert_completion_status(easy_result);
             completeRequest(RequestHandle{ &m_request_pool, std::unique_ptr<Request>{ raw_request_handle_ptr } });
         }
     }
@@ -383,7 +395,7 @@ auto on_uv_requests_accept_async(
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            request_ptr->setCompletionStatus(CURLcode::CURLE_SEND_ERROR);
+            request_ptr->m_status_code = Request::convert_completion_status(CURLcode::CURLE_SEND_ERROR);
             event_loop->completeRequest(std::move(request_handle));
         } else {
             /**

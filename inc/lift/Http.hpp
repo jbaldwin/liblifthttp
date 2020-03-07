@@ -30,7 +30,9 @@ enum class Version {
 /**
  * https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
  */
-enum class StatusCode : uint32_t {
+enum class StatusCode : int32_t {
+    HTTP_UNKNOWN = 0,
+
     HTTP_100_CONTINUE = 100,
     HTTP_101_SWITCHING_PROTOCOLS = 101,
     HTTP_102_PROCESSING = 102,
@@ -53,6 +55,10 @@ enum class StatusCode : uint32_t {
     HTTP_303_SEE_OTHER = 303,
     HTTP_304_NOT_MODIFIED = 304,
     HTTP_305_USE_PROXY = 305,
+    /*
+     * HTTP status code 306 is unused and reserved per RFC 7231 (https://tools.ietf.org/html/rfc7231#section-6.4.6),
+     * but originally meant 'switch proxy', so leaving for backwards compatibility.
+     */
     HTTP_306_SWITCH_PROXY = 306,
     HTTP_307_TEMPORARY_REDIRECT = 307,
     HTTP_308_PERMANENT_REDIRECT = 308,
@@ -80,8 +86,9 @@ enum class StatusCode : uint32_t {
     HTTP_422_UNPROCESSABLE_ENTITY = 422,
     HTTP_423_LOCKED = 423,
     HTTP_424_FAILED_DEPENDENCY = 424,
+    HTTP_425_TOO_EARLY = 425, // https://tools.ietf.org/html/rfc8470#section-5.2
     HTTP_426_UPGRADE_REQUIRED = 426,
-    HTTP_428_PRECONDITION_FAILED = 428,
+    HTTP_428_PRECONDITION_REQUIRED = 428, // https://tools.ietf.org/html/rfc6585
     HTTP_429_TOO_MANY_REQUESTS = 429,
     HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
     HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451,
@@ -111,7 +118,7 @@ auto to_string(
  * @return StatusCode
  */
 auto to_enum(
-    uint32_t code) -> StatusCode;
+    int32_t code) -> StatusCode;
 
 /**
  * HTTP 'Content-Type" types.  Can be extended to support

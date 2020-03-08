@@ -10,24 +10,21 @@ int main(int argc, char* argv[])
     // Initialize must be called first before using the LiftHttp library.
     lift::GlobalScopeInitializer lift_init{};
 
-    lift::RequestPool request_pool;
     {
-        auto request = request_pool.Produce("http://www.example.com");
+        lift::Request request{ "http://www.example.com" };
         std::cout << "Requesting http://www.example.com" << std::endl;
-        const auto& response = request->Perform();
-        std::cout << response.GetResponseData() << std::endl;
-        // when the request destructs it will return to the pool automatically
+        const auto& response = request.Perform();
+        std::cout << response.Data() << std::endl;
     }
 
     {
-        // this request object will be the same one as above recycled through the pool
-        auto request = request_pool.Produce("http://www.google.com");
+        lift::Request request{ "http://www.google.com" };
         std::cout << "Requesting http://www.google.com" << std::endl;
-        const auto& response = request->Perform();
-        std::cout << response.GetResponseData() << std::endl;
+        const auto& response = request.Perform();
+        std::cout << response.Data() << std::endl;
 
-        for (const auto& header : response.GetResponseHeaders()) {
-            std::cout << header.GetName() << ": " << header.GetValue() << "\n";
+        for (const auto& header : response.Headers()) {
+            std::cout << header.Name() << ": " << header.Value() << "\n";
         }
     }
 

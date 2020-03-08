@@ -32,7 +32,7 @@ public:
      * @param scheme Examples are "http" or "https".
      * @return QueryBuilder
      */
-    auto SetScheme(
+    auto Scheme(
         std::string_view scheme) -> QueryBuilder&;
 
     /**
@@ -42,7 +42,7 @@ public:
      *                 sure it is already there.
      * @return QueryBuilder
      */
-    auto SetHostname(
+    auto Hostname(
         std::string_view hostname) -> QueryBuilder&;
 
     /**
@@ -50,7 +50,7 @@ public:
      * @param port The url port.
      * @return QueryBuidler
      */
-    auto SetPort(
+    auto Port(
         uint16_t port) -> QueryBuilder&;
 
     /**
@@ -88,7 +88,7 @@ public:
      * @param fragment #imafragment
      * @return QueryBuilder
      */
-    auto SetFragment(
+    auto Fragment(
         std::string_view fragment) -> QueryBuilder&;
 
     /**

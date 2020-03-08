@@ -45,16 +45,17 @@ set(LIFT_CURL_LIBRARY_DEPENDENCIES
 set(LIFT_LIB_DEPS "${LIFT_SYSTEM_LIBRARY_DEPENDENCIES} ${LIFT_CURL_LIBRARY_DEPENDENCIES}")
 
 set(LIBLIFT_SOURCE_FILES
+    inc/lift/Const.hpp
     inc/lift/Escape.hpp src/Escape.cpp
-    inc/lift/EventLoop.hpp inc/lift/EventLoop.tcc src/EventLoop.cpp
+    inc/lift/EventLoop.hpp src/EventLoop.cpp
+    inc/lift/Executor.hpp src/Executor.cpp
     inc/lift/HeaderView.hpp src/HeaderView.cpp
     inc/lift/Lift.hpp src/Lift.cpp
+    inc/lift/LiftStatus.hpp src/LiftStatus.cpp
+    inc/lift/MimeField.hpp src/MimeField.cpp
     inc/lift/Http.hpp src/Http.cpp
     inc/lift/QueryBuilder.hpp src/QueryBuilder.cpp
     inc/lift/Request.hpp src/Request.cpp
-    inc/lift/RequestHandle.hpp src/RequestHandle.cpp
-    inc/lift/RequestPool.hpp src/RequestPool.cpp
-    inc/lift/RequestStatus.hpp src/RequestStatus.cpp
     inc/lift/ResolveHost.hpp src/ResolveHost.cpp
     inc/lift/Response.hpp src/Response.cpp
 )

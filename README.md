@@ -42,38 +42,45 @@ static lift::GlobalScopeInitializer g_lifthttp_gsi{};
 ### Simple Synchronous
 ```C++
 // Requests are always produced from a pool and return to the pool upon completion.
-lift::RequestPool pool{};
-auto request = pool.Produce("http://www.example.com");
-
-request->Perform();  // This call is the blocking synchronous HTTP call.
-
-std::cout << request->GetResponseData() << "\n";
+lift::Request request{"http://www.example.com"};
+// This call is the blocking synchronous HTTP call.
+auto response = request.Perform();
+std::cout << response.Data() << "\n";
 ```
 
 ### Simple Asynchronous
 ```C++
-// Event loops in Lift come with their own RequestPool, no need to provide one.
 // Creating the event loop starts it immediately, it spawns a background thread for executing requests.
 lift::EventLoop loop{};
-auto& pool = loop.GetRequestPool();
 
 // Create the request just like we did in the sync version, but now provide a lambda for on completion.
 // NOTE: that the Lambda is executed ON the Lift event loop background thread.  If you want to handle 
-// on completion processing on this main thread you need to std::move it back via a queue or inter-thread 
+// on completion processing on this main thread you need to std::move() it back via a queue or inter-thread 
 // communication.  This is imporant if any resources are shared between the threads.
-auto request = pool.Produce(
+// NOTE: The request is created on the heap so ownership can be passed easily via an std::unique_ptr
+// to the lift::EventLoop!  lift::Request::make() is a handy function to easily do so.
+auto request_ptr = lift::Request::make(
     "http://www.example.com",
-    [](lift::RequestHandle r) { std::cout << r->GetResponseData(); }, // on destruct 'r' will return to the pool.
-    10s, // Give the request 10 seconds to complete or timeout.
+    std::chrono::seconds{10}, // Give the request 10 seconds to complete or timeout.
+    [](lift::RequestPtr req_ptr, lift::Response response) 
+    {
+        std::cout << "LiftStatus: " << lift::to_string(response.LiftStatus()) << "\n";
+        std::cout << "HTTP Status Code: " << lift::to_string(response.StatusCode()) << "\n";
+        for(const auto& header : response.Headers())
+        {
+            std::cout << header.Name() << ": " << header.Value() << "\n";
+        }
+        std::cout << response.Data(); 
+    },
 );
 
 // Now inject the request into the event to be executed.  Moving into the event loop is required,
 // this passes ownership of the request to the event loop background worker thread.
-loop.StartRequest(std::move(request));
+loop.StartRequest(std::move(request_ptr));
 
 // Block on this main thread until the lift event loop background thread has completed the request, or timed out.
-while(loop.GetActiveRequestCount() > 0) {
-    std::this_thread::sleep_for(10ms);
+while(loop.ActiveRequestCount() > 0) {
+    std::this_thread::sleep_for(std::chrono::milliseconds{10});
 }
 
 // When loop goes out of scope here it will automatically stop the background thread and cleanup all resources.

@@ -6,23 +6,17 @@
 #include <string>
 #include <thread>
 
-static auto on_complete(lift::RequestHandle request, lift::Response response) -> void
+static auto on_complete(std::unique_ptr<lift::Request> request_ptr, lift::Response response) -> void
 {
-    if (response.GetCompletionStatus() == lift::RequestStatus::SUCCESS) {
+    if (response.LiftStatus() == lift::LiftStatus::SUCCESS) {
         std::cout
-            << "Completed " << request->GetUrl()
-            << " ms:" << response.GetTotalTime().count() << std::endl;
+            << "Completed " << request_ptr->Url()
+            << " ms:" << response.TotalTime().count() << std::endl;
     } else {
         std::cout
-            << "Error: " << request->GetUrl() << " : "
-            << lift::to_string(response.GetCompletionStatus()) << std::endl;
+            << "Error: " << request_ptr->Url() << " : "
+            << lift::to_string(response.LiftStatus()) << std::endl;
     }
-
-    /**
-     * When the Request destructs here it will return to the pool. To continue working
-     * on this request -- or work on the response data in a separate thread std::move()
-     * the request to where the processing should be done.
-     */
 }
 
 int main(int argc, char* argv[])
@@ -40,9 +34,7 @@ int main(int argc, char* argv[])
         "http://www.reddit.com"
     };
 
-    lift::EventLoop event_loop;
-    // EventLoops create their own request pools -- grab it to start creating requests.
-    auto& request_pool = event_loop.GetRequestPool();
+    lift::EventLoop event_loop{};
 
     /**
      * Create asynchronous requests for each url and inject them into
@@ -52,14 +44,14 @@ int main(int argc, char* argv[])
     std::chrono::milliseconds timeout = 250ms;
     for (auto& url : urls) {
         std::cout << "Requesting " << url << std::endl;
-        auto request = request_pool.Produce(url, on_complete, timeout);
-        event_loop.StartRequest(std::move(request));
+        auto request_ptr = lift::Request::make(url, timeout, on_complete);
+        event_loop.StartRequest(std::move(request_ptr));
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);
     }
 
     // Now wait for all the requests to finish before cleaning up.
-    while (event_loop.GetActiveRequestCount() > 0) {
+    while (event_loop.ActiveRequestCount() > 0) {
         std::this_thread::sleep_for(100ms);
     }
 

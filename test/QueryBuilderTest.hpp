@@ -8,9 +8,9 @@ TEST_CASE("Query Builder simple")
 {
     lift::QueryBuilder query_builder{};
     query_builder
-        .SetScheme("https")
-        .SetHostname("www.example.com")
-        .SetPort(443)
+        .Scheme("https")
+        .Hostname("www.example.com")
+        .Port(443)
         .AppendPathPart("test")
         .AppendPathPart("path")
         .AppendQueryParameter("param1", "value1")
@@ -21,8 +21,8 @@ TEST_CASE("Query Builder simple")
     REQUIRE(url == "https://www.example.com:443/test/path?param1=value1&param2=value2");
 
     query_builder
-        .SetScheme("http")
-        .SetHostname("www.reddit.com")
+        .Scheme("http")
+        .Hostname("www.reddit.com")
         .AppendPathPart("r")
         .AppendPathPart("funny");
     url = query_builder.Build();

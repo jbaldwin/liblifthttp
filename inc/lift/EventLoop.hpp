@@ -1,14 +1,16 @@
 #pragma once
 
-#include "lift/RequestPool.hpp"
+#include "lift/Executor.hpp"
+#include "lift/Request.hpp"
+#include "lift/ResolveHost.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>
 
 #include <atomic>
-#include <list>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <thread>
 #include <vector>
 
@@ -18,24 +20,28 @@ class CurlContext;
 
 class EventLoop {
     friend CurlContext;
+    friend Executor;
 
 public:
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
+     * @param reserve_connections The number of connections to prepare (reserve) for execution.
      * @param max_connections The maximum number of connections this event loop should 
      *                        hold open at any given time.  If exceeded the oldest connection
      *                        not in use will be removed.
      * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
      */
     explicit EventLoop(
+        std::optional<uint64_t> reserve_connections = std::nullopt,
         std::optional<uint64_t> max_connections = std::nullopt,
         std::vector<ResolveHost> resolve_hosts = {});
+
     ~EventLoop();
 
     EventLoop(const EventLoop& copy) = delete;
     EventLoop(EventLoop&& move) = delete;
-    auto operator=(const EventLoop& copy_assign) -> EventLoop& = delete;
-    auto operator=(EventLoop&& move_assign) -> EventLoop& = delete;
+    auto operator=(const EventLoop& copy_assign) noexcept -> EventLoop& = delete;
+    auto operator=(EventLoop&& move_assign) noexcept -> EventLoop& = delete;
 
     /**
      * @return True if the event loop is currently running.
@@ -54,55 +60,37 @@ public:
      * @return Gets the number of active HTTP requests currently running.  This includes
      *         the number of pending requests that haven't been started yet (if any).
      */
-    [[nodiscard]] auto GetActiveRequestCount() const -> uint64_t;
+    [[nodiscard]] auto ActiveRequestCount() const -> uint64_t;
 
     /**
-     * @return The request pool for this EventLoop.  All RequestHandles are returned to
-     *         this pool automatically upon completion for re-use.
-     */
-    auto GetRequestPool() -> RequestPool&;
-
-    /**
-     * Adds a request to process.
+     * Adds a request to process.  The ownership of the request is trasferred into
+     * the event loop during execution and returned to the client in the 
+     * OnCompletHandlerType callback.
      *
      * This function is thread safe.
      *
-     * @param request The request to process.  This request
-     *                will have its OnComplete() handler called
-     *                when its completed/error'ed/etc.
+     * @param request_ptr The request to process.  This request
+     *                    will have its OnComplete() handler called
+     *                    when its completed/error'ed/etc.
      */
     auto StartRequest(
-        RequestHandle request) -> bool;
+        RequestPtr request_ptr) -> bool;
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
-     * out of the container and into the EventLoop.
+     * out of the container and into the EventLoop, ownership of the requests is transferred
+     * into th event loop during execution.
      *
      * This function is thread safe.
      *
-     * @tparam Container A container of class Request.
+     * @tparam Container A container of class RequestPtr.
      * @param requests The batch of requests to process.
      */
     template <typename Container>
     auto StartRequests(
         Container requests) -> bool;
 
-    /**
-     * Sets the maximum number of connections for this event loop to keep open at any given
-     * point in time.  If the maximum number of connections is exceeded then the oldest
-     * connection that is not currently in use will be removed.
-     * @param max_connections The maximum number of connections this event loop should keep open.
-     */
-    auto SetMaxConnections(
-        uint64_t max_connections) -> void;
-
 private:
-    /**
-     * Each event loop gets its own private request pool for efficiency.
-     * This needs to be first so it de-allocates all its RequestHandles last on shutdown.
-     */
-    RequestPool m_request_pool;
-
     /// Set to true if the EventLoop is currently running.
     std::atomic<bool> m_is_running{ false };
     /// Set to true if the EventLoop is currently shutting down.
@@ -130,15 +118,21 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<RequestHandle> m_pending_requests{};
+    std::vector<ExecutorPtr> m_pending_requests{};
     /// Only accessible from within the EventLoop thread.
-    std::vector<RequestHandle> m_grabbed_requests{};
+    std::vector<ExecutorPtr> m_grabbed_requests{};
 
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread{};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
+
+    /// List of CURL* handles to use for requests.
+    std::deque<CURL*> m_curl_handles{};
+
+    /// The set of resolve hosts to apply to all requests in this event loop.
+    std::vector<lift::ResolveHost> m_resolve_hosts{};
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
     std::atomic<bool> m_async_closed{ false };
@@ -166,10 +160,10 @@ private:
      * Completes a request to pass ownership back to the user land.
      * Manages internal state accordingly, always call this function rather
      * than the Request->OnComplete() function directly.
-     * @param request The request handle to complete.
+     * @param executor_ptr The request handle to complete.
      */
     auto completeRequest(
-        RequestHandle request) -> void;
+        ExecutorPtr executor_ptr) -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -258,6 +252,39 @@ private:
         uv_async_t* handle) -> void;
 };
 
-} // lift
+template <typename Container>
+auto EventLoop::StartRequests(
+    Container requests) -> bool
+{
+    if (m_is_stopping) {
+        return false;
+    }
 
-#include "EventLoop.tcc"
+    std::vector<ExecutorPtr> executors{};
+    executors.reserve(std::size(requests));
+
+    // We'll prepare now since it won't block the event loop thread.
+    // Since this might not be cheap do it outside the lock
+    for (auto& request_ptr : requests) {
+        auto executor_ptr = Executor::make(std::move(request_ptr), this);
+        executor_ptr->prepare();
+        executors.emplace_back(std::move(executor_ptr));
+    }
+
+    m_active_request_count += std::size(requests);
+
+    // Lock scope
+    {
+        std::lock_guard<std::mutex> guard(m_pending_requests_lock);
+        for (auto& executor_ptr : executors) {
+            m_pending_requests.emplace_back(std::move(executor_ptr));
+        }
+    }
+
+    // Notify the even loop thread that there are requests waiting to be picked up.
+    uv_async_send(&m_async);
+
+    return true;
+}
+
+} // lift

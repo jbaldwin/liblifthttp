@@ -5,7 +5,7 @@
 #include <lift/Lift.hpp>
 
 static auto user_data_on_complete(
-    lift::RequestHandle request,
+    lift::RequestPtr request_ptr,
     lift::Response response,
     uint64_t user_data_value1,
     double user_data_value2) -> void
@@ -28,24 +28,23 @@ TEST_CASE("User data")
     // more like an example we'll include a unique "request_id" that gets captured as the user data.
     uint64_t request_id = 1;
 
-    auto& request_pool = event_loop.GetRequestPool();
-    auto req1 = request_pool.Produce("http://localhost:80/", std::chrono::seconds{ 1 });
-    req1->SetOnCompleteHandler(
-        [request_id](lift::RequestHandle request, lift::Response response) {
+    auto req1 = std::make_unique<lift::Request>("http://localhost:80/", std::chrono::seconds{ 1 });
+    req1->OnCompleteHandler(
+        [request_id](lift::RequestPtr request, lift::Response response) {
             user_data_on_complete(std::move(request), std::move(response), request_id, 100.5);
         });
     event_loop.StartRequest(std::move(req1));
 
     request_id = 2;
 
-    auto req2 = request_pool.Produce("http://localhost:80/", std::chrono::seconds{ 1 });
-    req2->SetOnCompleteHandler(
-        [request_id](lift::RequestHandle request, lift::Response response) {
+    auto req2 = std::make_unique<lift::Request>("http://localhost:80/", std::chrono::seconds{ 1 });
+    req2->OnCompleteHandler(
+        [request_id](lift::RequestPtr request, lift::Response response) {
             user_data_on_complete(std::move(request), std::move(response), request_id, 1234.567);
         });
     event_loop.StartRequest(std::move(req2));
 
-    while (event_loop.GetActiveRequestCount() > 0) {
+    while (event_loop.ActiveRequestCount() > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
     }
 }

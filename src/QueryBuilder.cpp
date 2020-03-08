@@ -3,21 +3,21 @@
 
 namespace lift {
 
-auto QueryBuilder::SetScheme(
+auto QueryBuilder::Scheme(
     std::string_view scheme) -> QueryBuilder&
 {
     m_scheme = scheme;
     return *this;
 }
 
-auto QueryBuilder::SetHostname(
+auto QueryBuilder::Hostname(
     std::string_view hostname) -> QueryBuilder&
 {
     m_hostname = hostname;
     return *this;
 }
 
-auto QueryBuilder::SetPort(
+auto QueryBuilder::Port(
     uint16_t port) -> QueryBuilder&
 {
     m_port = port;
@@ -39,7 +39,7 @@ auto QueryBuilder::AppendQueryParameter(
     return *this;
 }
 
-auto QueryBuilder::SetFragment(
+auto QueryBuilder::Fragment(
     std::string_view fragment) -> QueryBuilder&
 {
     m_fragment = fragment;

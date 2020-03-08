@@ -29,8 +29,8 @@ public:
 
     CurlContext(const CurlContext&) = delete;
     CurlContext(CurlContext&&) = delete;
-    auto operator=(const CurlContext&) = delete;
-    auto operator=(CurlContext&&) = delete;
+    auto operator=(const CurlContext&) noexcept -> CurlContext& = delete;
+    auto operator=(CurlContext&&) noexcept -> CurlContext& = delete;
 
     auto Init(
         uv_loop_t* uv_loop,
@@ -97,10 +97,15 @@ auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void;
 
 EventLoop::EventLoop(
+    std::optional<uint64_t> reserve_connections,
     std::optional<uint64_t> max_connections,
     std::vector<ResolveHost> resolve_hosts)
-    : m_request_pool(std::move(resolve_hosts))
+    : m_resolve_hosts(std::move(resolve_hosts))
 {
+    for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
+        m_curl_handles.push_back(curl_easy_init());
+    }
+
     uv_async_init(m_loop, &m_async, on_uv_requests_accept_async);
     m_async.data = this;
 
@@ -113,7 +118,7 @@ EventLoop::EventLoop(
     curl_multi_setopt(m_cmh, CURLMOPT_TIMERDATA, this);
 
     if (max_connections.has_value()) {
-        SetMaxConnections(max_connections.value());
+        curl_multi_setopt(m_cmh, CURLMOPT_MAXCONNECTS, static_cast<long>(max_connections.value()));
     }
 
     m_background_thread = std::thread{ [this] { run(); } };
@@ -132,7 +137,7 @@ EventLoop::~EventLoop()
 {
     m_is_stopping = true;
 
-    while (GetActiveRequestCount() > 0) {
+    while (ActiveRequestCount() > 0) {
         std::this_thread::sleep_for(1ms);
     }
 
@@ -148,6 +153,11 @@ EventLoop::~EventLoop()
 
     m_background_thread.join();
 
+    for (auto* curl_handle : m_curl_handles) {
+        curl_easy_cleanup(curl_handle);
+    }
+    m_curl_handles.clear();
+
     curl_multi_cleanup(m_cmh);
     uv_loop_close(m_loop);
 }
@@ -162,18 +172,13 @@ auto EventLoop::Stop() -> void
     m_is_stopping = true;
 }
 
-auto EventLoop::GetActiveRequestCount() const -> uint64_t
+auto EventLoop::ActiveRequestCount() const -> uint64_t
 {
     return m_active_request_count;
 }
 
-auto EventLoop::GetRequestPool() -> RequestPool&
-{
-    return m_request_pool;
-}
-
 auto EventLoop::StartRequest(
-    RequestHandle request) -> bool
+    RequestPtr request_ptr) -> bool
 {
     if (m_is_stopping) {
         return false;
@@ -182,21 +187,16 @@ auto EventLoop::StartRequest(
     // Do this now so that the event loop takes into account 'pending' requests as well.
     ++m_active_request_count;
 
-    // We'll prepare now since it won't block the event loop thread.
-    request->prepareForPerform();
+    // Prepare now since it won't block the event loop thread.
+    auto executor_ptr = Executor::make(std::move(request_ptr), this);
+    executor_ptr->prepare();
     {
         std::lock_guard<std::mutex> guard{ m_pending_requests_lock };
-        m_pending_requests.emplace_back(std::move(request));
+        m_pending_requests.emplace_back(std::move(executor_ptr));
     }
     uv_async_send(&m_async);
 
     return true;
-}
-
-auto EventLoop::SetMaxConnections(
-    uint64_t max_connections) -> void
-{
-    curl_multi_setopt(m_cmh, CURLMOPT_MAXCONNECTS, static_cast<long>(max_connections));
 }
 
 auto EventLoop::run() -> void
@@ -232,23 +232,27 @@ auto EventLoop::checkActions(
             CURL* easy_handle = message->easy_handle;
             CURLcode easy_result = message->data.result;
 
-            Request* raw_request_handle_ptr = nullptr;
-            curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_request_handle_ptr);
+            Executor* raw_executor_ptr = nullptr;
+            curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_executor_ptr);
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            raw_request_handle_ptr->m_response.m_completions_status = Request::convert_completion_status(easy_result);
-            completeRequest(RequestHandle{ &m_request_pool, std::unique_ptr<Request>{ raw_request_handle_ptr } });
+            raw_executor_ptr->m_response.m_lift_status = Executor::convert(easy_result);
+
+            completeRequest(std::unique_ptr<Executor>{ raw_executor_ptr });
         }
     }
 }
 
 auto EventLoop::completeRequest(
-    RequestHandle request) -> void
+    std::unique_ptr<Executor> executor_ptr) -> void
 {
-    auto& on_complete_handler = request->m_on_complete_handler;
-    request->copyCurlFieldsToResponse();
-    auto response = std::move(request->m_response);
-    on_complete_handler(std::move(request), std::move(response));
+    executor_ptr->copyToResponse();
+    auto& on_complete_handler = executor_ptr->m_request_async->m_on_complete_handler;
+    if (on_complete_handler != nullptr) {
+        on_complete_handler(
+            std::move(executor_ptr->m_request_async),
+            std::move(executor_ptr->m_response));
+    }
     --m_active_request_count;
 }
 
@@ -386,18 +390,17 @@ auto on_uv_requests_accept_async(
             event_loop->m_pending_requests);
     }
 
-    for (auto& request_handle : event_loop->m_grabbed_requests) {
-        auto& request_ptr = request_handle.m_request_ptr;
+    for (auto& executor_ptr : event_loop->m_grabbed_requests) {
 
-        auto curl_code = curl_multi_add_handle(event_loop->m_cmh, request_ptr->m_curl_handle);
+        auto curl_code = curl_multi_add_handle(event_loop->m_cmh, executor_ptr->m_curl_handle);
 
         if (curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM) {
             /**
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            request_ptr->m_response.m_completions_status = Request::convert_completion_status(CURLcode::CURLE_SEND_ERROR);
-            event_loop->completeRequest(std::move(request_handle));
+            executor_ptr->m_response.m_lift_status = Executor::convert(CURLcode::CURLE_SEND_ERROR);
+            event_loop->completeRequest(std::move(executor_ptr));
         } else {
             /**
              * Immediately call curl's check action to get the current request moving.
@@ -411,7 +414,7 @@ auto on_uv_requests_accept_async(
              * processed by curl.  When curl is finished completing the request
              * it will be put back into a Request object for the client to use.
              */
-            (void)request_ptr.release();
+            (void)executor_ptr.release();
         }
     }
 

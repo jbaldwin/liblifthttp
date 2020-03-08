@@ -3,10 +3,11 @@
 #include <string>
 
 namespace lift {
-class Request;
+class Executor;
 
 class ResolveHost {
-    friend Request;
+    /// For getCurlFormattedResolveHost().
+    friend Executor;
 
 public:
     /**

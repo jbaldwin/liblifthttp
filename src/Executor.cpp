@@ -140,8 +140,12 @@ auto Executor::prepare() -> void
         break;
     }
 
-    if (m_request->Timeout().has_value()) {
-        curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(m_request->Timeout().value().count()));
+    // Synchronous Requests get their timeout value set directly on the curl easy handle.
+    // Asynchronous requests will handle timeouts on the event loop due to Connection Time.
+    if (m_request_sync != nullptr) {
+        if (m_request->Timeout().has_value()) {
+            curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(m_request->Timeout().value().count()));
+        }
     }
 
     // Timesup is handled when injecting into the CURLM* event loop for asynchronous requests.
@@ -160,15 +164,15 @@ auto Executor::prepare() -> void
     const auto& encodings = m_request->AcceptEncodings();
     if (encodings.has_value()) {
         if (!encodings.value().empty()) {
-            std::size_t length{ 0 };
+            std::size_t length { 0 };
             for (const auto& e : encodings.value()) {
                 length += e.length() + 2; // for ", "
             }
 
-            std::string joined{};
+            std::string joined {};
             joined.reserve(length);
 
-            bool first{ true };
+            bool first { true };
             for (auto& e : encodings.value()) {
                 if (first) {
                     first = false;
@@ -276,7 +280,7 @@ auto Executor::copyCurlToResponse() -> void
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
     // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.
-    m_response.m_total_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{ total_time });
+    m_response.m_total_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double> { total_time });
 
     long connect_count = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &connect_count);
@@ -335,7 +339,7 @@ auto curl_write_header(
     auto& response = executor_ptr->m_response;
     const size_t data_length = size * nitems;
 
-    std::string_view data_view{ buffer, data_length };
+    std::string_view data_view { buffer, data_length };
 
     if (data_view.empty()) {
         return data_length;
@@ -374,7 +378,7 @@ auto curl_write_header(
     // Calculate and append the Header view object.
     const char* start = response.m_headers.c_str();
     auto total_length = response.m_headers.length();
-    std::string_view request_data_view{ (start + total_length) - cleaned_up_length, cleaned_up_length };
+    std::string_view request_data_view { (start + total_length) - cleaned_up_length, cleaned_up_length };
     response.m_headers_idx.emplace_back(request_data_view);
 
     return data_length; // return original size for curl to continue processing

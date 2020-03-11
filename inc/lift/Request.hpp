@@ -81,36 +81,6 @@ public:
         return std::make_unique<Request>(std::move(url), std::move(timeout), std::move(on_complete_handler));
     }
 
-    /**
-     * Creates a new request with a two tier timesup + timeout.  This is useful if normally 
-     * the request's timeout would be very short but establishing a TLS connection or long
-     * distance connection would cause timeouts to occur very frequently.  This timesup
-     * feature will tell the client when the 'short' timesup has occurred but Lift will
-     * attempt to continue establishing the connection until the 'longer' timeout value.
-     * 
-     * @param url The url to request.
-     * @param timesup The amount of time this request *should* complete in.  This value *must*
-     *                be smaller than timeout.
-     * @param timeout The amount of time this request should have to attempt to establish the 
-     *                connection.  This value *must* be greater than timesup.  Note that the 
-     *                on_complete_handler will *NEVER* fire for this event, it will either
-     *                timesup the request OR complete before the timeout.  If it timeouts
-     *                the request's second on complete callback is currently silently dropped, 
-     *                future support to receive both callbacks might be considered.
-     * @param on_complete_handler For asynchronous requests provide this if you want to 
-     *                            know when the request completes with the Response information.
-     */ 
-    static auto make(
-        std::string url,
-        std::chrono::milliseconds timesup,
-        std::chrono::milliseconds timeout,
-        OnCompleteHandlerType on_complete_handler) -> std::unique_ptr<Request>
-    {
-        auto request_ptr = std::make_unique<Request>(std::move(url), std::optional{ timeout }, std::move(on_complete_handler));
-        request_ptr->Timesup(timesup);
-        return request_ptr;
-    }
-
     Request(const Request&) = default;
     Request(Request&&) = default;
     auto operator=(const Request&) noexcept -> Request& = default;
@@ -144,18 +114,6 @@ public:
     auto Timeout() const -> const std::optional<std::chrono::milliseconds>& { return m_timeout; }
     auto Timeout(
         std::optional<std::chrono::milliseconds> timeout) -> void { m_timeout = std::move(timeout); }
-
-    auto Timesup() const -> const std::optional<std::chrono::milliseconds>& { return m_timesup; }
-
-    /**
-     * Sets the timesup value for an asynchronous request.  Does not apply to synchronous requests.
-     * @param timesup This is the amount of time the application is willing to wait
-     *                for this request to complete, but will wait until timeout for
-     *                the connection to be established.
-     * @throw std::logic_error If timesup is >= timeout.
-     */
-    auto Timesup(
-        std::optional<std::chrono::milliseconds> timesup) -> void;
 
     /**
      * @return The URL of the HTTP request.
@@ -216,7 +174,7 @@ public:
      * @param name The name of the header, e.g. 'Accept' or 'Expect'.
      */
     auto RemoveHeader(
-        std::string_view name) -> void { Header(name, std::string_view{}); }
+        std::string_view name) -> void { Header(name, std::string_view {}); }
     /**
      * Adds a request header with its value.
      * @param name The name of the header, e.g. 'Connection'.
@@ -253,41 +211,41 @@ public:
 
 private:
     /// The on complete handler callback.
-    OnCompleteHandlerType m_on_complete_handler{ nullptr };
+    OnCompleteHandlerType m_on_complete_handler { nullptr };
     /// The transfer progress handler callback.
-    TransferProgressHandlerType m_on_transfer_progress_handler{ nullptr };
+    TransferProgressHandlerType m_on_transfer_progress_handler { nullptr };
     /// The timeout for the request, or none.
-    std::optional<std::chrono::milliseconds> m_timeout{};
+    std::optional<std::chrono::milliseconds> m_timeout {};
     /// The timesup for the request, or none.
-    std::optional<std::chrono::milliseconds> m_timesup{};
+    std::optional<std::chrono::milliseconds> m_timesup {};
     /// The URL.
-    std::string m_url{};
+    std::string m_url {};
     /// The HTTP request method.
-    http::Method m_method{ http::Method::GET };
+    http::Method m_method { http::Method::GET };
     /// The HTTP version to use for this request.
-    http::Version m_version{ http::Version::USE_BEST };
+    http::Version m_version { http::Version::USE_BEST };
     /// Should this request automatically follow redirects?
-    bool m_follow_redirects{ true };
+    bool m_follow_redirects { true };
     /// How many redirects should be followed? -1 infinite, 0 none, <num>.
-    int64_t m_max_redirects{ -1 };
+    int64_t m_max_redirects { -1 };
     /// Should the peer be ssl verified?
-    bool m_verify_ssl_peer{ true };
+    bool m_verify_ssl_peer { true };
     /// Should the host be ssl verified?
-    bool m_verify_ssl_host{ true };
+    bool m_verify_ssl_host { true };
     /// Specific Accept-Encoding header fields.
-    std::optional<std::vector<std::string>> m_accept_encodings{};
+    std::optional<std::vector<std::string>> m_accept_encodings {};
     /// A set of host:port to ip addresses that will be resolved before DNS.
-    std::vector<lift::ResolveHost> m_resolve_hosts{};
+    std::vector<lift::ResolveHost> m_resolve_hosts {};
     /// The request headers buffer to quickly append into without allocating memory.
-    std::string m_request_headers{};
+    std::string m_request_headers {};
     /// The request headers index.  Used to generate the curl slist.
-    std::vector<HeaderView> m_request_headers_idx{};
+    std::vector<HeaderView> m_request_headers_idx {};
     /// The POST request body data, mutually exclusive with MimeField requests.
-    bool m_request_data_set{ false };
-    std::string m_request_data{};
+    bool m_request_data_set { false };
+    std::string m_request_data {};
     /// The Mime request fields, mutually exclusive with POST request body data.
-    bool m_mime_fields_set{ false };
-    std::vector<lift::MimeField> m_mime_fields{};
+    bool m_mime_fields_set { false };
+    std::vector<lift::MimeField> m_mime_fields {};
 
     // libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(

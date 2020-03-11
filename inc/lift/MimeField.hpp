@@ -23,8 +23,8 @@ public:
     auto Value() const -> const std::variant<std::string, std::filesystem::path>& { return m_field_value; }
 
 private:
-    std::string m_field_name{};
-    std::variant<std::string, std::filesystem::path> m_field_value{};
+    std::string m_field_name {};
+    std::variant<std::string, std::filesystem::path> m_field_value {};
 };
 
 } // namespace lift

@@ -8,17 +8,17 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
     {
-        lift::Request request{ "http://www.example.com" };
+        lift::Request request { "http://www.example.com" };
         std::cout << "Requesting http://www.example.com" << std::endl;
         const auto& response = request.Perform();
         std::cout << response.Data() << std::endl;
     }
 
     {
-        lift::Request request{ "http://www.google.com" };
+        lift::Request request { "http://www.google.com" };
         std::cout << "Requesting http://www.google.com" << std::endl;
         const auto& response = request.Perform();
         std::cout << response.Data() << std::endl;

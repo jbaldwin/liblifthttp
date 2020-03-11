@@ -6,7 +6,7 @@
 
 TEST_CASE("Query Builder simple")
 {
-    lift::QueryBuilder query_builder{};
+    lift::QueryBuilder query_builder {};
     query_builder
         .Scheme("https")
         .Hostname("www.example.com")

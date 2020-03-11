@@ -18,7 +18,7 @@ Request::Request(
 
 auto Request::Perform() -> Response
 {
-    Executor executor{ this };
+    Executor executor { this };
     return executor.perform();
 }
 
@@ -36,21 +36,6 @@ auto Request::TransferProgressHandler(
     } else {
         m_on_transfer_progress_handler = nullptr;
     }
-}
-
-auto Request::Timesup(
-    std::optional<std::chrono::milliseconds> timesup) -> void
-{
-
-    if (timesup.has_value() && timesup.value() >= m_timeout.value_or(std::chrono::milliseconds{ 0 })) {
-        throw std::logic_error(
-            "Times up "
-            + std::to_string(timesup.value().count())
-            + " cannot be <= than timeout "
-            + std::to_string(m_timeout.value_or(std::chrono::milliseconds{ 0 }).count()));
-    }
-
-    m_timesup = std::move(timesup);
 }
 
 auto Request::FollowRedirects(
@@ -93,7 +78,7 @@ auto Request::Header(
     }
     m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
 
-    std::string_view full_header{ start, header_len - 1 }; // subtract off the null byte
+    std::string_view full_header { start, header_len - 1 }; // subtract off the null byte
     m_request_headers_idx.emplace_back(full_header);
 }
 

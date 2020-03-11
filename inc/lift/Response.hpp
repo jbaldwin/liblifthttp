@@ -70,21 +70,21 @@ public:
 
 private:
     /// The status of this HTTP request.
-    lift::LiftStatus m_lift_status{ lift::LiftStatus::BUILDING };
+    lift::LiftStatus m_lift_status { lift::LiftStatus::BUILDING };
     /// The response headers.
-    std::string m_headers{};
+    std::string m_headers {};
     /// Views into each header.
-    std::vector<HeaderView> m_headers_idx{};
+    std::vector<HeaderView> m_headers_idx {};
     /// The response data if any.
-    std::string m_data{};
+    std::string m_data {};
     /// The HTTP response status code.
-    lift::http::StatusCode m_status_code{ lift::http::StatusCode::HTTP_UNKNOWN };
+    lift::http::StatusCode m_status_code { lift::http::StatusCode::HTTP_UNKNOWN };
     /// The total time in milliseconds to execute the request.
-    std::chrono::milliseconds m_total_time{ 0 };
+    std::chrono::milliseconds m_total_time { 0 };
     /// The number of times attempted to connect to the remote server.
-    uint64_t m_num_connects{ 0 };
+    uint64_t m_num_connects { 0 };
     /// The number of redirects traversed while processing the request.
-    uint64_t m_num_redirects{ 0 };
+    uint64_t m_num_redirects { 0 };
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(

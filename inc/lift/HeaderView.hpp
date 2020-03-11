@@ -39,7 +39,7 @@ private:
     /// The header's name.
     std::string_view m_name;
     /// The header's value if it has one.
-    std::string_view m_value{};
+    std::string_view m_value {};
 };
 
 } // lift

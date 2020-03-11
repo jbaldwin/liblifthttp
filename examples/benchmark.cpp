@@ -41,15 +41,15 @@ int main(int argc, char* argv[])
     using namespace std::chrono_literals;
 
     std::string url(argv[1]);
-    auto duration = std::chrono::seconds{ std::stoul(argv[2]) };
+    auto duration = std::chrono::seconds { std::stoul(argv[2]) };
     uint64_t connections = std::stoul(argv[3]);
     uint64_t threads = std::stoul(argv[4]);
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
-    std::atomic<uint64_t> success{ 0 };
-    std::atomic<uint64_t> error{ 0 };
+    std::atomic<uint64_t> success { 0 };
+    std::atomic<uint64_t> error { 0 };
 
     {
         std::vector<std::unique_ptr<lift::EventLoop>> loops;

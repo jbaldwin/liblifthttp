@@ -34,11 +34,15 @@ public:
      * @param max_connections The maximum number of connections this event loop should 
      *                        hold open at any given time.  If exceeded the oldest connection
      *                        not in use will be removed.
+     * @param connection_time The amount of time new connections are allowed to setup the connection.
+     *                        This should always be larger than the timeout values set on individual
+     *                        requests
      * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
      */
     explicit EventLoop(
         std::optional<uint64_t> reserve_connections = std::nullopt,
         std::optional<uint64_t> max_connections = std::nullopt,
+        std::optional<std::chrono::milliseconds> connection_time = std::nullopt,
         std::vector<ResolveHost> resolve_hosts = {});
 
     ~EventLoop();
@@ -97,25 +101,28 @@ public:
 
 private:
     /// Set to true if the EventLoop is currently running.
-    std::atomic<bool> m_is_running{ false };
+    std::atomic<bool> m_is_running { false };
     /// Set to true if the EventLoop is currently shutting down.
-    std::atomic<bool> m_is_stopping{ false };
+    std::atomic<bool> m_is_stopping { false };
     /// The active number of requests running.
-    std::atomic<uint64_t> m_active_request_count{ 0 };
+    std::atomic<uint64_t> m_active_request_count { 0 };
 
     /// The UV event loop to drive libcurl.
-    uv_loop_t* m_loop{ uv_loop_new() };
+    uv_loop_t* m_uv_loop { uv_loop_new() };
     /// The async trigger for injecting new requests into the event loop.
-    uv_async_t m_async{};
-    /// libcurl requires a single timer to drive timeouts/wake-ups.
-    uv_timer_t m_timeout_timer{};
-    /// timesup timer
-    uv_timer_t m_timesup_timer{};
+    uv_async_t m_async {};
+    /// libcurl requires a single timer to drive internal timeouts/wake-ups.
+    uv_timer_t m_timer_curl {};
+    /// If set, the amount of time connections are allowed to connect, this can be
+    /// longer than the timeout of the request.
+    std::optional<std::chrono::milliseconds> m_connection_time { std::nullopt };
+    /// Timeout timer.
+    uv_timer_t m_timer_timeout {};
     /// The libcurl multi handle for driving multiple easy handles at once.
-    CURLM* m_cmh{ curl_multi_init() };
+    CURLM* m_cmh { curl_multi_init() };
 
     /// Pending requests are safely queued via this lock.
-    std::mutex m_pending_requests_lock{};
+    std::mutex m_pending_requests_lock {};
     /**
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
@@ -125,32 +132,30 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<ExecutorPtr> m_pending_requests{};
+    std::vector<ExecutorPtr> m_pending_requests {};
     /// Only accessible from within the EventLoop thread.
-    std::vector<ExecutorPtr> m_grabbed_requests{};
+    std::vector<ExecutorPtr> m_grabbed_requests {};
 
     /// The background thread spawned to drive the event loop.
-    std::thread m_background_thread{};
+    std::thread m_background_thread {};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
 
     /// List of CURL* handles to use for requests.
-    std::deque<CURL*> m_curl_handles{};
+    std::deque<CURL*> m_curl_handles {};
 
     /// The set of resolve hosts to apply to all requests in this event loop.
-    std::vector<lift::ResolveHost> m_resolve_hosts{};
+    std::vector<lift::ResolveHost> m_resolve_hosts {};
 
-    // Requests with timesup are notified when the time is up, but lift will attempt to establish
-    // or finish the request until timeout to keep the socket alive.
-    std::multimap<TimePoint, Executor*> m_timesup{};
+    std::multimap<TimePoint, Executor*> m_timeouts {};
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
-    std::atomic<bool> m_async_closed{ false };
-    /// Flag to denote that the m_timeout_timer has been closed on shutdown.
-    std::atomic<bool> m_timeout_timer_closed{ false };
-    /// Flag to denote that the m_timesup_timer has been closed on shutdown.
-    std::atomic<bool> m_timesup_timer_closed{ false };
+    std::atomic<bool> m_async_closed { false };
+    /// Flag to denote that the curl timer has been closed on shutdown.
+    std::atomic<bool> m_timer_curl_closed { false };
+    /// Flag to denote that the timer for timeouts has been closed.
+    std::atomic<bool> m_timer_timeout_closed { false };
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -181,38 +186,37 @@ private:
         LiftStatus status) -> void;
 
     /**
-     * Completes a request by passing ownership of the request back to the user land,
-     * but fakes a simple response object with various fields for timesup.
-     * This will not delete the executor yet as it will attempt to let the 
-     * event loop finish the request to estasblish the connection.
-     * @param executor_ptr The request handle to complete.
+     * Completes a request that has timed out but still has connection time remaining.
+     * @param executor_ptr The request to timeout.
      */
-    auto completeRequestTimesup(
+    auto completeRequestTimeout(
         Executor* executor_ptr) -> void;
 
     /**
-     * If the request has a timesup value then it is added to the multi-map,
-     * the timesup timer is adjusted and the executor is given an iterator
-     * for the multi-maps position to quickly delete this item when removed.
-     * @param executor The executor/request to add its timesup.
+     * Adds the request with the appropriate timeout.
+     * If only a timeout exists, the timeout is set directly on CURLM.
+     * If timeout + connection time exists AND connectoin time > timeout
+     *      timeout is set on the EventLoop
+     *      connection time is set on Curl
+     * If timeout > connection time
+     *      timeout is set on the EventLoop
+     * If no timeout exists nothing is set (infinite -- and could hang).
      */
-    auto addTimesup(
+    auto addTimeout(
         Executor& executor) -> void;
 
     /**
-     * @param executor The executor to remove its timesup.
-     * @return The next item in the timesup multi-map.  If this executor
-     *         does not have a timesup then the end of the map is returned.
+     * Removes the timeout from the EventLoop timer information.
+     * Connection time can still fire from curl but the request's
+     * on complete handler won't be called.
      */
-    auto removeTimesup(
+    auto removeTimeout(
         Executor& executor) -> std::multimap<uint64_t, Executor*>::iterator;
 
     /**
-     * Unconditionally stops and restarts the timesup timer if there are
-     * timesup items that are still being tracked.  If there are no timesup
-     * items being tracked the timer is stopped.
+     * Updates the event loop timeout information.
      */
-    auto updateTimesup() -> void;
+    auto updateTimeouts() -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -300,11 +304,6 @@ private:
     friend auto on_uv_requests_accept_async(
         uv_async_t* handle) -> void;
 
-    /**
-     * This function is called by libuv when m_timesup_timer triggers.
-     * 
-     * @param handle The m_timesup_timer handler.
-     */
     friend auto on_uv_timesup_callback(
         uv_timer_t* handle) -> void;
 };
@@ -317,7 +316,7 @@ auto EventLoop::StartRequests(
         return false;
     }
 
-    std::vector<ExecutorPtr> executors{};
+    std::vector<ExecutorPtr> executors {};
     executors.reserve(std::size(requests));
 
     // We'll prepare now since it won't block the event loop thread.

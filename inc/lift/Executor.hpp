@@ -36,28 +36,28 @@ public:
 
 private:
     /// The curl handle to execute against.
-    CURL* m_curl_handle{ nullptr };
+    CURL* m_curl_handle { nullptr };
     /// The mime handle if present.
-    curl_mime* m_mime_handle{ nullptr };
+    curl_mime* m_mime_handle { nullptr };
     /// The HTTP curl request headers.
-    std::vector<curl_slist> m_curl_request_headers{};
+    std::vector<curl_slist> m_curl_request_headers {};
     /// The HTTP curl resolve hosts.
-    curl_slist* m_curl_resolve_hosts{ nullptr };
+    curl_slist* m_curl_resolve_hosts { nullptr };
 
     /// If sync request the pointer to the request.
-    Request* m_request_sync{ nullptr };
+    Request* m_request_sync { nullptr };
 
     /// If async request the event loop executing this request.
-    EventLoop* m_event_loop{ nullptr };
+    EventLoop* m_event_loop { nullptr };
     /// If async request the pointer to the request.
-    RequestPtr m_request_async{ nullptr };
-    /// If the async request has a timeup set then this is the position to delete when completed.
-    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timesup_iterator;
+    RequestPtr m_request_async { nullptr };
+    /// If the async request has a timeout set then this is the position to delete when completed.
+    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator;
     // Has the on complete callback been called already?
-    bool m_on_complete_callback_called{ false };
+    bool m_on_complete_callback_called { false };
 
     /// Used internally to point at one of the sync or async requests.
-    Request* m_request{ nullptr };
+    Request* m_request { nullptr };
 
     /// The HTTP response data.
     Response m_response;
@@ -66,7 +66,7 @@ private:
         RequestPtr request_ptr,
         EventLoop* event_loop) -> std::unique_ptr<Executor>
     {
-        return std::unique_ptr<Executor>(new Executor{ std::move(request_ptr), event_loop });
+        return std::unique_ptr<Executor>(new Executor { std::move(request_ptr), event_loop });
     }
 
     /**

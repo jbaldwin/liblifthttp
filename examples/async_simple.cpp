@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     (void)argv;
 
     // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init{};
+    lift::GlobalScopeInitializer lift_init {};
 
     std::vector<std::string> urls = {
         "http://www.example.com",
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
         "http://www.reddit.com"
     };
 
-    lift::EventLoop event_loop{};
+    lift::EventLoop event_loop {};
 
     /**
      * Create asynchronous requests for each url and inject them into

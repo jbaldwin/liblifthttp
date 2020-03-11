@@ -71,7 +71,7 @@ TEST_CASE("Async POST request")
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
         });
-    request->RequestData(data);
+    request->Data(data);
     request->Method(lift::http::Method::POST);
     request->FollowRedirects(true);
     request->Version(lift::http::Version::V1_1);
@@ -86,7 +86,7 @@ TEST_CASE("Async POST request")
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
         });
-    request->RequestData(data);
+    request->Data(data);
     request->Method(lift::http::Method::POST);
     request->FollowRedirects(true);
     request->Version(lift::http::Version::V1_1);

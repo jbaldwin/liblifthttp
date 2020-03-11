@@ -10,6 +10,7 @@ static const std::string LIFT_STATUS_SUCCESS = "SUCCESS"s;
 static const std::string LIFT_STATUS_CONNECT_ERROR = "CONNECT_ERROR"s;
 static const std::string LIFT_STATUS_CONNECT_DNS_ERROR = "CONNECT_DNS_ERROR"s;
 static const std::string LIFT_STATUS_CONNECT_SSL_ERROR = "CONNECT_SSL_ERROR"s;
+static const std::string LIFT_STATUS_TIMESUP = "TIMESUP"s;
 static const std::string LIFT_STATUS_TIMEOUT = "TIMEOUT"s;
 static const std::string LIFT_STATUS_RESPONSE_EMPTY = "RESPONSE_EMPTY"s;
 static const std::string LIFT_STATUS_ERROR_FAILED_TO_START = "ERROR_FAILED_TO_START"s;
@@ -32,6 +33,8 @@ auto to_string(
         return LIFT_STATUS_CONNECT_DNS_ERROR;
     case LiftStatus::CONNECT_SSL_ERROR:
         return LIFT_STATUS_CONNECT_SSL_ERROR;
+    case LiftStatus::TIMESUP:
+        return LIFT_STATUS_TIMESUP;
     case LiftStatus::TIMEOUT:
         return LIFT_STATUS_TIMEOUT;
     case LiftStatus::RESPONSE_EMPTY:

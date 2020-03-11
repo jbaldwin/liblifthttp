@@ -96,6 +96,9 @@ auto on_uv_curl_perform_callback(
 auto on_uv_requests_accept_async(
     uv_async_t* handle) -> void;
 
+auto on_uv_timesup_callback(
+    uv_timer_t* handle) -> void;
+
 EventLoop::EventLoop(
     std::optional<uint64_t> reserve_connections,
     std::optional<uint64_t> max_connections,
@@ -111,6 +114,9 @@ EventLoop::EventLoop(
 
     uv_timer_init(m_loop, &m_timeout_timer);
     m_timeout_timer.data = this;
+
+    uv_timer_init(m_loop, &m_timesup_timer);
+    m_timesup_timer.data = this;
 
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETFUNCTION, curl_handle_socket_actions);
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA, this);
@@ -142,12 +148,14 @@ EventLoop::~EventLoop()
     }
 
     uv_timer_stop(&m_timeout_timer);
+    uv_timer_stop(&m_timesup_timer);
     uv_close(uv_type_cast<uv_handle_t>(&m_timeout_timer), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&m_timesup_timer), uv_close_callback);
     uv_close(uv_type_cast<uv_handle_t>(&m_async), uv_close_callback);
     uv_async_send(&m_async); // fake a request to make sure the loop wakes up
     uv_stop(m_loop);
 
-    while (!m_timeout_timer_closed && !m_async_closed) {
+    while (!m_timeout_timer_closed && !m_timesup_timer_closed && !m_async_closed) {
         std::this_thread::sleep_for(1ms);
     }
 
@@ -232,28 +240,120 @@ auto EventLoop::checkActions(
             CURL* easy_handle = message->easy_handle;
             CURLcode easy_result = message->data.result;
 
-            Executor* raw_executor_ptr = nullptr;
-            curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &raw_executor_ptr);
+            Executor* executor = nullptr;
+            curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &executor);
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            raw_executor_ptr->m_response.m_lift_status = Executor::convert(easy_result);
-
-            completeRequest(std::unique_ptr<Executor>{ raw_executor_ptr });
+            completeRequestNormal(
+                ExecutorPtr{ executor },
+                Executor::convert(easy_result));
         }
     }
 }
 
-auto EventLoop::completeRequest(
-    std::unique_ptr<Executor> executor_ptr) -> void
+auto EventLoop::completeRequestNormal(
+    ExecutorPtr executor_ptr,
+    LiftStatus status) -> void
 {
-    executor_ptr->copyToResponse();
     auto& on_complete_handler = executor_ptr->m_request_async->m_on_complete_handler;
-    if (on_complete_handler != nullptr) {
+
+    if (executor_ptr->m_on_complete_callback_called == false && on_complete_handler != nullptr) {
+        executor_ptr->m_on_complete_callback_called = true;
+        executor_ptr->m_response.m_lift_status = status;
+        executor_ptr->copyCurlToResponse();
+        removeTimesup(*executor_ptr);
+
         on_complete_handler(
             std::move(executor_ptr->m_request_async),
             std::move(executor_ptr->m_response));
     }
+
+    // Only a true ~Executor() causes request count to go down.
     --m_active_request_count;
+}
+
+auto EventLoop::completeRequestTimesup(
+    Executor* executor_ptr) -> void
+{
+    auto& on_complete_handler = executor_ptr->m_request_async->m_on_complete_handler;
+
+    // Call on complete if it exists and hasn't been called before.
+    if (executor_ptr->m_on_complete_callback_called == false && on_complete_handler != nullptr) {
+        executor_ptr->m_on_complete_callback_called = true;
+        executor_ptr->m_response.m_lift_status = lift::LiftStatus::TIMESUP;
+        executor_ptr->setTimesupResponse(executor_ptr->m_request->Timesup().value());
+
+        // Removing the timesup is done in the uv timesup callback so it can prune
+        // every single item that has timesup'ed.  Doing it here will cause 1 item
+        // per loop iteration to be removed if there are multiple items with the same timesup value.
+        // removeTimesup(*executor_ptr);
+
+        on_complete_handler(
+            std::move(executor_ptr->m_request_async),
+            std::move(executor_ptr->m_response));
+    }
+}
+
+auto EventLoop::addTimesup(
+    Executor& executor) -> void
+{
+    if (executor.m_request->Timesup().has_value() && !executor.m_timesup_iterator.has_value()) {
+        auto now = uv_now(m_loop);
+        const auto& timesup = executor.m_request->Timesup().value();
+
+        TimePoint time_point = now + timesup.count();
+        executor.m_timesup_iterator = m_timesup.emplace(time_point, &executor);
+
+        // Anytime an item is added the timesup timer might need to be adjusted.
+        updateTimesup();
+    }
+}
+
+auto EventLoop::removeTimesup(
+    Executor& executor) -> std::multimap<uint64_t, Executor*>::iterator
+{
+    if (executor.m_timesup_iterator.has_value()) {
+        auto iter = executor.m_timesup_iterator.value();
+        auto next = m_timesup.erase(iter);
+        executor.m_timesup_iterator.reset();
+
+        // Anytime an item is removed the timesup timer might need to be adjusted.
+        updateTimesup();
+
+        return next;
+    }
+
+    return m_timesup.end(); // is this behavior ok?
+}
+
+auto EventLoop::updateTimesup() -> void
+{
+    // TODO only change if it needs to change, this will probably require
+    // an iterator to the item just added or removed to properly skip
+    // setting the timer every single time.
+
+    if (!m_timesup.empty()) {
+        auto now = uv_now(m_loop);
+        auto first = m_timesup.begin()->first;
+
+        // If the first item is already 'expired' setting the timer to zero
+        // will trigger uv to call its callback on the next loop iteration.
+        // Otherwise set the difference to how many milliseconds are between
+        // first and now.
+        uint64_t timer_value{ 0 };
+        if (first > now) {
+            timer_value = first - now;
+        }
+
+        uv_timer_stop(&m_timesup_timer);
+        uv_timer_start(
+            &m_timesup_timer,
+            on_uv_timesup_callback,
+            timer_value,
+            0);
+    } else {
+        uv_timer_stop(&m_timesup_timer);
+    }
 }
 
 auto curl_start_timeout(
@@ -337,6 +437,8 @@ auto uv_close_callback(uv_handle_t* handle) -> void
         event_loop->m_async_closed = true;
     } else if (handle == uv_type_cast<uv_handle_t>(&event_loop->m_timeout_timer)) {
         event_loop->m_timeout_timer_closed = true;
+    } else if (handle == uv_type_cast<uv_handle_t>(&event_loop->m_timesup_timer)) {
+        event_loop->m_timesup_timer_closed = true;
     }
 }
 
@@ -390,7 +492,14 @@ auto on_uv_requests_accept_async(
             event_loop->m_pending_requests);
     }
 
+    auto now = uv_now(event_loop->m_loop);
+
     for (auto& executor_ptr : event_loop->m_grabbed_requests) {
+
+        // This must be done before adding to the CURLM* object,
+        // if not its possible a very fast request could complete
+        // before this gets into the multi-map!
+        event_loop->addTimesup(*executor_ptr);
 
         auto curl_code = curl_multi_add_handle(event_loop->m_cmh, executor_ptr->m_curl_handle);
 
@@ -399,26 +508,53 @@ auto on_uv_requests_accept_async(
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            executor_ptr->m_response.m_lift_status = Executor::convert(CURLcode::CURLE_SEND_ERROR);
-            event_loop->completeRequest(std::move(executor_ptr));
+            event_loop->completeRequestNormal(
+                std::move(executor_ptr),
+                Executor::convert(CURLcode::CURLE_SEND_ERROR));
         } else {
-            /**
-             * Immediately call curl's check action to get the current request moving.
-             * Curl appears to have an internal queue and if it gets too long it might
-             * drop requests.
-             */
-            event_loop->checkActions();
-
             /**
              * Drop the unique_ptr safety around the RequestHandle while it is being
              * processed by curl.  When curl is finished completing the request
              * it will be put back into a Request object for the client to use.
              */
             (void)executor_ptr.release();
+
+            /**
+             * Immediately call curl's check action to get the current request moving.
+             * Curl appears to have an internal queue and if it gets too long it might
+             * drop requests.
+             */
+            event_loop->checkActions();
         }
     }
 
     event_loop->m_grabbed_requests.clear();
+}
+
+auto on_uv_timesup_callback(
+    uv_timer_t* handle) -> void
+{
+    auto* event_loop = static_cast<EventLoop*>(handle->data);
+    auto& timesup = event_loop->m_timesup;
+
+    if (timesup.empty()) {
+        return;
+    }
+
+    auto now = uv_now(event_loop->m_loop);
+
+    // While the items in the timesup map are <= now "timesup" them to the client.
+    auto iter = timesup.begin();
+    while (iter != timesup.end()) {
+        if (iter->first > now) {
+            // Everything past this point has more time to wait.
+            break;
+        }
+
+        auto* executor = iter->second;
+        event_loop->completeRequestTimesup(executor);
+        iter = event_loop->removeTimesup(*executor);
+    }
 }
 
 } // lift

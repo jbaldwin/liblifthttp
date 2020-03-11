@@ -8,6 +8,7 @@
 #include <uv.h>
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -17,12 +18,16 @@
 namespace lift {
 
 class CurlContext;
+using CurlContextPtr = std::unique_ptr<CurlContext>;
 
 class EventLoop {
     friend CurlContext;
     friend Executor;
 
 public:
+    // libuv uses simple uint64_t values for millisecond steady clocks.
+    using TimePoint = uint64_t;
+
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
      * @param reserve_connections The number of connections to prepare (reserve) for execution.
@@ -104,6 +109,8 @@ private:
     uv_async_t m_async{};
     /// libcurl requires a single timer to drive timeouts/wake-ups.
     uv_timer_t m_timeout_timer{};
+    /// timesup timer
+    uv_timer_t m_timesup_timer{};
     /// The libcurl multi handle for driving multiple easy handles at once.
     CURLM* m_cmh{ curl_multi_init() };
 
@@ -126,7 +133,7 @@ private:
     std::thread m_background_thread{};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
-    std::deque<std::unique_ptr<CurlContext>> m_curl_context_ready;
+    std::deque<CurlContextPtr> m_curl_context_ready;
 
     /// List of CURL* handles to use for requests.
     std::deque<CURL*> m_curl_handles{};
@@ -134,10 +141,16 @@ private:
     /// The set of resolve hosts to apply to all requests in this event loop.
     std::vector<lift::ResolveHost> m_resolve_hosts{};
 
+    // Requests with timesup are notified when the time is up, but lift will attempt to establish
+    // or finish the request until timeout to keep the socket alive.
+    std::multimap<TimePoint, Executor*> m_timesup{};
+
     /// Flag to denote that the m_async handle has been closed on shutdown.
     std::atomic<bool> m_async_closed{ false };
     /// Flag to denote that the m_timeout_timer has been closed on shutdown.
     std::atomic<bool> m_timeout_timer_closed{ false };
+    /// Flag to denote that the m_timesup_timer has been closed on shutdown.
+    std::atomic<bool> m_timesup_timer_closed{ false };
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -161,9 +174,45 @@ private:
      * Manages internal state accordingly, always call this function rather
      * than the Request->OnComplete() function directly.
      * @param executor_ptr The request handle to complete.
+     * @param status The status of the request when completing.
      */
-    auto completeRequest(
-        ExecutorPtr executor_ptr) -> void;
+    auto completeRequestNormal(
+        ExecutorPtr executor_ptr,
+        LiftStatus status) -> void;
+
+    /**
+     * Completes a request by passing ownership of the request back to the user land,
+     * but fakes a simple response object with various fields for timesup.
+     * This will not delete the executor yet as it will attempt to let the 
+     * event loop finish the request to estasblish the connection.
+     * @param executor_ptr The request handle to complete.
+     */
+    auto completeRequestTimesup(
+        Executor* executor_ptr) -> void;
+
+    /**
+     * If the request has a timesup value then it is added to the multi-map,
+     * the timesup timer is adjusted and the executor is given an iterator
+     * for the multi-maps position to quickly delete this item when removed.
+     * @param executor The executor/request to add its timesup.
+     */
+    auto addTimesup(
+        Executor& executor) -> void;
+
+    /**
+     * @param executor The executor to remove its timesup.
+     * @return The next item in the timesup multi-map.  If this executor
+     *         does not have a timesup then the end of the map is returned.
+     */
+    auto removeTimesup(
+        Executor& executor) -> std::multimap<uint64_t, Executor*>::iterator;
+
+    /**
+     * Unconditionally stops and restarts the timesup timer if there are
+     * timesup items that are still being tracked.  If there are no timesup
+     * items being tracked the timer is stopped.
+     */
+    auto updateTimesup() -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -250,6 +299,14 @@ private:
      */
     friend auto on_uv_requests_accept_async(
         uv_async_t* handle) -> void;
+
+    /**
+     * This function is called by libuv when m_timesup_timer triggers.
+     * 
+     * @param handle The m_timesup_timer handler.
+     */
+    friend auto on_uv_timesup_callback(
+        uv_timer_t* handle) -> void;
 };
 
 template <typename Container>

@@ -66,7 +66,7 @@ public:
     /**
      * @return The number of redirects made during this request.
      */
-    [[nodiscard]] auto NumRedirects() const -> uint64_t { return m_num_redircts; }
+    [[nodiscard]] auto NumRedirects() const -> uint64_t { return m_num_redirects; }
 
 private:
     /// The status of this HTTP request.
@@ -84,7 +84,7 @@ private:
     /// The number of times attempted to connect to the remote server.
     uint64_t m_num_connects{ 0 };
     /// The number of redirects traversed while processing the request.
-    uint64_t m_num_redircts{ 0 };
+    uint64_t m_num_redirects{ 0 };
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(
@@ -111,6 +111,10 @@ private:
     /// libuv will call this function when the StartRequest() function is called.
     friend auto on_uv_requests_accept_async(
         uv_async_t* handle) -> void;
+
+    /// For Timesup.
+    friend auto on_uv_timesup_callback(
+        uv_timer_t* handle) -> void;
 };
 
 } // namespace lift

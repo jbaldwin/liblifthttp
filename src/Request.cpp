@@ -38,58 +38,19 @@ auto Request::TransferProgressHandler(
     }
 }
 
-auto Request::Timeout() const -> const std::optional<std::chrono::milliseconds>&
+auto Request::Timesup(
+    std::optional<std::chrono::milliseconds> timesup) -> void
 {
-    return m_timeout;
-}
 
-auto Request::Timeout(
-    std::optional<std::chrono::milliseconds> timeout) -> void
-{
-    m_timeout = std::move(timeout);
-}
+    if (timesup.has_value() && timesup.value() >= m_timeout.value_or(std::chrono::milliseconds{ 0 })) {
+        throw std::logic_error(
+            "Times up "
+            + std::to_string(timesup.value().count())
+            + " cannot be <= than timeout "
+            + std::to_string(m_timeout.value_or(std::chrono::milliseconds{ 0 }).count()));
+    }
 
-auto Request::Url() const -> const std::string&
-{
-    return m_url;
-}
-
-auto Request::Url(
-    std::string url) -> void
-{
-    m_url = std::move(url);
-}
-
-auto Request::Method() const -> http::Method
-{
-    return m_method;
-}
-
-auto Request::Method(
-    http::Method method) -> void
-{
-    m_method = method;
-}
-
-auto Request::Version() const -> http::Version
-{
-    return m_version;
-}
-
-auto Request::Version(
-    http::Version version) -> void
-{
-    m_version = version;
-}
-
-auto Request::FollowRedirects() const -> bool
-{
-    return m_follow_redirects;
-}
-
-auto Request::MaxRedirects() const -> int64_t
-{
-    return m_max_redirects;
+    m_timesup = std::move(timesup);
 }
 
 auto Request::FollowRedirects(
@@ -107,55 +68,6 @@ auto Request::FollowRedirects(
     } else {
         m_follow_redirects = false;
     }
-}
-
-auto Request::VerifySslPeer() const -> bool
-{
-    return m_verify_ssl_peer;
-}
-
-auto Request::VerifySslPeer(
-    bool verify_ssl_peer) -> void
-{
-    m_verify_ssl_peer = verify_ssl_peer;
-}
-
-auto Request::VerifySslHost() const -> bool
-{
-    return m_verify_ssl_host;
-}
-
-auto Request::VerifySslHost(
-    bool verify_ssl_host) -> void
-{
-    m_verify_ssl_host = verify_ssl_host;
-}
-
-auto Request::AcceptEncodings() const -> const std::optional<std::vector<std::string>>&
-{
-    return m_accept_encodings;
-}
-auto Request::AcceptEncoding(
-    std::optional<std::vector<std::string>> encodings) -> void
-{
-    m_accept_encodings = std::move(encodings);
-}
-
-auto Request::ResolveHosts() const -> const std::vector<lift::ResolveHost>&
-{
-    return m_resolve_hosts;
-}
-
-auto Request::ResolveHost(
-    lift::ResolveHost resolve_host) -> void
-{
-    m_resolve_hosts.emplace_back(std::move(resolve_host));
-}
-
-auto Request::RemoveHeader(
-    std::string_view name) -> void
-{
-    Header(name, std::string_view{});
 }
 
 auto Request::Header(
@@ -185,17 +97,7 @@ auto Request::Header(
     m_request_headers_idx.emplace_back(full_header);
 }
 
-auto Request::Headers() const -> const std::vector<HeaderView>&
-{
-    return m_request_headers_idx;
-}
-
-auto Request::RequestData() const -> const std::string&
-{
-    return m_request_data;
-}
-
-auto Request::RequestData(
+auto Request::Data(
     std::string data) -> void
 {
     if (m_mime_fields_set) {
@@ -205,11 +107,6 @@ auto Request::RequestData(
     m_request_data_set = true;
     m_request_data = std::move(data);
     m_method = http::Method::POST;
-}
-
-auto Request::MimeFields() const -> const std::vector<lift::MimeField>&
-{
-    return m_mime_fields;
 }
 
 auto Request::MimeField(

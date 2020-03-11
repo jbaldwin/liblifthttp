@@ -28,6 +28,14 @@ enum class LiftStatus {
     /// The request has an SSL connection error.
     CONNECT_SSL_ERROR,
 
+    /// The request had its timesup expire.  Timesup is a two tier timeout
+    /// where the client is notified when timesup expires for the request
+    /// but Lift will continue trying to establish the request until timeout.
+    /// This is important for TLS or establishing connections when the timeout
+    /// of the request _should_ be very short and otherwise would make new
+    /// connections with a single timeout value very difficult and cause lots
+    /// of connection churn.
+    TIMESUP,
     /// The request timed out.
     TIMEOUT,
     /// The request has an empty response (socket severed).

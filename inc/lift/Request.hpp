@@ -46,17 +46,69 @@ public:
         int64_t upload_total_bytes,
         int64_t upload_now_bytes)>;
 
+    /**
+     * Creates a new request with the given url, possible timeout and possible on complete handler.
+     * Note that synchronous requests do not require on complete handlers as the Perfom() function
+     * will return the Result immediately to the caller.
+     * 
+     * @param url The url to request.
+     * @param timeout An optional timeout for this request.  If not provided the request
+     *                could hang/block forever if it is never responded to.
+     * @param on_complete_handler For asynchronous requests provide this if you want to 
+     *                            know when the request completes with the Response information.
+     */
     Request(
         std::string url,
         std::optional<std::chrono::milliseconds> timeout = std::nullopt,
         OnCompleteHandlerType on_complete_handler = nullptr);
 
+    /**
+     * Creates a new request on the heap, this is a useful utility for asynchronous requests.
+     * 
+     * Note that requests may be re-used after completing.
+     * 
+     * @param url The url to request.
+     * @param timeout An optional timeout for this request.  If not provided the request
+     *                could hang/block forever if it is never responded to.
+     * @param on_complete_handler For asynchronous requests provide this if you want to 
+     *                            know when the request completes with the Response information.
+     */
     static auto make(
         std::string url,
         std::optional<std::chrono::milliseconds> timeout = std::nullopt,
         OnCompleteHandlerType on_complete_handler = nullptr) -> std::unique_ptr<Request>
     {
         return std::make_unique<Request>(std::move(url), std::move(timeout), std::move(on_complete_handler));
+    }
+
+    /**
+     * Creates a new request with a two tier timesup + timeout.  This is useful if normally 
+     * the request's timeout would be very short but establishing a TLS connection or long
+     * distance connection would cause timeouts to occur very frequently.  This timesup
+     * feature will tell the client when the 'short' timesup has occurred but Lift will
+     * attempt to continue establishing the connection until the 'longer' timeout value.
+     * 
+     * @param url The url to request.
+     * @param timesup The amount of time this request *should* complete in.  This value *must*
+     *                be smaller than timeout.
+     * @param timeout The amount of time this request should have to attempt to establish the 
+     *                connection.  This value *must* be greater than timesup.  Note that the 
+     *                on_complete_handler will *NEVER* fire for this event, it will either
+     *                timesup the request OR complete before the timeout.  If it timeouts
+     *                the request's second on complete callback is currently silently dropped, 
+     *                future support to receive both callbacks might be considered.
+     * @param on_complete_handler For asynchronous requests provide this if you want to 
+     *                            know when the request completes with the Response information.
+     */ 
+    static auto make(
+        std::string url,
+        std::chrono::milliseconds timesup,
+        std::chrono::milliseconds timeout,
+        OnCompleteHandlerType on_complete_handler) -> std::unique_ptr<Request>
+    {
+        auto request_ptr = std::make_unique<Request>(std::move(url), std::optional{ timeout }, std::move(on_complete_handler));
+        request_ptr->Timesup(timesup);
+        return request_ptr;
     }
 
     Request(const Request&) = default;
@@ -89,30 +141,42 @@ public:
     auto TransferProgressHandler(
         std::optional<TransferProgressHandlerType> transfer_progress_handler) -> void;
 
-    auto Timeout() const -> const std::optional<std::chrono::milliseconds>&;
+    auto Timeout() const -> const std::optional<std::chrono::milliseconds>& { return m_timeout; }
     auto Timeout(
-        std::optional<std::chrono::milliseconds> timeout) -> void;
+        std::optional<std::chrono::milliseconds> timeout) -> void { m_timeout = std::move(timeout); }
+
+    auto Timesup() const -> const std::optional<std::chrono::milliseconds>& { return m_timesup; }
+
+    /**
+     * Sets the timesup value for an asynchronous request.  Does not apply to synchronous requests.
+     * @param timesup This is the amount of time the application is willing to wait
+     *                for this request to complete, but will wait until timeout for
+     *                the connection to be established.
+     * @throw std::logic_error If timesup is >= timeout.
+     */
+    auto Timesup(
+        std::optional<std::chrono::milliseconds> timesup) -> void;
 
     /**
      * @return The URL of the HTTP request.
      */
-    auto Url() const -> const std::string&;
+    auto Url() const -> const std::string& { return m_url; }
     /**
      * @param url The URL of the HTTP request.
      */
     auto Url(
-        std::string url) -> void;
+        std::string url) -> void { m_url = std::move(url); }
 
-    auto Method() const -> http::Method;
+    auto Method() const -> http::Method { return m_method; }
     auto Method(
-        http::Method method) -> void;
+        http::Method method) -> void { m_method = method; }
 
-    auto Version() const -> http::Version;
+    auto Version() const -> http::Version { return m_version; }
     auto Version(
-        http::Version version) -> void;
+        http::Version version) -> void { m_version = version; }
 
-    auto FollowRedirects() const -> bool;
-    auto MaxRedirects() const -> int64_t;
+    auto FollowRedirects() const -> bool { return m_follow_redirects; }
+    auto MaxRedirects() const -> int64_t { return m_max_redirects; }
     /**
      * Sets if this request should follow redirects.  By default following redirects is
      * enabled.
@@ -123,26 +187,27 @@ public:
         bool follow_redirects,
         int64_t max_redirects = -1) -> void;
 
-    auto VerifySslPeer() const -> bool;
+    auto VerifySslPeer() const -> bool { return m_verify_ssl_peer; }
     auto VerifySslPeer(
-        bool verify_ssl_peer) -> void;
+        bool verify_ssl_peer) -> void { m_verify_ssl_peer = verify_ssl_peer; }
 
-    auto VerifySslHost() const -> bool;
+    auto VerifySslHost() const -> bool { return m_verify_ssl_host; }
     auto VerifySslHost(
-        bool verify_ssl_host) -> void;
+        bool verify_ssl_host) -> void { m_verify_ssl_host = verify_ssl_host; }
 
-    auto AcceptEncodings() const -> const std::optional<std::vector<std::string>>&;
+    auto AcceptEncodings() const -> const std::optional<std::vector<std::string>>& { return m_accept_encodings; }
     /**
      * IMPORTANT: Using this is mutually exclusive with adding your own Accept-Encoding header.
      * 
      * @param encodings A list of accept encodings to send in the request.
      */
     auto AcceptEncoding(
-        std::optional<std::vector<std::string>> encodings) -> void;
+        std::optional<std::vector<std::string>> encodings) -> void { m_accept_encodings = std::move(encodings); }
 
-    auto ResolveHosts() const -> const std::vector<lift::ResolveHost>&;
+    auto ResolveHosts() const -> const std::vector<lift::ResolveHost>& { return m_resolve_hosts; }
     auto ResolveHost(
-        lift::ResolveHost resolve_host) -> void;
+        lift::ResolveHost resolve_host) -> void { m_resolve_hosts.emplace_back(std::move(resolve_host)); }
+    auto ClearResolveHosts() -> void { m_resolve_hosts.clear(); }
 
     /**
      * Specifically removes the header from the request.  There are a few
@@ -151,7 +216,7 @@ public:
      * @param name The name of the header, e.g. 'Accept' or 'Expect'.
      */
     auto RemoveHeader(
-        std::string_view name) -> void;
+        std::string_view name) -> void { Header(name, std::string_view{}); }
     /**
      * Adds a request header with its value.
      * @param name The name of the header, e.g. 'Connection'.
@@ -161,23 +226,28 @@ public:
         std::string_view name,
         std::string_view value) -> void;
 
-    auto Headers() const -> const std::vector<HeaderView>&;
+    auto Headers() const -> const std::vector<HeaderView>& { return m_request_headers_idx; }
+    auto ClearHeaders() -> void
+    {
+        m_request_headers.clear();
+        m_request_headers_idx.clear();
+    }
 
-    auto RequestData() const -> const std::string&;
+    auto Data() const -> const std::string& { return m_request_data; }
     /**
      * Sets the request to HTTP POST and the body of the request
-     * to the provided data.
+     * to the provided data.  Override the method after this call to PUT if desired.
      *
-     * NOTE: this is mutually exclusive with using AddMimeField or AddMimeFileField,
+     * NOTE: this is mutually exclusive with using MimeField
      * as you cannot include traditional POST data in a mime-type form submission.
      *
      * @param data The request data to send in the HTTP POST.
      * @throw std::logic_error If called after using AddMimeField.
      */
-    auto RequestData(
+    auto Data(
         std::string data) -> void;
 
-    auto MimeFields() const -> const std::vector<lift::MimeField>&;
+    auto MimeFields() const -> const std::vector<lift::MimeField>& { return m_mime_fields; }
     auto MimeField(
         lift::MimeField mime_field) -> void;
 
@@ -188,6 +258,8 @@ private:
     TransferProgressHandlerType m_on_transfer_progress_handler{ nullptr };
     /// The timeout for the request, or none.
     std::optional<std::chrono::milliseconds> m_timeout{};
+    /// The timesup for the request, or none.
+    std::optional<std::chrono::milliseconds> m_timesup{};
     /// The URL.
     std::string m_url{};
     /// The HTTP request method.
@@ -217,21 +289,7 @@ private:
     bool m_mime_fields_set{ false };
     std::vector<lift::MimeField> m_mime_fields{};
 
-    /// libcurl will call this function when a header is received for the HTTP request.
-    friend auto curl_write_header(
-        char* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
-
-    /// libcurl will call this function when data is received for the HTTP request.
-    friend auto curl_write_data(
-        void* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
-
-    /// libcurl will call this function if the user has requested transfer progress information.
+    // libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(
         void* clientp,
         curl_off_t download_total_bytes,

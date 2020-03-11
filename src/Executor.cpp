@@ -76,7 +76,7 @@ auto Executor::perform() -> Response
 
     auto curl_error_code = curl_easy_perform(m_curl_handle);
     m_response.m_lift_status = convert(curl_error_code);
-    copyToResponse();
+    copyCurlToResponse();
 
     return std::move(m_response);
 }
@@ -143,6 +143,8 @@ auto Executor::prepare() -> void
     if (m_request->Timeout().has_value()) {
         curl_easy_setopt(m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(m_request->Timeout().value().count()));
     }
+
+    // Timesup is handled when injecting into the CURLM* event loop for asynchronous requests.
 
     long curl_value = (m_request->FollowRedirects()) ? 1L : 0L;
     curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
@@ -235,8 +237,8 @@ auto Executor::prepare() -> void
 
     // POST or MIME data
     if (m_request->m_request_data_set) {
-        curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request->RequestData().size()));
-        curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS, m_request->RequestData().data());
+        curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_request->Data().size()));
+        curl_easy_setopt(m_curl_handle, CURLOPT_POSTFIELDS, m_request->Data().data());
     } else if (m_request->m_mime_fields_set) {
         m_mime_handle = curl_mime_init(m_curl_handle);
 
@@ -265,7 +267,7 @@ auto Executor::prepare() -> void
     }
 }
 
-auto Executor::copyToResponse() -> void
+auto Executor::copyCurlToResponse() -> void
 {
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
@@ -282,7 +284,16 @@ auto Executor::copyToResponse() -> void
 
     long redirect_count = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_REDIRECT_COUNT, &redirect_count);
-    m_response.m_num_redircts = static_cast<uint64_t>(redirect_count);
+    m_response.m_num_redirects = static_cast<uint64_t>(redirect_count);
+}
+
+auto Executor::setTimesupResponse(
+    std::chrono::milliseconds total_time) -> void
+{
+    m_response.m_status_code = lift::http::StatusCode::HTTP_UNKNOWN;
+    m_response.m_total_time = total_time;
+    m_response.m_num_connects = 0;
+    m_response.m_num_redirects = 0;
 }
 
 auto Executor::convert(

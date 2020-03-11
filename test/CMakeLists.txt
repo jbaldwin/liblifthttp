@@ -6,6 +6,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     EscapeTest.hpp
     QueryBuilderTest.hpp
     SyncRequestTest.hpp
+    TimesupTest.hpp
     TransferProgressRequest.hpp
     UserDataRequestTest.hpp
 )

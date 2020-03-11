@@ -5,6 +5,8 @@
 
 #include <curl/curl.h>
 
+#include <map>
+
 namespace lift {
 class Request;
 class EventLoop;
@@ -24,7 +26,7 @@ class EventLoop;
  * hence it has no public methods other than its destructor.
  */
 class Executor {
-    /// Allowed to create Executors.
+    /// Allowed to create Executors and Timesup!
     friend EventLoop;
     /// Allowed to create Executors.
     friend Request;
@@ -49,6 +51,10 @@ private:
     EventLoop* m_event_loop{ nullptr };
     /// If async request the pointer to the request.
     RequestPtr m_request_async{ nullptr };
+    /// If the async request has a timeup set then this is the position to delete when completed.
+    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timesup_iterator;
+    // Has the on complete callback been called already?
+    bool m_on_complete_callback_called{ false };
 
     /// Used internally to point at one of the sync or async requests.
     Request* m_request{ nullptr };
@@ -93,9 +99,17 @@ private:
     auto prepare() -> void;
 
     /**
-     * Copies all available HTTP response fields into the lift::Response.
+     * Copies all available HTTP response fields into the lift::Response from
+     * the curl handle.
      */
-    auto copyToResponse() -> void;
+    auto copyCurlToResponse() -> void;
+
+    /**
+     * Sets the response object with appropriate times up values.
+     * @param total_time The total time the request executed for.
+     */
+    auto setTimesupResponse(
+        std::chrono::milliseconds total_time) -> void;
 
     /**
      * Converts a CURLcode into a LiftStatus.
@@ -128,6 +142,10 @@ private:
 
     friend auto on_uv_requests_accept_async(
         uv_async_t* handle) -> void;
+
+    /// For Timesup.
+    friend auto on_uv_timesup_callback(
+        uv_timer_t* handle) -> void;
 };
 
 using ExecutorPtr = std::unique_ptr<Executor>;

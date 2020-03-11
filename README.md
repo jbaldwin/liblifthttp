@@ -41,11 +41,17 @@ static lift::GlobalScopeInitializer g_lifthttp_gsi{};
 
 ### Simple Synchronous
 ```C++
-// Requests are always produced from a pool and return to the pool upon completion.
+// Synchronous requests can be created on the stack.
 lift::Request request{"http://www.example.com"};
-// This call is the blocking synchronous HTTP call.
+// This is the blocking synchronous HTTP call.
 auto response = request.Perform();
-std::cout << response.Data() << "\n";
+std::cout << "LiftStatus: " << lift::to_string(response.LiftStatus()) << "\n";
+std::cout << "HTTP Status Code: " << lift::to_string(response.StatusCode()) << "\n";
+for(const auto& header : response.Headers())
+{
+    std::cout << header.Name() << ": " << header.Value() << "\n";
+}
+std::cout << response.Data(); 
 ```
 
 ### Simple Asynchronous

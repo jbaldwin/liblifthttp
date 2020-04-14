@@ -15,7 +15,7 @@ TEST_CASE("Async 100 requests")
 
     for (std::size_t i = 0; i < COUNT; ++i) {
         auto r = std::make_unique<lift::Request>(
-            "http://localhost:80/",
+            "http://nginx:80/",
             std::chrono::seconds { 1 },
             [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
                 REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -41,7 +41,7 @@ TEST_CASE("Async batch 100 requests")
 
     for (std::size_t i = 0; i < COUNT; ++i) {
         auto r = std::make_unique<lift::Request>(
-            "http://localhost:80/",
+            "http://nginx:80/",
             std::chrono::seconds { 1 },
             [](std::unique_ptr<lift::Request>, lift::Response response) -> void {
                 REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -65,7 +65,7 @@ TEST_CASE("Async POST request")
     std::string data = "DATA DATA DATA!";
 
     auto request = std::make_unique<lift::Request>(
-        "http://localhost:80/",
+        "http://nginx:80/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -80,7 +80,7 @@ TEST_CASE("Async POST request")
     ev.StartRequest(std::move(request));
 
     request = std::make_unique<lift::Request>(
-        "http://localhost:80/",
+        "http://nginx:80/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);

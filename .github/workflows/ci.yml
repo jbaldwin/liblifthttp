@@ -1,0 +1,121 @@
+name: build-release-test
+
+on: [push, pull_request]
+
+jobs:
+    build-ubuntu:
+        name: Build Ubuntu and Test
+        runs-on: ubuntu-latest
+        container:
+            image: ubuntu:latest
+        services:
+            nginx:
+                image: nginx:stable
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+            -   name: apt
+                run: |
+                    apt-get update
+                    apt-get -y upgrade
+                    apt install -y build-essential software-properties-common
+                    add-apt-repository ppa:ubuntu-toolchain-r/test
+                    apt-get install -y \
+                        git \
+                        cmake \
+                        ninja-build \
+                        g++-9 \
+                        clang-9 \
+                        zlib1g-dev \
+                        libcurl4-openssl-dev \
+                        libuv1-dev
+            -   name: build-release-g++
+                run: |
+                    mkdir build-release-g++
+                    cd build-release-g++
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=gcc-9 \
+                        -DCMAKE_CXX_COMPILER=g++-9 \
+                        ..
+                    ninja
+            -   name: build-release-clang
+                run: |
+                    mkdir build-release-clang
+                    cd build-release-clang
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=clang-9 \
+                        -DCMAKE_CXX_COMPILER=clang++-9 \
+                        ..
+                    ninja
+            -   name: test-release-g++
+                run: |
+                    ./build-release-g++/test/liblifthttp_tests
+                    # Can be run with ctest but directly running gives better errors.
+                    # cd build-release-g++
+                    # ctest -v
+            -   name: test-release-clang
+                run: |
+                    ./build-release-clang/test/liblifthttp_tests
+                    # Can be run with ctest but directly running gives better errors.
+                    # cd build-release-clang
+                    # ctest -v
+    build-fedora:
+        name: Build Fedora and Test
+        runs-on: ubuntu-latest
+        container:
+            image: fedora:latest
+        services:
+            nginx:
+                image: nginx:stable
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+            -   name: dnf
+                run: |
+                    sudo dnf install -y \
+                        git \
+                        cmake \
+                        ninja-build \
+                        g++ \
+                        clang \
+                        zlib-devel \
+                        libcurl-devel \
+                        libuv-devel
+            -   name: build-release-g++
+                run: |
+                    mkdir build-release-g++
+                    cd build-release-g++
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=gcc \
+                        -DCMAKE_CXX_COMPILER=g++ \
+                        ..
+                    ninja
+            -   name: build-release-clang
+                run: |
+                    mkdir build-release-clang
+                    cd build-release-clang
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=clang \
+                        -DCMAKE_CXX_COMPILER=clang++ \
+                        ..
+                    ninja
+            -   name: test-release-g++
+                run: |
+                    ./build-release-g++/test/liblifthttp_tests
+                    # Can be run with ctest but directly running gives better errors.
+                    # cd build-release-g++
+                    # ctest -v
+            -   name: test-release-clang
+                run: |
+                    ./build-release-clang/test/liblifthttp_tests
+                    # Can be run with ctest but directly running gives better errors.
+                    # cd build-release-clang
+                    # ctest -v

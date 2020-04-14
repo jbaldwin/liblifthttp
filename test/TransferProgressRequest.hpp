@@ -8,7 +8,7 @@
 
 TEST_CASE("Transfer Progress synchronous")
 {
-    auto request = std::make_unique<lift::Request>("http://localhost:80/");
+    auto request = std::make_unique<lift::Request>("http://nginx:80/");
     std::size_t handler_called = 0;
 
     request->TransferProgressHandler(
@@ -26,7 +26,7 @@ TEST_CASE("Transfer Progress synchronous")
 
 TEST_CASE("Download <N> bytes test synchronous")
 {
-    auto request = std::make_unique<lift::Request>("http://localhost:80/");
+    auto request = std::make_unique<lift::Request>("http://nginx:80/");
     bool should_failed = true;
 
     static constexpr std::size_t BYTES_TO_DOWNLOAD = 5;

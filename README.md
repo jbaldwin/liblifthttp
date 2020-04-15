@@ -46,7 +46,7 @@ lift::Request request{"http://www.example.com"};
 // This is the blocking synchronous HTTP call.
 auto response = request.Perform();
 std::cout << "LiftStatus: " << lift::to_string(response.LiftStatus()) << "\n";
-std::cout << "HTTP Status Code: " << lift::to_string(response.StatusCode()) << "\n";
+std::cout << "HTTP Status Code: " << lift::http::to_string(response.StatusCode()) << "\n";
 for(const auto& header : response.Headers())
 {
     std::cout << header.Name() << ": " << header.Value() << "\n";
@@ -71,13 +71,13 @@ auto request_ptr = lift::Request::make(
     [](lift::RequestPtr req_ptr, lift::Response response)
     {
         std::cout << "LiftStatus: " << lift::to_string(response.LiftStatus()) << "\n";
-        std::cout << "HTTP Status Code: " << lift::to_string(response.StatusCode()) << "\n";
+        std::cout << "HTTP Status Code: " << lift::http::to_string(response.StatusCode()) << "\n";
         for(const auto& header : response.Headers())
         {
             std::cout << header.Name() << ": " << header.Value() << "\n";
         }
         std::cout << response.Data();
-    },
+    }
 );
 
 // Now inject the request into the event to be executed.  Moving into the event loop is required,

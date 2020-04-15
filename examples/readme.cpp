@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
     }
     std::cout << response.Data();
 
+    // Creating the event loop starts it immediately, it spawns a background thread for executing requests.
     lift::EventLoop loop{};
 
     // Create the request just like we did in the sync version, but now provide a lambda for on completion.

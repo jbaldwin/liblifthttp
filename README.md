@@ -110,7 +110,19 @@ while(loop.ActiveRequestCount() > 0) {
     cmake --build .
 
 ### CMake Projects
-To use within your cmake project you can clone the project or use git submodules and then add subdirectory in the parent project's `CMakeList.txt`,
+
+NOTE: by default liblifthttp will attempt to use system versions of `libcurl-dev`, `libuv-dev`, `libcrypto-dev`, `libssl-dev`, and `libcares-dev`.  If your project(s), like some of mine do, require a custom built version
+of `libcurl` or any of the other libraries that curl links to then you can specify the following `cmake` variables to override where liblifthttp
+will link `libcurl` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-dev` link is not currently supported.
+
+    ${LIFT_CURL_INCLUDE} # The curl.h header location, default is empty.
+    ${LIFT_LIBSSL}       # The ssl library to link against, default is empty.
+    ${LIFT_LIBCRYPTO}    # The crypto library to link against, default is empty.
+    ${LIFT_LIBCURL}      # The curl library to link against, default is '-lcurl'.
+    ${LIFT_LIBCARES}     # The c-ares (dns) library to link against, default is empty.
+
+#### add_subdirectory()
+To use within your cmake project you can clone the project or use git submodules and then `add_subdirectory` in the parent project's `CMakeList.txt`,
 assuming the lift code is in a `liblifthttp/` subdirectory of the parent project:
 
     add_subdirectory(liblifthttp)
@@ -122,15 +134,25 @@ To link to the `<project_name>` then use the following:
 
 Include lift in the project's code by simply including `#include <lift/lift.hpp>` as needed.
 
-Note that by default liblifthttp will attempt to use system versions of `libcurl-dev`, `libuv-dev`, `libcrypto-dev`, `libssl-dev`, and `libcares-dev`.  If your project, like some of mine do, require a custom built version 
-of `libcurl` or any of the other libraries that curl links to then you can specify the following `cmake` variables to override where liblifthttp
-will link `libcurl` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-dev` link is not currently supported.
+#### FetchContent
+CMake can also include the project directly via a `FetchContent` declaration.  In your project's `CMakeLists.txt`
+include the following code to download the git repository and make it available to link to.
 
-    ${CURL_INCLUDE} # The curl.h header location, default is empty.
-    ${LIBSSL}       # The ssl library to link against, default is empty.
-    ${LIBCRYPTO}    # The crypto library to link against, default is empty.
-    ${LIBCURL}      # The curl library to link against, default is '-lcurl'.
-    ${LIBCARES}     # The c-ares (dns) library to link against, default is empty.
+    cmake_minimum_required(VERSION 3.11)
+
+    # ... cmake project stuff ...
+
+    include(FetchContent)
+    FetchContent_Declare(
+        lifthttp
+        GIT_REPOSITORY https://github.com/jbaldwin/liblifthttp.git
+        GIT_TAG        <TAG_OR_GIT_HASH>
+    )
+    FetchContent_MakeAvailable(lifthttp)
+
+    # ... cmake project more stuff ...
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE lifthttp)
 
 ## Benchmarks
 Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.  The benchmark is compared against `wrk` as that is basically optimal performance since
@@ -159,22 +181,23 @@ Using `nginx` as the webserver with the default `ubuntu` configuration.
 
 ## Contributing and Testing
 
-This project has a [CircleCI](https://circleci.com/) implementation to compile and run unit tests as well as simple integration tests against a local `nginx` instance.
+This project has a GitHub Actions CI implementation to compile and run unit tests as well as simple integration tests against a local `nginx` instance.
 
 Currently tested distros:
 * ubuntu:latest
 * fedora:latest
 
 Currently tested compilers:
-* g++
-* clang
+* g++-9
+* clang-9
 
-Contributing should ideally be a single commit if possible.  Any new feature should include relevant tests and examples 
+Contributing should ideally be a single commit if possible.  Any new feature should include relevant tests and examples
 are welcome if understanding how the feature works is difficult or provides some additional value the tests otherwise cannot.
 
 CMake is setup to understand how to run the tests.  Building and then running `ctest` will
 execute the tests locally.  Note that the integration tests that make HTTP calls require a webserver
-on http://localhost:80/ that will respond with a 200 on the root directory and 404 on any other url.
+on http://nginx:80/ that will respond with a 200 on the root directory and 404 on any other url.  The 'nginx' hostname
+must be available to respond on, this is how the regression/automation suite sets up nginx.
 A future iteration might include an embedded server that responds with more sophisticated tests.
 
 ```bash

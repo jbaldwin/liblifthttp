@@ -8,27 +8,27 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT DEFINED CURL_INCLUDE)
-    set(CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
+if(NOT DEFINED LIFT_CURL_INCLUDE)
+    set(LIFT_CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
 endif()
 if(NOT DEFINED LIBSSL)
-    set(LIBSSL "" CACHE FILEPATH "User specified libssl static location.")
+    set(LIFT_LIBSSL "" CACHE FILEPATH "User specified libssl static location.")
 endif()
-if(NOT DEFINED LIBCRYPTO)
-    set(LIBCRYPTO "" CACHE FILEPATH "User specificed libcrypto static location.")
+if(NOT DEFINED LIFT_LIBCRYPTO)
+    set(LIFT_LIBCRYPTO "" CACHE FILEPATH "User specificed libcrypto static location.")
 endif()
-if(NOT DEFINED LIBCURL)
-    set(LIBCURL "-lcurl" CACHE FILEPATH "User specified libcurl static location.")
+if(NOT DEFINED LIFT_LIBCURL)
+    set(LIFT_LIBCURL "-lcurl" CACHE FILEPATH "User specified libcurl static location.")
 endif()
-if(NOT DEFINED LIBCARES)
-    set(LIBCARES "" CACHE FILEPATH "User specified libcares static location.")
+if(NOT DEFINED LIFT_LIBCARES)
+    set(LIFT_LIBCARES "" CACHE FILEPATH "User specified libcares static location.")
 endif()
 
-message("${PROJECT_NAME} CURL_INCLUDE = ${CURL_INCLUDE}")
-message("${PROJECT_NAME} LIBSSL       = ${LIBSSL}")
-message("${PROJECT_NAME} LIBCRYPTO    = ${LIBCRYPTO}")
-message("${PROJECT_NAME} LIBCURL      = ${LIBCURL}")
-message("${PROJECT_NAME} LIBCARES     = ${LIBCARES}")
+message("${PROJECT_NAME} LIFT_CURL_INCLUDE = ${LIFT_CURL_INCLUDE}")
+message("${PROJECT_NAME} LIFT_LIBSSL       = ${LIFT_LIBSSL}")
+message("${PROJECT_NAME} LIFT_LIBCRYPTO    = ${LIFT_LIBCRYPTO}")
+message("${PROJECT_NAME} LIFT_LIBCURL      = ${LIFT_LIBCURL}")
+message("${PROJECT_NAME} LIFT_LIBCARES     = ${LIFT_LIBCARES}")
 
 set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
     uv
@@ -39,7 +39,7 @@ set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
 )
 
 set(LIFT_CURL_LIBRARY_DEPENDENCIES
-    "-Wl,--start-group ${LIBSSL} ${LIBCRYPTO} ${LIBCURL} ${LIBCARES} -Wl,--end-group"
+    "-Wl,--start-group ${LIFT_LIBSSL} ${LIFT_LIBCRYPTO} ${LIFT_LIBCURL} ${LIFT_LIBCARES} -Wl,--end-group"
 )
 
 set(LIFT_LIB_DEPS "${LIFT_SYSTEM_LIBRARY_DEPENDENCIES} ${LIFT_CURL_LIBRARY_DEPENDENCIES}")
@@ -63,7 +63,7 @@ set(LIBLIFT_SOURCE_FILES
 add_library(${PROJECT_NAME} STATIC SHARED ${LIBLIFT_SOURCE_FILES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${CURL_INCLUDE})
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LIB_DEPS})

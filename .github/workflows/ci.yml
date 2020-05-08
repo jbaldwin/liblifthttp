@@ -8,6 +8,9 @@ jobs:
         runs-on: ubuntu-latest
         container:
             image: ubuntu:latest
+            env:
+                TZ: America/New_York
+                DEBIAN_FRONTEND: noninteractive
         services:
             nginx:
                 image: nginx:stable

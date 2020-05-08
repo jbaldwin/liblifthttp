@@ -42,8 +42,8 @@ enum class LiftStatus {
 };
 
 /**
- * @param request_status Convert to string.
- * @return String representation of the request status.
+ * @param status Convert the lift status to human readable string.
+ * @return String representation of the status.
  */
 auto to_string(
     LiftStatus status) -> const std::string&;

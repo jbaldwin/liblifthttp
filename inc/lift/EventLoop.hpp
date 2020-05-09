@@ -31,7 +31,7 @@ public:
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
      * @param reserve_connections The number of connections to prepare (reserve) for execution.
-     * @param max_connections The maximum number of connections this event loop should 
+     * @param max_connections The maximum number of connections this event loop should
      *                        hold open at any given time.  If exceeded the oldest connection
      *                        not in use will be removed.
      * @param connection_time The amount of time new connections are allowed to setup the connection.

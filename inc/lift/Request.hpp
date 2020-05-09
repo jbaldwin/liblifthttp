@@ -164,7 +164,7 @@ public:
     /**
      * Sets the accept encoding header to all supported encodings that this platform was built with.
      */
-    auto AcceptEncodingAllAvailable() -> void { m_accept_encodings = std::vector<std::string>{}; }
+    auto AcceptEncodingAllAvailable() -> void { m_accept_encodings = std::vector<std::string> {}; }
 
     auto ResolveHosts() const -> const std::vector<lift::ResolveHost>& { return m_resolve_hosts; }
     auto ResolveHost(

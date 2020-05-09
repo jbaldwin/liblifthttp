@@ -30,17 +30,17 @@ public:
     /**
      * @return Gets the given host that should be resolved.
      */
-    [[nodiscard]] auto GetResolveHost() const noexcept -> const std::string&;
+    [[nodiscard]] auto Host() const noexcept -> const std::string& { return m_resolve_host; }
 
     /**
      * @return Gets the given port that should be resolved.
      */
-    [[nodiscard]] auto GetResolvePort() const noexcept -> uint16_t;
+    [[nodiscard]] auto Port() const noexcept -> uint16_t { return m_resolve_port; }
 
     /**
      * @return Gets the given IP Address that is being resolved to.
      */
-    [[nodiscard]] auto GetResolvedIpAddr() const noexcept -> const std::string&;
+    [[nodiscard]] auto IpAddr() const noexcept -> const std::string& { return m_resolved_ip_addr; }
 
 private:
     /// The given input resolve host.
@@ -56,7 +56,7 @@ private:
     /**
      * @return Gets the "host:port:ipaddress" curl formatted resolve host.
      */
-    [[nodiscard]] auto getCurlFormattedResolveHost() const noexcept -> const std::string&;
+    [[nodiscard]] auto getCurlFormattedResolveHost() const noexcept -> const std::string& { return m_curl_formatted; }
 };
 
 } // namespace lift

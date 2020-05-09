@@ -135,15 +135,19 @@ jobs:
             -   name: dnf
                 run: |
                     sudo dnf install -y \
-                        git \
                         cmake \
+                        git \
                         ninja-build \
                         gcc-c++-9.3.1 \
                         clang-9.0.1 \
                         lcov \
                         zlib-devel \
                         libcurl-devel \
-                        libuv-devel
+                        libuv-devel \
+                        iputils
+            -   name: ping
+                run: |
+                    ping -c1 nginx
             -   name: build-debug-g++
                 run: |
                     mkdir build-debug-g++

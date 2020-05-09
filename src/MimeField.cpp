@@ -16,9 +16,10 @@ MimeField::MimeField(
     : m_field_name(std::move(field_name))
     , m_field_value(std::move(field_filepath))
 {
-    if (!std::filesystem::exists(field_filepath)) {
-        throw std::runtime_error("File path doesn't exist.");
-    }
+    // TODO Doesn't seem to work?
+    // if (!std::filesystem::exists(field_filepath)) {
+    //     throw std::runtime_error("File path doesn't exist.");
+    // }
 }
 
 } // namespace lift

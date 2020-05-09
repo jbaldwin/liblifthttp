@@ -156,11 +156,15 @@ public:
     auto AcceptEncodings() const -> const std::optional<std::vector<std::string>>& { return m_accept_encodings; }
     /**
      * IMPORTANT: Using this is mutually exclusive with adding your own Accept-Encoding header.
-     * 
      * @param encodings A list of accept encodings to send in the request.
      */
     auto AcceptEncoding(
         std::optional<std::vector<std::string>> encodings) -> void { m_accept_encodings = std::move(encodings); }
+
+    /**
+     * Sets the accept encoding header to all supported encodings that this platform was built with.
+     */
+    auto AcceptEncodingAllAvailable() -> void { m_accept_encodings = std::vector<std::string>{}; }
 
     auto ResolveHosts() const -> const std::vector<lift::ResolveHost>& { return m_resolve_hosts; }
     auto ResolveHost(

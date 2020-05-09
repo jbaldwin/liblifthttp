@@ -1,13 +1,13 @@
-name: build-release-test
+name: build
 
 on: [push]
 
 jobs:
-    build-ubuntu:
-        name: Build Ubuntu and Test
+    build-ubuntu-18-04:
+        name: ubuntu-18.04
         runs-on: ubuntu-latest
         container:
-            image: ubuntu:latest
+            image: ubuntu:18.04
             env:
                 TZ: America/New_York
                 DEBIAN_FRONTEND: noninteractive
@@ -62,11 +62,70 @@ jobs:
                 run: |
                     cd build-release-clang
                     ctest -v
-    build-fedora:
-        name: Build Fedora and Test
+    build-ubuntu-20-04:
+        name: ubuntu-20.04
         runs-on: ubuntu-latest
         container:
-            image: fedora:latest
+            image: ubuntu:20.04
+            env:
+                TZ: America/New_York
+                DEBIAN_FRONTEND: noninteractive
+        services:
+            nginx:
+                image: nginx:stable
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+            -   name: apt
+                run: |
+                    apt-get update
+                    apt-get -y upgrade
+                    apt install -y build-essential software-properties-common
+                    add-apt-repository ppa:ubuntu-toolchain-r/test
+                    apt-get install -y \
+                        cmake \
+                        git \
+                        ninja-build \
+                        g++-9 \
+                        clang-9 \
+                        zlib1g-dev \
+                        libcurl4-openssl-dev \
+                        libuv1-dev
+            -   name: build-release-g++
+                run: |
+                    mkdir build-release-g++
+                    cd build-release-g++
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=gcc-9 \
+                        -DCMAKE_CXX_COMPILER=g++-9 \
+                        ..
+                    ninja
+            -   name: build-release-clang
+                run: |
+                    mkdir build-release-clang
+                    cd build-release-clang
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=clang-9 \
+                        -DCMAKE_CXX_COMPILER=clang++-9 \
+                        ..
+                    ninja
+            -   name: test-release-g++
+                run: |
+                    cd build-release-g++
+                    ctest -v
+            -   name: test-release-clang
+                run: |
+                    cd build-release-clang
+                    ctest -v
+    build-fedora-31:
+        name: fedora-31
+        runs-on: ubuntu-latest
+        container:
+            image: fedora:31
         services:
             nginx:
                 image: nginx:stable
@@ -79,11 +138,24 @@ jobs:
                         git \
                         cmake \
                         ninja-build \
-                        g++ \
-                        clang \
+                        gcc-c++-9.3.1 \
+                        clang-9.0.1 \
+                        lcov \
                         zlib-devel \
                         libcurl-devel \
                         libuv-devel
+            -   name: build-debug-g++
+                run: |
+                    mkdir build-debug-g++
+                    cd build-debug-g++
+                    cmake \
+                        -GNinja \
+                        -DLIFT_CODE_COVERAGE=ON \
+                        -DCMAKE_BUILD_TYPE=Debug \
+                        -DCMAKE_C_COMPILER=gcc \
+                        -DCMAKE_CXX_COMPILER=g++ \
+                        ..
+                    ninja
             -   name: build-release-g++
                 run: |
                     mkdir build-release-g++
@@ -114,3 +186,14 @@ jobs:
                 run: |
                     cd build-release-clang
                     ctest -v
+            -   name: Build coverage info
+                run: |
+                    cd build-debug-g++
+                    ctest -v
+                    gcov -o ./test/CMakeFiles/liblifthttp_tests.dir/main.cpp.o ./test/liblifthttp_tests
+                    lcov --include "*/inc/lift/*" --include "*/src/*" --exclude "test/*" -o liblifthttp_tests.info -c -d .
+            -   name: Coveralls GitHub Action
+                uses: coverallsapp/github-action@v1.0.1
+                with:
+                    github-token: ${{ secrets.GITHUB_TOKEN }}
+                    path-to-lcov: build-debug-g++/liblifthttp_tests.info

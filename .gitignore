@@ -3,6 +3,7 @@
 /cmake-build-debug/
 /Release/
 /Debug/
+/build-debug-g++/
 /build-release-g++/
 /build-release-clang++/
 /build/

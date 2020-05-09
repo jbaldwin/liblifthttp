@@ -1,7 +1,8 @@
 liblifthttp - Safe Easy to use C++17 HTTP client library.
 =========================================================
 
-[![CI](https://github.com/jbaldwin/liblifthttp/workflows/build-release-test/badge.svg)](https://github.com/jbaldwin/liblifthttp/workflows/build-release-test/badge.svg)
+[![CI](https://github.com/jbaldwin/liblifthtp/workflows/build/badge.svg)](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/jbaldwin/liblifthttp/badge.svg?branch=master)](https://coveralls.io/github/jbaldwin/liblifthttp?branch=master)
 [![language][badge.language]][language]
 [![license][badge.license]][license]
 
@@ -93,27 +94,40 @@ while(loop.ActiveRequestCount() > 0) {
 ```
 
 ## Requirements
-    C++17 compiler (g++/clang++)
+    C++17 compiler
+        g++-9
+        clang-9
     CMake
-    make and/or ninja
-    pthreads/std::thread
-    libcurl devel
-    libuv devel
-    zlib devel
+    make or ninja
+    std::thread
+    libcurl-devel
+    libuv-devel
+    zlib-devel
+    stdc++fs
+
+    Tested on:
+        ubuntu:18.04
+        fedora:31
 
 ## Instructions
 
 ### Building
-    # This will produce a shared and static library to link against your project.
+    # This will produce a static library to link against your project.
     mkdir Release && cd Release
     cmake -DCMAKE_BUILD_TYPE=Release ..
     cmake --build .
 
 ### CMake Projects
 
-NOTE: by default liblifthttp will attempt to use system versions of `libcurl-dev`, `libuv-dev`, `libcrypto-dev`, `libssl-dev`, and `libcares-dev`.  If your project(s), like some of mine do, require a custom built version
+CMake options:
+
+    LIFT_BUILD_EXAMPLES "Build the examples. Default=ON"
+    LIFT_BUILD_TESTS    "Build the tests. Default=ON"
+    LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF"
+
+NOTE: by default liblifthttp will attempt to use system versions of `libcurl-devel`, `libuv-devel`, `libcrypto-devel`, `libssl-devel`, and `libcares-devel`.  If your project(s) require a custom built version
 of `libcurl` or any of the other libraries that curl links to then you can specify the following `cmake` variables to override where liblifthttp
-will link `libcurl` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-dev` link is not currently supported.
+will link `libcurl-devel` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-devel` link is not currently supported.
 
     ${LIFT_CURL_INCLUDE} # The curl.h header location, default is empty.
     ${LIFT_LIBSSL}       # The ssl library to link against, default is empty.
@@ -178,36 +192,6 @@ Using `nginx` as the webserver with the default `ubuntu` configuration.
 | 100         | 2       | 165,981     | 73,181       |
 | 100         | 3       | 173,978     | 88,881       |
 | 100         | 4       | 171,778     | 96,355       |
-
-## Contributing and Testing
-
-This project has a GitHub Actions CI implementation to compile and run unit tests as well as simple integration tests against a local `nginx` instance.
-
-Currently tested distros:
-* ubuntu:latest
-* fedora:latest
-
-Currently tested compilers:
-* g++-9
-* clang-9
-
-Contributing should ideally be a single commit if possible.  Any new feature should include relevant tests and examples
-are welcome if understanding how the feature works is difficult or provides some additional value the tests otherwise cannot.
-
-CMake is setup to understand how to run the tests.  Building and then running `ctest` will
-execute the tests locally.  Note that the integration tests that make HTTP calls require a webserver
-on http://nginx:80/ that will respond with a 200 on the root directory and 404 on any other url.  The 'nginx' hostname
-must be available to respond on, this is how the regression/automation suite sets up nginx.
-A future iteration might include an embedded server that responds with more sophisticated tests.
-
-```bash
-apt-get install nginx
-systemctl start nginx
-mkdir Release && cd Release
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build .
-ctest -V
-```
 
 ## Support
 

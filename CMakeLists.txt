@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(lifthttp CXX)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(LIFT_BUILD_EXAMPLES "Build the examples. Default=ON" ON)
+option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
+option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 
 if(NOT DEFINED LIFT_CURL_INCLUDE)
     set(LIFT_CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
@@ -24,6 +26,8 @@ message("${PROJECT_NAME} LIFT_LIBSSL       = ${LIFT_LIBSSL}")
 message("${PROJECT_NAME} LIFT_LIBCRYPTO    = ${LIFT_LIBCRYPTO}")
 message("${PROJECT_NAME} LIFT_LIBCURL      = ${LIFT_LIBCURL}")
 message("${PROJECT_NAME} LIFT_LIBCARES     = ${LIFT_LIBCARES}")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
     uv
@@ -55,13 +59,19 @@ set(LIBLIFT_SOURCE_FILES
     inc/lift/Response.hpp src/Response.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC SHARED ${LIBLIFT_SOURCE_FILES})
+add_library(${PROJECT_NAME} STATIC ${LIBLIFT_SOURCE_FILES})
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LIB_DEPS})
+
+if(LIFT_CODE_COVERAGE)
+    target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
+    target_link_libraries(${PROJECT_NAME} PRIVATE gcov)
+endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(
@@ -70,6 +80,11 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     )
 endif()
 
-add_subdirectory(examples)
-enable_testing()
-add_subdirectory(test)
+if(LIFT_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if(LIFT_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()

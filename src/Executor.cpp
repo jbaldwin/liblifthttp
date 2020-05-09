@@ -215,7 +215,12 @@ auto Executor::prepare() -> void
         prev = &item;
     }
 
-    curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, &m_curl_request_headers.front());
+    if(!m_curl_request_headers.empty()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, &m_curl_request_headers.front());
+    }
+    else {
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, nullptr);
+    }
 
     // DNS resolve hosts
     if (!m_request->m_resolve_hosts.empty()

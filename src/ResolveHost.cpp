@@ -21,24 +21,4 @@ ResolveHost::ResolveHost(
     m_curl_formatted.append(m_resolved_ip_addr);
 }
 
-auto ResolveHost::GetResolveHost() const noexcept -> const std::string&
-{
-    return m_resolve_host;
-}
-
-auto ResolveHost::GetResolvePort() const noexcept -> uint16_t
-{
-    return m_resolve_port;
-}
-
-auto ResolveHost::GetResolvedIpAddr() const noexcept -> const std::string&
-{
-    return m_resolved_ip_addr;
-}
-
-auto ResolveHost::getCurlFormattedResolveHost() const noexcept -> const std::string&
-{
-    return m_curl_formatted;
-}
-
 } // namespace lift

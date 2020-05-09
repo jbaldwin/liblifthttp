@@ -7,7 +7,9 @@ static lift::GlobalScopeInitializer g_lift_gsi {};
 
 #include "AsyncRequestTest.hpp"
 #include "EscapeTest.hpp"
+#include "EventLoopTest.hpp"
 #include "QueryBuilderTest.hpp"
+#include "ResolveHostTest.hpp"
 #include "SyncRequestTest.hpp"
 #include "TimesupTest.hpp"
 #include "TransferProgressRequest.hpp"

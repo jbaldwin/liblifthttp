@@ -205,6 +205,7 @@ auto Executor::prepare() -> void
 
         auto& item = m_curl_request_headers[i];
         // WOOF! curl shouldn't edit this...
+        // TODO c++20 use span which allows for mutable string_views.
         item.data = const_cast<char*>(header.Header().data());
         item.next = nullptr;
 
@@ -215,10 +216,9 @@ auto Executor::prepare() -> void
         prev = &item;
     }
 
-    if(!m_curl_request_headers.empty()) {
+    if (!m_curl_request_headers.empty()) {
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, &m_curl_request_headers.front());
-    }
-    else {
+    } else {
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, nullptr);
     }
 
@@ -236,9 +236,11 @@ auto Executor::prepare() -> void
                 m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
         }
 
-        for (const auto& resolve_host : m_event_loop->m_resolve_hosts) {
-            m_curl_resolve_hosts = curl_slist_append(
-                m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
+        if (m_event_loop != nullptr) {
+            for (const auto& resolve_host : m_event_loop->m_resolve_hosts) {
+                m_curl_resolve_hosts = curl_slist_append(
+                    m_curl_resolve_hosts, resolve_host.getCurlFormattedResolveHost().data());
+            }
         }
 
         curl_easy_setopt(m_curl_handle, CURLOPT_RESOLVE, m_curl_resolve_hosts);

@@ -1,7 +1,7 @@
 liblifthttp - Safe Easy to use C++17 HTTP client library.
 =========================================================
 
-[![CI](https://github.com/jbaldwin/liblifthtp/workflows/build/badge.svg)](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)
+[![CI](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/jbaldwin/liblifthttp/badge.svg?branch=master)](https://coveralls.io/github/jbaldwin/liblifthttp?branch=master)
 [![language][badge.language]][language]
 [![license][badge.license]][license]

@@ -93,6 +93,7 @@ auto Executor::prepare() -> void
     curl_easy_setopt(m_curl_handle, CURLOPT_URL, m_request->Url().c_str());
 
     switch (m_request->Method()) {
+    case http::Method::UNKNOWN: // default to GET on unknown/bad value.
     case http::Method::GET:
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
         break;
@@ -120,6 +121,7 @@ auto Executor::prepare() -> void
     }
 
     switch (m_request->Version()) {
+    case http::Version::UNKNOWN: // default to USE_BEST on unknown/bad value.
     case http::Version::USE_BEST:
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
         break;

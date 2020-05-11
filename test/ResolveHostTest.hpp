@@ -4,9 +4,6 @@
 
 #include <lift/Lift.hpp>
 
-// Note that this IP Address is asigned by github actions and is subject to change.
-static const std::string SERVICE_IP_ADDRESS = "172.18.0.3";
-
 TEST_CASE("ResolveHost synchronous perform")
 {
     lift::ResolveHost rhost {

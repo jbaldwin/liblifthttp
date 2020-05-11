@@ -5,6 +5,10 @@ option(LIFT_BUILD_EXAMPLES "Build the examples. Default=ON" ON)
 option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 
+message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES = ${LIFT_BUILD_EXAMPLES}")
+message("${PROJECT_NAME} LIFT_BUILD_TESTS    = ${LIFT_BUILD_TESTS}")
+message("${PROJECT_NAME} LIFT_CODE_COVERAGE  = ${LIFT_CODE_COVERAGE}")
+
 if(NOT DEFINED LIFT_CURL_INCLUDE)
     set(LIFT_CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
 endif()

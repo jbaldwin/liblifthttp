@@ -6,7 +6,7 @@
 
 TEST_CASE("Synchronous 200")
 {
-    auto request = std::make_unique<lift::Request>("http://nginx:80/");
+    auto request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/");
     const auto& response = request->Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -24,7 +24,7 @@ TEST_CASE("Synchronous 404")
 
 TEST_CASE("Synchronous HEAD")
 {
-    auto request = std::make_unique<lift::Request>("http://nginx:80/");
+    auto request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/");
     request->Method(lift::http::Method::HEAD);
     const auto& response = request->Perform();
 
@@ -35,7 +35,7 @@ TEST_CASE("Synchronous HEAD")
 
 TEST_CASE("Synchronous custom headers")
 {
-    auto request = std::make_unique<lift::Request>("http://nginx:80/");
+    auto request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/");
     request->Header("x-custom-header-1", "custom-value-1");
 
     for (const auto& header : request->Headers()) {
@@ -47,7 +47,7 @@ TEST_CASE("Synchronous custom headers")
 
 TEST_CASE("Multiple headers added")
 {
-    auto request = std::make_unique<lift::Request>("http://nginx:80/");
+    auto request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/");
     request->Header("Connection", "keep-alive");
     request->Header("x-custom-header-1", "value1");
     request->Header("x-custom-header-2", "value2");

@@ -14,8 +14,6 @@ liblifthttp - Safe Easy to use C++17 HTTP client library.
 
 You're using curl? Do you even lift?
 
-https://github.com/jbaldwin/liblifthttp
-
 **liblifthttp** is a C++17 HTTP client library that provides an easy to use API for both synchronous _and_ asynchronous requests.  It is built upon the rock solid libcurl and libuv libraries.
 
 **liblifthttp** is licensed under the Apache 2.0 license.

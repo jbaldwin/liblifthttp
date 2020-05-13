@@ -32,16 +32,11 @@ Executor::Executor(
 Executor::Executor(
     RequestPtr request_ptr,
     EventLoop* event_loop)
-    : m_event_loop(event_loop)
+    : m_curl_handle(event_loop->acquireCurlHandle())
+    , m_event_loop(event_loop)
     , m_request_async(std::move(request_ptr))
     , m_request(m_request_async.get())
 {
-    if (m_event_loop->m_curl_handles.empty()) {
-        m_curl_handle = curl_easy_init();
-    } else {
-        m_curl_handle = m_event_loop->m_curl_handles.back();
-        m_event_loop->m_curl_handles.pop_back();
-    }
 }
 
 Executor::~Executor()
@@ -56,17 +51,20 @@ Executor::~Executor()
         m_mime_handle = nullptr;
     }
 
-    if (m_request_sync != nullptr) {
-        // sync requests get cleaned up on completion
-        curl_easy_cleanup(m_curl_handle);
-        m_request_sync = nullptr;
-        m_request = nullptr;
-    } else // When executor deletes itself the unique_ptr has already moved
-    {
-        // async requests get reset on completion
-        curl_easy_reset(m_curl_handle);
-        m_event_loop->m_curl_handles.push_back(m_curl_handle);
-        m_request = nullptr;
+    if (m_curl_handle != nullptr) {
+        if (m_request_sync != nullptr) {
+            // sync requests get cleaned up on completion
+            curl_easy_cleanup(m_curl_handle);
+            m_request_sync = nullptr;
+            m_request = nullptr;
+        } else {
+            // When executor deletes itself the unique_ptr has already moved
+            // async requests get reset on completion
+            m_event_loop->returnCurlHandle(m_curl_handle);
+            m_curl_handle = nullptr;
+            m_request_async = nullptr;
+            m_request = nullptr;
+        }
     }
 }
 

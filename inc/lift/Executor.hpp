@@ -21,7 +21,7 @@ class EventLoop;
  * and cause 'bad things to happen'.  By splitting the Request and
  * Response objects out from any underlying CURL objects the lifetimes
  * can be appropriately managed.
- * 
+ *
  * This class should never be used directly by the user of liblifthttp,
  * hence it has no public methods other than its destructor.
  */
@@ -32,6 +32,10 @@ class Executor {
     friend Request;
 
 public:
+    Executor(const Executor&) = delete;
+    Executor(Executor&&) = delete;
+    auto operator=(const Executor&) -> Executor& = delete;
+    auto operator=(Executor &&) -> Executor& = delete;
     ~Executor();
 
 private:

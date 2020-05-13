@@ -142,6 +142,8 @@ private:
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
 
+    /// Lock for accessing curl handles.
+    std::mutex m_curl_handles_lock {};
     /// List of CURL* handles to use for requests.
     std::deque<CURL*> m_curl_handles {};
 
@@ -178,19 +180,19 @@ private:
      * Completes a request to pass ownership back to the user land.
      * Manages internal state accordingly, always call this function rather
      * than the Request->OnComplete() function directly.
-     * @param executor_ptr The request handle to complete.
+     * @param executor The request handle to complete.
      * @param status The status of the request when completing.
      */
     auto completeRequestNormal(
-        ExecutorPtr executor_ptr,
+        Executor& executor,
         LiftStatus status) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.
-     * @param executor_ptr The request to timeout.
+     * @param executor The request to timeout.
      */
     auto completeRequestTimeout(
-        Executor* executor_ptr) -> void;
+        Executor& executor) -> void;
 
     /**
      * Adds the request with the appropriate timeout.
@@ -217,6 +219,9 @@ private:
      * Updates the event loop timeout information.
      */
     auto updateTimeouts() -> void;
+
+    auto acquireCurlHandle() -> CURL*;
+    auto returnCurlHandle(CURL* curl_handle) -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.

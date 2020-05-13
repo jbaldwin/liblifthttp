@@ -105,11 +105,14 @@ EventLoop::EventLoop(
     std::optional<uint64_t> max_connections,
     std::optional<std::chrono::milliseconds> connection_time,
     std::vector<ResolveHost> resolve_hosts)
-    : m_connection_time(connection_time)
+    : m_connection_time(std::move(connection_time))
     , m_resolve_hosts(std::move(resolve_hosts))
 {
-    for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
-        m_curl_handles.push_back(curl_easy_init());
+    {
+        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
+        for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
+            m_curl_handles.push_back(curl_easy_init());
+        }
     }
 
     uv_async_init(m_uv_loop, &m_async, on_uv_requests_accept_async);
@@ -164,10 +167,13 @@ EventLoop::~EventLoop()
 
     m_background_thread.join();
 
-    for (auto* curl_handle : m_curl_handles) {
-        curl_easy_cleanup(curl_handle);
+    {
+        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
+        for (auto* curl_handle : m_curl_handles) {
+            curl_easy_cleanup(curl_handle);
+        }
+        m_curl_handles.clear();
     }
-    m_curl_handles.clear();
 
     curl_multi_cleanup(m_cmh);
     uv_loop_close(m_uv_loop);
@@ -192,6 +198,10 @@ auto EventLoop::StartRequest(
     RequestPtr request_ptr) -> bool
 {
     if (m_is_stopping) {
+        return false;
+    }
+
+    if (request_ptr == nullptr) {
         return false;
     }
 
@@ -237,64 +247,67 @@ auto EventLoop::checkActions(
 
     while ((message = curl_multi_info_read(m_cmh, &msgs_left)) != nullptr) {
         if (message->msg == CURLMSG_DONE) {
-            /**
-             * Per docs do not use 'message' after calling curl_multi_remove_handle.
-             */
             CURL* easy_handle = message->easy_handle;
             CURLcode easy_result = message->data.result;
 
             Executor* executor = nullptr;
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &executor);
+            ExecutorPtr executor_ptr { executor };
+
             curl_multi_remove_handle(m_cmh, easy_handle);
 
             completeRequestNormal(
-                ExecutorPtr { executor },
+                *executor_ptr.get(),
                 Executor::convert(easy_result));
         }
     }
 }
 
 auto EventLoop::completeRequestNormal(
-    ExecutorPtr executor_ptr,
+    Executor& executor,
     LiftStatus status) -> void
 {
-    auto& on_complete_handler = executor_ptr->m_request_async->m_on_complete_handler;
+    if (executor.m_on_complete_callback_called == false) {
 
-    if (executor_ptr->m_on_complete_callback_called == false && on_complete_handler != nullptr) {
-        executor_ptr->m_on_complete_callback_called = true;
-        executor_ptr->m_response.m_lift_status = status;
-        executor_ptr->copyCurlToResponse();
-        removeTimeout(*executor_ptr);
+        auto& on_complete_handler = executor.m_request_async->m_on_complete_handler;
 
-        on_complete_handler(
-            std::move(executor_ptr->m_request_async),
-            std::move(executor_ptr->m_response));
+        if (on_complete_handler != nullptr) {
+            executor.m_on_complete_callback_called = true;
+            executor.m_response.m_lift_status = status;
+            executor.copyCurlToResponse();
+            removeTimeout(executor);
+
+            on_complete_handler(
+                std::move(executor.m_request_async),
+                std::move(executor.m_response));
+        }
     }
 
-    // Only a true ~Executor() causes request count to go down.
     --m_active_request_count;
 }
 
 auto EventLoop::completeRequestTimeout(
-    Executor* executor_ptr) -> void
+    Executor& executor) -> void
 {
-    auto& on_complete_handler = executor_ptr->m_request_async->m_on_complete_handler;
+    auto& on_complete_handler = executor.m_request_async->m_on_complete_handler;
 
     // Call on complete if it exists and hasn't been called before.
-    if (executor_ptr->m_on_complete_callback_called == false && on_complete_handler != nullptr) {
-        executor_ptr->m_on_complete_callback_called = true;
-        executor_ptr->m_response.m_lift_status = lift::LiftStatus::TIMEOUT;
-        executor_ptr->setTimesupResponse(executor_ptr->m_request->Timeout().value());
+    if (executor.m_on_complete_callback_called == false && on_complete_handler != nullptr) {
+        executor.m_on_complete_callback_called = true;
+        executor.m_response.m_lift_status = lift::LiftStatus::TIMEOUT;
+        executor.setTimesupResponse(executor.m_request->Timeout().value());
 
         // Removing the timesup is done in the uv timesup callback so it can prune
         // every single item that has timesup'ed.  Doing it here will cause 1 item
         // per loop iteration to be removed if there are multiple items with the same timesup value.
-        // removeTimeout(*executor_ptr);
+        // removeTimeout(executor);
 
         on_complete_handler(
-            std::move(executor_ptr->m_request_async),
-            std::move(executor_ptr->m_response));
+            std::move(executor.m_request_async),
+            std::move(executor.m_response));
     }
+
+    // Lift timeouts do not trigger an active request count drop.
 }
 
 auto EventLoop::addTimeout(
@@ -377,6 +390,30 @@ auto EventLoop::updateTimeouts() -> void
             0);
     } else {
         uv_timer_stop(&m_timer_timeout);
+    }
+}
+
+auto EventLoop::acquireCurlHandle() -> CURL*
+{
+    {
+        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
+        if (!m_curl_handles.empty()) {
+            auto* curl_handle = m_curl_handles.back();
+            m_curl_handles.pop_back();
+            return curl_handle;
+        }
+    }
+
+    // Out of re-usabl curl handles, create a new one outside the lock.
+    return curl_easy_init();
+}
+
+auto EventLoop::returnCurlHandle(CURL* curl_handle) -> void
+{
+    curl_easy_reset(curl_handle);
+    {
+        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
+        m_curl_handles.push_back(curl_handle);
     }
 }
 
@@ -533,7 +570,7 @@ auto on_uv_requests_accept_async(
              * immediately.
              */
             event_loop->completeRequestNormal(
-                std::move(executor_ptr),
+                *executor_ptr.get(),
                 Executor::convert(CURLcode::CURLE_SEND_ERROR));
         } else {
             /**
@@ -575,9 +612,9 @@ auto on_uv_timesup_callback(
             break;
         }
 
-        auto* executor = iter->second;
+        auto& executor = *iter->second;
         event_loop->completeRequestTimeout(executor);
-        iter = event_loop->removeTimeout(*executor);
+        iter = event_loop->removeTimeout(executor);
     }
 }
 

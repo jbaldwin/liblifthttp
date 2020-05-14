@@ -55,7 +55,7 @@ public:
     /**
      * @return True if the event loop is currently running.
      */
-    auto IsRunning() -> bool;
+    [[nodiscard]] auto IsRunning() -> bool;
 
     /**
      * Stops the event loop from accepting new requests.  It will continue to process
@@ -73,7 +73,7 @@ public:
 
     /**
      * Adds a request to process.  The ownership of the request is trasferred into
-     * the event loop during execution and returned to the client in the 
+     * the event loop during execution and returned to the client in the
      * OnCompletHandlerType callback.
      *
      * This function is thread safe.
@@ -98,6 +98,13 @@ public:
     template <typename Container>
     auto StartRequests(
         Container requests) -> bool;
+
+    /**
+     * Gets the background event loop's native thread id.  This is useful for setting
+     * schedule priorities or other native threads settings on the background thread.
+     * @return std::thread::native_handle_type for the background event loop thread.
+     */
+    [[nodiscard]] auto NativeThreadHandle() -> std::thread::native_handle_type { return m_background_thread.native_handle(); }
 
 private:
     /// Set to true if the EventLoop is currently running.

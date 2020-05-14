@@ -5,6 +5,8 @@
 
 #include <chrono>
 #include <thread>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 using namespace std::chrono_literals;
 
@@ -222,6 +224,9 @@ auto EventLoop::StartRequest(
 
 auto EventLoop::run() -> void
 {
+    m_tid = syscall(SYS_gettid);
+    m_native_handle = m_background_thread.native_handle();
+
     m_is_running = true;
     uv_run(m_uv_loop, UV_RUN_DEFAULT);
     m_is_running = false;

@@ -17,6 +17,51 @@
 
 namespace lift {
 
+enum class ShareOptions : uint64_t {
+    /// Share nothing across event loops.
+    NOTHING = 0,
+    /// Share DNS information across event loops.
+    DNS = 1 << 1,
+    /// Share SSL information across event loops.
+    SSL = 1 << 2,
+    /// Share Data pipeline'ing across event loops.
+    DATA = 1 << 3,
+    /// Share all available types
+    ALL = (DNS + SSL + DATA)
+};
+
+class Share {
+    friend EventLoop;
+
+public:
+    Share(
+        ShareOptions share_options);
+    ~Share();
+
+    Share(const Share&) = delete;
+    Share(Share&&) = delete;
+    auto operator=(const Share&) -> Share& = delete;
+    auto operator=(Share &&) -> Share& = delete;
+
+private:
+    CURLSH* m_curl_share_ptr { curl_share_init() };
+    std::mutex m_curl_share_all_lock {};
+    std::mutex m_curl_share_dns_lock {};
+    std::mutex m_curl_share_ssl_lock {};
+    std::mutex m_curl_share_data_lock {};
+
+    friend auto curl_share_lock(
+        CURL* curl_ptr,
+        curl_lock_data data,
+        curl_lock_access access,
+        void* user_ptr) -> void;
+
+    friend auto curl_share_unlock(
+        CURL* curl_ptr,
+        curl_lock_data data,
+        void* user_ptr) -> void;
+};
+
 class CurlContext;
 using CurlContextPtr = std::unique_ptr<CurlContext>;
 
@@ -38,12 +83,14 @@ public:
      *                        This should always be larger than the timeout values set on individual
      *                        requests
      * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
+     * @param share_ptr Should separate event loops share connection information?
      */
     explicit EventLoop(
         std::optional<uint64_t> reserve_connections = std::nullopt,
         std::optional<uint64_t> max_connections = std::nullopt,
         std::optional<std::chrono::milliseconds> connection_time = std::nullopt,
-        std::vector<ResolveHost> resolve_hosts = {});
+        std::vector<ResolveHost> resolve_hosts = {},
+        std::shared_ptr<Share> share_ptr = nullptr);
 
     ~EventLoop();
 
@@ -153,9 +200,9 @@ private:
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread {};
     /// The background thread operating system thread id.
-    std::optional<pid_t> m_tid{};
+    std::optional<pid_t> m_tid {};
     /// The background thread native handle type id (pthread_t).
-    std::optional<std::thread::native_handle_type> m_native_handle{};
+    std::optional<std::thread::native_handle_type> m_native_handle {};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
@@ -168,7 +215,13 @@ private:
     /// The set of resolve hosts to apply to all requests in this event loop.
     std::vector<lift::ResolveHost> m_resolve_hosts {};
 
+    /// When connection time is enabled on an event loop the curl timeout is the longer
+    /// timeout value and these timeouts are the shorter value.
     std::multimap<TimePoint, Executor*> m_timeouts {};
+
+    /// If the event loop is provided a Share object then connection information like
+    // DNS/SSL/Data pipelining can be shared across event loops.
+    std::shared_ptr<Share> m_share_ptr { nullptr };
 
     /// Flag to denote that the m_async handle has been closed on shutdown.
     std::atomic<bool> m_async_closed { false };

@@ -4,8 +4,8 @@
 #include <curl/multi.h>
 
 #include <chrono>
-#include <thread>
 #include <sys/syscall.h>
+#include <thread>
 #include <unistd.h>
 
 using namespace std::chrono_literals;
@@ -17,6 +17,79 @@ static auto uv_type_cast(I* i) -> O*
 {
     auto* void_ptr = static_cast<void*>(i);
     return static_cast<O*>(void_ptr);
+}
+
+auto curl_share_lock(
+    CURL* curl_ptr,
+    curl_lock_data data,
+    curl_lock_access access,
+    void* user_ptr) -> void;
+
+auto curl_share_unlock(
+    CURL* curl_ptr,
+    curl_lock_data data,
+    void* user_ptr) -> void;
+
+Share::Share(
+    ShareOptions share_options)
+{
+    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_LOCKFUNC, curl_share_lock);
+    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_UNLOCKFUNC, curl_share_unlock);
+    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_USERDATA, this);
+
+    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::DNS)) {
+        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
+    }
+
+    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::SSL)) {
+        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+    }
+
+    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::DATA)) {
+        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
+    }
+}
+
+Share::~Share()
+{
+    curl_share_cleanup(m_curl_share_ptr);
+}
+
+auto curl_share_lock(
+    CURL*,
+    curl_lock_data data,
+    curl_lock_access,
+    void* user_ptr) -> void
+{
+    auto& share = *static_cast<Share*>(user_ptr);
+
+    if (data == CURL_LOCK_DATA_SHARE) {
+        share.m_curl_share_all_lock.lock();
+    } else if (data == CURL_LOCK_DATA_DNS) {
+        share.m_curl_share_dns_lock.lock();
+    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
+        share.m_curl_share_ssl_lock.lock();
+    } else if (data == CURL_LOCK_DATA_CONNECT) {
+        share.m_curl_share_data_lock.lock();
+    }
+}
+
+auto curl_share_unlock(
+    CURL*,
+    curl_lock_data data,
+    void* user_ptr) -> void
+{
+    auto& share = *static_cast<Share*>(user_ptr);
+
+    if (data == CURL_LOCK_DATA_SHARE) {
+        share.m_curl_share_all_lock.unlock();
+    } else if (data == CURL_LOCK_DATA_DNS) {
+        share.m_curl_share_dns_lock.unlock();
+    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
+        share.m_curl_share_ssl_lock.unlock();
+    } else if (data == CURL_LOCK_DATA_CONNECT) {
+        share.m_curl_share_data_lock.unlock();
+    }
 }
 
 class CurlContext {
@@ -106,9 +179,11 @@ EventLoop::EventLoop(
     std::optional<uint64_t> reserve_connections,
     std::optional<uint64_t> max_connections,
     std::optional<std::chrono::milliseconds> connection_time,
-    std::vector<ResolveHost> resolve_hosts)
+    std::vector<ResolveHost> resolve_hosts,
+    std::shared_ptr<Share> share_ptr)
     : m_connection_time(std::move(connection_time))
     , m_resolve_hosts(std::move(resolve_hosts))
+    , m_share_ptr(std::move(share_ptr))
 {
     {
         std::lock_guard<std::mutex> guard { m_curl_handles_lock };
@@ -400,17 +475,26 @@ auto EventLoop::updateTimeouts() -> void
 
 auto EventLoop::acquireCurlHandle() -> CURL*
 {
+    CURL* curl_handle { nullptr };
+
     {
         std::lock_guard<std::mutex> guard { m_curl_handles_lock };
         if (!m_curl_handles.empty()) {
-            auto* curl_handle = m_curl_handles.back();
+            curl_handle = m_curl_handles.back();
             m_curl_handles.pop_back();
-            return curl_handle;
         }
     }
 
     // Out of re-usabl curl handles, create a new one outside the lock.
-    return curl_easy_init();
+    if (curl_handle == nullptr) {
+        curl_handle = curl_easy_init();
+    }
+
+    if (m_share_ptr != nullptr) {
+        curl_easy_setopt(curl_handle, CURLOPT_SHARE, m_share_ptr->m_curl_share_ptr);
+    }
+
+    return curl_handle;
 }
 
 auto EventLoop::returnCurlHandle(CURL* curl_handle) -> void

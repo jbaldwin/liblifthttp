@@ -235,12 +235,12 @@ EventLoop::~EventLoop()
     uv_close(uv_type_cast<uv_handle_t>(&m_timer_curl), uv_close_callback);
     uv_close(uv_type_cast<uv_handle_t>(&m_timer_timeout), uv_close_callback);
     uv_close(uv_type_cast<uv_handle_t>(&m_async), uv_close_callback);
-    uv_async_send(&m_async); // fake a request to make sure the loop wakes up
-    uv_stop(m_uv_loop);
 
     while (!m_timer_curl_closed && !m_timer_timeout_closed && !m_async_closed) {
         std::this_thread::sleep_for(1ms);
+        uv_async_send(&m_async); // fake a request to make sure the loop wakes up
     }
+    uv_stop(m_uv_loop);
 
     m_background_thread.join();
 
@@ -300,7 +300,12 @@ auto EventLoop::StartRequest(
 auto EventLoop::run() -> void
 {
     m_tid = syscall(SYS_gettid);
-    m_native_handle = m_background_thread.native_handle();
+    /**
+     * Note that its possible to use m_background_thread.native_handle() however
+     * gdb and other debugging tools have an issue reporting the thread id correctly, so
+     * for now its better to call pthread_self().
+     */
+    m_native_handle = pthread_self();
 
     m_is_running = true;
     uv_run(m_uv_loop, UV_RUN_DEFAULT);
@@ -485,7 +490,7 @@ auto EventLoop::acquireCurlHandle() -> CURL*
         }
     }
 
-    // Out of re-usabl curl handles, create a new one outside the lock.
+    // Out of re-usable curl handles, create a new one outside the lock.
     if (curl_handle == nullptr) {
         curl_handle = curl_easy_init();
     }

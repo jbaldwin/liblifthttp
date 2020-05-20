@@ -15,7 +15,7 @@ TEST_CASE("Synchronous 200")
 
 TEST_CASE("Synchronous 404")
 {
-    auto request = std::make_unique<lift::Request>("http://nginx:80/not/here");
+    auto request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/not/here");
     const auto& response = request->Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);

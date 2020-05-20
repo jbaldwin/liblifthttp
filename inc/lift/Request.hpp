@@ -64,9 +64,9 @@ public:
 
     /**
      * Creates a new request on the heap, this is a useful utility for asynchronous requests.
-     * 
+     *
      * Note that requests may be re-used after completing.
-     * 
+     *
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
@@ -88,14 +88,14 @@ public:
 
     /**
      * Synchronously executes this request.
-     * 
-     * Note: If there is no timeout set on the request and the remote 
+     *
+     * Note: If there is no timeout set on the request and the remote
      * server fails to respond this call can block forever.
      */
     auto Perform() -> Response;
 
     /**
-     * This on complete handler event is called when a Request is executed 
+     * This on complete handler event is called when a Request is executed
      * asynchronously.  This is not used for synchronous requests.
      * @param on_complete_handler When this request completes this handle is called.
      */

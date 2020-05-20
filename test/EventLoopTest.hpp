@@ -59,7 +59,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
     REQUIRE_FALSE(ev.StartRequests(std::move(requests2)));
 }
 
-TEST_CASE("EventLoop Share")
+TEST_CASE("EventLoop Share synchronous")
 {
     auto lift_share_ptr = std::make_shared<lift::Share>(lift::ShareOptions::ALL);
 
@@ -105,4 +105,63 @@ TEST_CASE("EventLoop Share")
 
     ev1.Stop();
     ev2.Stop();
+}
+
+TEST_CASE("EventLoop Share Overlapping requests")
+{
+    std::atomic<uint64_t> count{0};
+
+    constexpr size_t N_SHARE = 10;
+    constexpr size_t N_EVENT_LOOPS = 10;
+    constexpr size_t N_REQUESTS = 100'000;
+
+    std::vector<std::shared_ptr<lift::Share>> lift_share{};
+    for(size_t i = 0; i < N_SHARE; ++i)
+    {
+        lift_share.emplace_back(std::make_shared<lift::Share>(lift::ShareOptions::ALL));
+    }
+
+    auto worker_func = [&count, &lift_share]() {
+        static size_t share_counter{0};
+        lift::EventLoop event_loop{
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::vector<lift::ResolveHost> {},
+            lift_share[share_counter++ % N_SHARE]
+        };
+
+        for(size_t i = 0; i < N_REQUESTS; ++i) {
+            auto request_ptr = lift::Request::make(
+                "http://" + NGINX_HOSTNAME + ":80/",
+                std::chrono::seconds { 60 },
+                [&](std::unique_ptr<lift::Request>, lift::Response response) {
+                    ++count;
+                });
+
+            event_loop.StartRequest(std::move(request_ptr));
+        }
+
+        while(event_loop.ActiveRequestCount() > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    };
+
+    auto start = std::chrono::steady_clock::now();
+
+    std::vector<std::thread> workers{};
+    for(size_t i = 0; i < N_EVENT_LOOPS; ++i)
+    {
+        workers.emplace_back(worker_func);
+    }
+
+    for(auto& worker : workers) {
+        worker.join();
+    }
+
+    REQUIRE(count == N_EVENT_LOOPS * N_REQUESTS);
+
+    auto stop = std::chrono::steady_clock::now();
+
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "\n";
 }

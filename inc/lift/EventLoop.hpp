@@ -151,14 +151,14 @@ public:
      * background thread has started, e.g. `IsRunning()` returns `true`.
      * @return std::thread::native_handle_type for the background event loop thread.
      */
-    [[nodiscard]] auto NativeThreadHandle() const -> const std::optional<std::thread::native_handle_type>& { return m_native_handle; }
+    [[nodiscard]] auto NativeThreadHandle() const -> const std::optional<std::atomic<std::thread::native_handle_type>>& { return m_native_handle; }
 
     /**
      * Gets the background event loop's native operating system thread id.  This will only be available
      * after the background thread has started, e.g. `IsRunning()` returns `true`.
      * @return gettid()
      */
-    [[nodiscard]] auto OperatingSystemThreadId() const -> const std::optional<pid_t>& { return m_tid; }
+    [[nodiscard]] auto OperatingSystemThreadId() const -> const std::optional<std::atomic<pid_t>>& { return m_tid; }
 
 private:
     /// Set to true if the EventLoop is currently running.
@@ -200,9 +200,9 @@ private:
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread {};
     /// The background thread operating system thread id.
-    std::optional<pid_t> m_tid {};
+    std::optional<std::atomic<pid_t>> m_tid {};
     /// The background thread native handle type id (pthread_t).
-    std::optional<std::thread::native_handle_type> m_native_handle {};
+    std::optional<std::atomic<std::thread::native_handle_type>> m_native_handle {};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;

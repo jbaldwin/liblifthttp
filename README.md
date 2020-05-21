@@ -97,7 +97,7 @@ while(loop.ActiveRequestCount() > 0) {
         clang-9
     CMake
     make or ninja
-    std::thread
+    pthreads
     libcurl-devel
     libuv-devel
     zlib-devel
@@ -105,6 +105,7 @@ while(loop.ActiveRequestCount() > 0) {
 
     Tested on:
         ubuntu:18.04
+        ubuntu:20.04
         fedora:31
 
 ## Instructions
@@ -122,16 +123,7 @@ CMake options:
     LIFT_BUILD_EXAMPLES "Build the examples. Default=ON"
     LIFT_BUILD_TESTS    "Build the tests. Default=ON"
     LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF"
-
-NOTE: by default liblifthttp will attempt to use system versions of `libcurl-devel`, `libuv-devel`, `libcrypto-devel`, `libssl-devel`, and `libcares-devel`.  If your project(s) require a custom built version
-of `libcurl` or any of the other libraries that curl links to then you can specify the following `cmake` variables to override where liblifthttp
-will link `libcurl-devel` development libraries.  These can be dynamic or static libraries.  Note that a custom `libuv-devel` link is not currently supported.
-
-    ${LIFT_CURL_INCLUDE} # The curl.h header location, default is empty.
-    ${LIFT_LIBSSL}       # The ssl library to link against, default is empty.
-    ${LIFT_LIBCRYPTO}    # The crypto library to link against, default is empty.
-    ${LIFT_LIBCURL}      # The curl library to link against, default is '-lcurl'.
-    ${LIFT_LIBCARES}     # The c-ares (dns) library to link against, default is empty.
+    LIFT_LINK_TARGETS   "User specified additional link targets for custom curl and ssl libraries, defaults to system 'curl'."
 
 #### add_subdirectory()
 To use within your cmake project you can clone the project or use git submodules and then `add_subdirectory` in the parent project's `CMakeList.txt`,
@@ -142,7 +134,7 @@ assuming the lift code is in a `liblifthttp/` subdirectory of the parent project
 To link to the `<project_name>` then use the following:
 
     add_executable(<project_name> main.cpp)
-    target_link_libraries(<project_name> PRIVATE lifthttp)
+    target_link_libraries(<project_name> PUBLIC lifthttp)
 
 Include lift in the project's code by simply including `#include <lift/lift.hpp>` as needed.
 
@@ -164,7 +156,18 @@ include the following code to download the git repository and make it available 
 
     # ... cmake project more stuff ...
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE lifthttp)
+    target_link_libraries(${PROJECT_NAME} PUBLIC lifthttp)
+
+### Running Tests
+The tests are automatically run by GitHub Actions on all Pull Requests.  They can also be ran locally with a default
+localhost instance of `nginx`.  To do so the CMake option `LIFT_LOCALHOST_TESTS=ON` must be set otherwise the tests
+will use the hostname `nginx` setup in the CI settings.  After building and starting `nginx` tests can be run by issuing:
+
+    # Invoke via cmake:
+    ctest -v
+
+    # Or invoke directly to see error messages if tests are failing:
+    ./test/liblifthttp_tests
 
 ## Benchmarks
 Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.  The benchmark is compared against `wrk` as that is basically optimal performance since

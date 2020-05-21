@@ -1,51 +1,29 @@
 cmake_minimum_required(VERSION 3.0)
 project(lifthttp CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(LIFT_BUILD_EXAMPLES "Build the examples. Default=ON" ON)
 option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 
-message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES = ${LIFT_BUILD_EXAMPLES}")
-message("${PROJECT_NAME} LIFT_BUILD_TESTS    = ${LIFT_BUILD_TESTS}")
-message("${PROJECT_NAME} LIFT_CODE_COVERAGE  = ${LIFT_CODE_COVERAGE}")
-
-if(NOT DEFINED LIFT_CURL_INCLUDE)
-    set(LIFT_CURL_INCLUDE "" CACHE PATH "User specified libcurl include directory.")
-endif()
-if(NOT DEFINED LIBSSL)
-    set(LIFT_LIBSSL "" CACHE FILEPATH "User specified libssl static location.")
-endif()
-if(NOT DEFINED LIFT_LIBCRYPTO)
-    set(LIFT_LIBCRYPTO "" CACHE FILEPATH "User specificed libcrypto static location.")
-endif()
-if(NOT DEFINED LIFT_LIBCURL)
-    set(LIFT_LIBCURL "-lcurl" CACHE FILEPATH "User specified libcurl static location.")
-endif()
-if(NOT DEFINED LIFT_LIBCARES)
-    set(LIFT_LIBCARES "" CACHE FILEPATH "User specified libcares static location.")
+if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
+    set(LIFT_USER_LINK_LIBRARIES curl CACHE STRING "User specified additional link targets for custom curl and ssl libraries, defaults to system 'curl'.")
 endif()
 
-message("${PROJECT_NAME} LIFT_CURL_INCLUDE = ${LIFT_CURL_INCLUDE}")
-message("${PROJECT_NAME} LIFT_LIBSSL       = ${LIFT_LIBSSL}")
-message("${PROJECT_NAME} LIFT_LIBCRYPTO    = ${LIFT_LIBCRYPTO}")
-message("${PROJECT_NAME} LIFT_LIBCURL      = ${LIFT_LIBCURL}")
-message("${PROJECT_NAME} LIFT_LIBCARES     = ${LIFT_LIBCARES}")
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-set(LIFT_SYSTEM_LIBRARY_DEPENDENCIES
+set(LIFT_LINK_LIBRARIES
     uv
     pthread
     z
     dl
     stdc++fs
+    ${LIFT_USER_LINK_LIBRARIES}
 )
 
-set(LIFT_CURL_LIBRARY_DEPENDENCIES
-    "-Wl,--start-group ${LIFT_LIBSSL} ${LIFT_LIBCRYPTO} ${LIFT_LIBCURL} ${LIFT_LIBCARES} -Wl,--end-group"
-)
-
-set(LIFT_LIB_DEPS "${LIFT_SYSTEM_LIBRARY_DEPENDENCIES} ${LIFT_CURL_LIBRARY_DEPENDENCIES}")
+message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES = ${LIFT_BUILD_EXAMPLES}")
+message("${PROJECT_NAME} LIFT_BUILD_TESTS    = ${LIFT_BUILD_TESTS}")
+message("${PROJECT_NAME} LIFT_CODE_COVERAGE  = ${LIFT_CODE_COVERAGE}")
+message("${PROJECT_NAME} LIFT_LINK_LIBRARIES = ${LIFT_LINK_LIBRARIES}")
 
 set(LIBLIFT_SOURCE_FILES
     inc/lift/Const.hpp
@@ -70,7 +48,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LIB_DEPS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LINK_LIBRARIES})
 
 if(LIFT_CODE_COVERAGE)
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage)

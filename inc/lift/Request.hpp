@@ -50,11 +50,11 @@ public:
      * Creates a new request with the given url, possible timeout and possible on complete handler.
      * Note that synchronous requests do not require on complete handlers as the Perfom() function
      * will return the Result immediately to the caller.
-     * 
+     *
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to 
+     * @param on_complete_handler For asynchronous requests provide this if you want to
      *                            know when the request completes with the Response information.
      */
     Request(
@@ -70,7 +70,7 @@ public:
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to 
+     * @param on_complete_handler For asynchronous requests provide this if you want to
      *                            know when the request completes with the Response information.
      */
     static auto make(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "lift/Header.hpp"
 #include "lift/Http.hpp"
 #include "lift/MimeField.hpp"
 #include "lift/ResolveHost.hpp"
@@ -188,12 +189,16 @@ public:
         std::string_view name,
         std::string_view value) -> void;
 
-    auto Headers() const -> const std::vector<HeaderView>& { return m_request_headers_idx; }
-    auto ClearHeaders() -> void
-    {
-        m_request_headers.clear();
-        m_request_headers_idx.clear();
-    }
+    /**
+     * @return The current list of headers added to this request.  Note that if more headers are added
+     *         the Header classes Name() and Value() string_views might become invalidated.
+     */
+    auto Headers() const -> const std::vector<lift::Header>& { return m_request_headers; }
+
+    /**
+     * Clears the current set of headers for this request.
+     */
+    auto ClearHeaders() -> void { m_request_headers.clear(); }
 
     auto Data() const -> const std::string& { return m_request_data; }
     /**
@@ -240,10 +245,8 @@ private:
     std::optional<std::vector<std::string>> m_accept_encodings {};
     /// A set of host:port to ip addresses that will be resolved before DNS.
     std::vector<lift::ResolveHost> m_resolve_hosts {};
-    /// The request headers buffer to quickly append into without allocating memory.
-    std::string m_request_headers {};
-    /// The request headers index.  Used to generate the curl slist.
-    std::vector<HeaderView> m_request_headers_idx {};
+    /// The request headers preformatted into the curl "Header: value\0" format.
+    std::vector<lift::Header> m_request_headers {};
     /// The POST request body data, mutually exclusive with MimeField requests.
     bool m_request_data_set { false };
     std::string m_request_data {};

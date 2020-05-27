@@ -30,7 +30,7 @@ set(LIBLIFT_SOURCE_FILES
     inc/lift/Escape.hpp src/Escape.cpp
     inc/lift/EventLoop.hpp src/EventLoop.cpp
     inc/lift/Executor.hpp src/Executor.cpp
-    inc/lift/HeaderView.hpp src/HeaderView.cpp
+    inc/lift/Header.hpp src/Header.cpp
     inc/lift/Lift.hpp src/Lift.cpp
     inc/lift/LiftStatus.hpp src/LiftStatus.cpp
     inc/lift/MimeField.hpp src/MimeField.cpp

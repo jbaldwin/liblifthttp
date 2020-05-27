@@ -44,7 +44,7 @@ private:
     /// The mime handle if present.
     curl_mime* m_mime_handle { nullptr };
     /// The HTTP curl request headers.
-    std::vector<curl_slist> m_curl_request_headers {};
+    curl_slist* m_curl_request_headers { nullptr };
     /// The HTTP curl resolve hosts.
     curl_slist* m_curl_resolve_hosts { nullptr };
 

@@ -387,8 +387,14 @@ auto EventLoop::completeRequestTimeout(
         // per loop iteration to be removed if there are multiple items with the same timesup value.
         // removeTimeout(executor);
 
+        // IMPORTANT! Copying here is required _OR_ shared ownership must be added as libcurl
+        // maintains char* type pointers into the request data structure.  There is no guarantee
+        // after moving into user land that it will stay alive long enough until curl finishes its
+        // own timeout.
+        auto copy_ptr = std::make_unique<Request>(*executor.m_request_async);
+
         on_complete_handler(
-            std::move(executor.m_request_async),
+            std::move(copy_ptr),
             std::move(executor.m_response));
     }
 

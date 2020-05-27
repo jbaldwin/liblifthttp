@@ -41,6 +41,11 @@ Executor::Executor(
 
 Executor::~Executor()
 {
+    if (m_curl_request_headers != nullptr) {
+        curl_slist_free_all(m_curl_request_headers);
+        m_curl_request_headers = nullptr;
+    }
+
     if (m_curl_resolve_hosts != nullptr) {
         curl_slist_free_all(m_curl_resolve_hosts);
         m_curl_resolve_hosts = nullptr;
@@ -194,30 +199,18 @@ auto Executor::prepare() -> void
     }
 
     // Headers
-    // Make sure we've got enough items allocated.
-    if (m_curl_request_headers.size() < m_request->m_request_headers_idx.size()) {
-        m_curl_request_headers.resize(m_request->m_request_headers_idx.size());
+    if (m_curl_request_headers != nullptr) {
+        curl_slist_free_all(m_curl_request_headers);
+        m_curl_request_headers = nullptr;
     }
 
-    curl_slist* prev = nullptr;
-    for (std::size_t i = 0; i < m_request->m_request_headers_idx.size(); ++i) {
-        const auto& header = m_request->m_request_headers_idx[i];
-
-        auto& item = m_curl_request_headers[i];
-        // WOOF! curl shouldn't edit this...
-        // TODO c++20 use span which allows for mutable string_views.
-        item.data = const_cast<char*>(header.Header().data());
-        item.next = nullptr;
-
-        if (prev != nullptr) {
-            prev->next = &item;
-        }
-
-        prev = &item;
+    for (auto& header : m_request->m_request_headers) {
+        m_curl_request_headers = curl_slist_append(
+            m_curl_request_headers, header.headerFull().data());
     }
 
-    if (!m_curl_request_headers.empty()) {
-        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, &m_curl_request_headers.front());
+    if (m_curl_request_headers != nullptr) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, m_curl_request_headers);
     } else {
         curl_easy_setopt(m_curl_handle, CURLOPT_HTTPHEADER, nullptr);
     }
@@ -368,25 +361,7 @@ auto curl_write_header(
         data_view.remove_suffix(rm_size);
     }
 
-    const auto cleaned_up_length = data_view.length();
-
-    size_t capacity = response.m_headers.capacity();
-    size_t total_len = response.m_headers.size() + cleaned_up_length;
-    if (capacity < total_len) {
-        do {
-            capacity *= 2;
-        } while (capacity < total_len);
-        response.m_headers.reserve(capacity);
-    }
-
-    // Append the entire header into the full header buffer.
-    response.m_headers.append(data_view.data(), cleaned_up_length);
-
-    // Calculate and append the Header view object.
-    const char* start = response.m_headers.c_str();
-    auto total_length = response.m_headers.length();
-    std::string_view request_data_view { (start + total_length) - cleaned_up_length, cleaned_up_length };
-    response.m_headers_idx.emplace_back(request_data_view);
+    response.m_headers.emplace_back(std::string { data_view.data(), data_view.length() });
 
     return data_length; // return original size for curl to continue processing
 }

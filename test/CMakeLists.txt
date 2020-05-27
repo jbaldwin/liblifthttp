@@ -7,6 +7,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     AsyncRequestTest.hpp
     EscapeTest.hpp
     EventLoopTest.hpp
+    HeaderTest.hpp
     HttpTest.hpp
     MimeFieldTest.hpp
     QueryBuilderTest.hpp

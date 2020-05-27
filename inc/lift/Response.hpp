@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lift/HeaderView.hpp"
+#include "lift/Header.hpp"
 #include "lift/Http.hpp"
 #include "lift/LiftStatus.hpp"
 
@@ -46,7 +46,7 @@ public:
     /**
      * @return The HTTP response headers.
      */
-    [[nodiscard]] auto Headers() const -> const std::vector<HeaderView>& { return m_headers_idx; }
+    [[nodiscard]] auto Headers() const -> const std::vector<Header>& { return m_headers; }
 
     /**
      * @return The HTTP download payload.
@@ -72,9 +72,7 @@ private:
     /// The status of this HTTP request.
     lift::LiftStatus m_lift_status { lift::LiftStatus::BUILDING };
     /// The response headers.
-    std::string m_headers {};
-    /// Views into each header.
-    std::vector<HeaderView> m_headers_idx {};
+    std::vector<Header> m_headers {};
     /// The response data if any.
     std::string m_data {};
     /// The HTTP response status code.

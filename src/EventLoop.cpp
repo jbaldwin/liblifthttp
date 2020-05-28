@@ -62,16 +62,7 @@ auto curl_share_lock(
     void* user_ptr) -> void
 {
     auto& share = *static_cast<Share*>(user_ptr);
-
-    if (data == CURL_LOCK_DATA_SHARE) {
-        share.m_curl_share_all_lock.lock();
-    } else if (data == CURL_LOCK_DATA_DNS) {
-        share.m_curl_share_dns_lock.lock();
-    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
-        share.m_curl_share_ssl_lock.lock();
-    } else if (data == CURL_LOCK_DATA_CONNECT) {
-        share.m_curl_share_data_lock.lock();
-    }
+    share.m_curl_locks[static_cast<uint64_t>(data)].lock();
 }
 
 auto curl_share_unlock(
@@ -80,16 +71,7 @@ auto curl_share_unlock(
     void* user_ptr) -> void
 {
     auto& share = *static_cast<Share*>(user_ptr);
-
-    if (data == CURL_LOCK_DATA_SHARE) {
-        share.m_curl_share_all_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_DNS) {
-        share.m_curl_share_dns_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
-        share.m_curl_share_ssl_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_CONNECT) {
-        share.m_curl_share_data_lock.unlock();
-    }
+    share.m_curl_locks[static_cast<uint64_t>(data)].unlock();
 }
 
 class CurlContext {
@@ -501,15 +483,13 @@ auto EventLoop::acquireCurlHandle() -> CURL*
         curl_handle = curl_easy_init();
     }
 
-    if (m_share_ptr != nullptr) {
-        curl_easy_setopt(curl_handle, CURLOPT_SHARE, m_share_ptr->m_curl_share_ptr);
-    }
-
     return curl_handle;
 }
 
 auto EventLoop::returnCurlHandle(CURL* curl_handle) -> void
 {
+    // reset documentation states share isn't removed
+    curl_easy_setopt(curl_handle, CURLOPT_SHARE, nullptr);
     curl_easy_reset(curl_handle);
     {
         std::lock_guard<std::mutex> guard { m_curl_handles_lock };
@@ -656,6 +636,14 @@ auto on_uv_requests_accept_async(
     auto now = uv_now(event_loop->m_uv_loop);
 
     for (auto& executor_ptr : event_loop->m_grabbed_requests) {
+
+        // If this event loop is sharing curl information add it now.
+        if (event_loop->m_share_ptr != nullptr) {
+            curl_easy_setopt(
+                executor_ptr->m_curl_handle,
+                CURLOPT_SHARE,
+                event_loop->m_share_ptr->m_curl_share_ptr);
+        }
 
         // This must be done before adding to the CURLM* object,
         // if not its possible a very fast request could complete

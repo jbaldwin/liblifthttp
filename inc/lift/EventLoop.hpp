@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 #include <uv.h>
 
+#include <array>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -45,10 +46,8 @@ public:
 
 private:
     CURLSH* m_curl_share_ptr { curl_share_init() };
-    std::mutex m_curl_share_all_lock {};
-    std::mutex m_curl_share_dns_lock {};
-    std::mutex m_curl_share_ssl_lock {};
-    std::mutex m_curl_share_data_lock {};
+
+    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};
 
     friend auto curl_share_lock(
         CURL* curl_ptr,
@@ -60,6 +59,9 @@ private:
         CURL* curl_ptr,
         curl_lock_data data,
         void* user_ptr) -> void;
+
+    friend auto on_uv_requests_accept_async(
+        uv_async_t* handle) -> void;
 };
 
 class CurlContext;

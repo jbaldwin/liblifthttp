@@ -32,6 +32,7 @@ static lift::GlobalScopeInitializer g_lift_gsi {};
 #include "AsyncRequestTest.hpp"
 #include "EscapeTest.hpp"
 #include "EventLoopTest.hpp"
+#include "HeaderTest.hpp"
 #include "HttpTest.hpp"
 #include "MimeFieldTest.hpp"
 #include "QueryBuilderTest.hpp"

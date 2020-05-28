@@ -12,8 +12,6 @@ Request::Request(
     , m_timeout(std::move(timeout))
     , m_on_complete_handler(std::move(on_complete_handler))
 {
-    m_request_headers.reserve(HEADER_DEFAULT_MEMORY_BYTES);
-    m_request_headers_idx.reserve(HEADER_DEFAULT_COUNT);
 }
 
 auto Request::Perform() -> Response
@@ -59,27 +57,7 @@ auto Request::Header(
     std::string_view name,
     std::string_view value) -> void
 {
-    size_t capacity = m_request_headers.capacity();
-    size_t header_len = name.length() + value.length() + 3; //": \0"
-    size_t total_len = m_request_headers.size() + header_len;
-    if (capacity < total_len) {
-        do {
-            capacity *= 2;
-        } while (capacity < total_len);
-        m_request_headers.reserve(capacity);
-    }
-
-    const char* start = m_request_headers.data() + m_request_headers.length();
-
-    m_request_headers.append(name.data(), name.length());
-    m_request_headers.append(": ");
-    if (!value.empty()) {
-        m_request_headers.append(value.data(), value.length());
-    }
-    m_request_headers += '\0'; // curl expects null byte, do not use string.append, it ignores null terminators!
-
-    std::string_view full_header { start, header_len - 1 }; // subtract off the null byte
-    m_request_headers_idx.emplace_back(full_header);
+    m_request_headers.emplace_back(name, value);
 }
 
 auto Request::Data(

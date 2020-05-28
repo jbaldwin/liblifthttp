@@ -109,21 +109,20 @@ TEST_CASE("EventLoop Share synchronous")
 
 TEST_CASE("EventLoop Share Overlapping requests")
 {
-    std::atomic<uint64_t> count{0};
+    std::atomic<uint64_t> count { 0 };
 
     constexpr size_t N_SHARE = 1;
     constexpr size_t N_EVENT_LOOPS = 2;
     constexpr size_t N_REQUESTS = 10'000;
 
-    std::vector<std::shared_ptr<lift::Share>> lift_share{};
-    for(size_t i = 0; i < N_SHARE; ++i)
-    {
+    std::vector<std::shared_ptr<lift::Share>> lift_share {};
+    for (size_t i = 0; i < N_SHARE; ++i) {
         lift_share.emplace_back(std::make_shared<lift::Share>(lift::ShareOptions::ALL));
     }
 
     auto worker_func = [&count, &lift_share]() {
-        static size_t share_counter{0};
-        lift::EventLoop event_loop{
+        static size_t share_counter { 0 };
+        lift::EventLoop event_loop {
             std::nullopt,
             std::nullopt,
             std::nullopt,
@@ -131,7 +130,7 @@ TEST_CASE("EventLoop Share Overlapping requests")
             lift_share[share_counter++ % N_SHARE]
         };
 
-        for(size_t i = 0; i < N_REQUESTS; ++i) {
+        for (size_t i = 0; i < N_REQUESTS; ++i) {
             auto request_ptr = lift::Request::make(
                 "http://" + NGINX_HOSTNAME + ":80/",
                 std::chrono::seconds { 60 },
@@ -142,20 +141,19 @@ TEST_CASE("EventLoop Share Overlapping requests")
             event_loop.StartRequest(std::move(request_ptr));
         }
 
-        while(event_loop.ActiveRequestCount() > 0) {
+        while (event_loop.ActiveRequestCount() > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     };
 
     auto start = std::chrono::steady_clock::now();
 
-    std::vector<std::thread> workers{};
-    for(size_t i = 0; i < N_EVENT_LOOPS; ++i)
-    {
+    std::vector<std::thread> workers {};
+    for (size_t i = 0; i < N_EVENT_LOOPS; ++i) {
         workers.emplace_back(worker_func);
     }
 
-    for(auto& worker : workers) {
+    for (auto& worker : workers) {
         worker.join();
     }
 

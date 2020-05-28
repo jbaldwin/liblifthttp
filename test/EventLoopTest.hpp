@@ -146,8 +146,6 @@ TEST_CASE("EventLoop Share Overlapping requests")
         }
     };
 
-    auto start = std::chrono::steady_clock::now();
-
     std::vector<std::thread> workers {};
     for (size_t i = 0; i < N_EVENT_LOOPS; ++i) {
         workers.emplace_back(worker_func);
@@ -158,8 +156,4 @@ TEST_CASE("EventLoop Share Overlapping requests")
     }
 
     REQUIRE(count == N_EVENT_LOOPS * N_REQUESTS);
-
-    auto stop = std::chrono::steady_clock::now();
-
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "\n";
 }

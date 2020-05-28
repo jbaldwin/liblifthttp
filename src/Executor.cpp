@@ -24,53 +24,27 @@ auto curl_xfer_info(
 Executor::Executor(
     Request* request)
     : m_request_sync(request)
-    , m_curl_handle(curl_easy_init())
     , m_request(m_request_sync)
 {
 }
 
 Executor::Executor(
-    RequestPtr request_ptr,
     EventLoop* event_loop)
-    : m_curl_handle(event_loop->acquireCurlHandle())
-    , m_event_loop(event_loop)
-    , m_request_async(std::move(request_ptr))
-    , m_request(m_request_async.get())
+    : m_event_loop(event_loop)
 {
 }
 
 Executor::~Executor()
 {
-    if (m_curl_request_headers != nullptr) {
-        curl_slist_free_all(m_curl_request_headers);
-        m_curl_request_headers = nullptr;
-    }
+    reset();
+    curl_easy_cleanup(m_curl_handle);
+}
 
-    if (m_curl_resolve_hosts != nullptr) {
-        curl_slist_free_all(m_curl_resolve_hosts);
-        m_curl_resolve_hosts = nullptr;
-    }
-
-    if (m_mime_handle != nullptr) {
-        curl_mime_free(m_mime_handle);
-        m_mime_handle = nullptr;
-    }
-
-    if (m_curl_handle != nullptr) {
-        if (m_request_sync != nullptr) {
-            // sync requests get cleaned up on completion
-            curl_easy_cleanup(m_curl_handle);
-            m_request_sync = nullptr;
-            m_request = nullptr;
-        } else {
-            // When executor deletes itself the unique_ptr has already moved
-            // async requests get reset on completion
-            m_event_loop->returnCurlHandle(m_curl_handle);
-            m_curl_handle = nullptr;
-            m_request_async = nullptr;
-            m_request = nullptr;
-        }
-    }
+auto Executor::startAsync(
+    RequestPtr request_ptr) -> void
+{
+    m_request_async = std::move(request_ptr);
+    m_request = m_request_async.get();
 }
 
 auto Executor::perform() -> Response
@@ -107,7 +81,7 @@ auto Executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
         break;
     case http::Method::PUT:
-        curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(m_curl_handle, CURLOPT_PUT, 1L);
         break;
     case http::Method::DELETE:
         curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -298,6 +272,36 @@ auto Executor::setTimesupResponse(
     m_response.m_total_time = total_time;
     m_response.m_num_connects = 0;
     m_response.m_num_redirects = 0;
+}
+
+auto Executor::reset() -> void
+{
+    if (m_mime_handle != nullptr) {
+        curl_mime_free(m_mime_handle);
+        m_mime_handle = nullptr;
+    }
+
+    if (m_curl_request_headers != nullptr) {
+        curl_slist_free_all(m_curl_request_headers);
+        m_curl_request_headers = nullptr;
+    }
+
+    if (m_curl_resolve_hosts != nullptr) {
+        curl_slist_free_all(m_curl_resolve_hosts);
+        m_curl_resolve_hosts = nullptr;
+    }
+
+    // Regardless of sync/async all three pointers get reset to nullptr.
+    m_request_sync = nullptr;
+    m_request_async = nullptr;
+    m_request = nullptr;
+
+    m_timeout_iterator.reset();
+    m_on_complete_callback_called = false;
+    m_response = Response {};
+
+    curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
+    curl_easy_reset(m_curl_handle);
 }
 
 auto Executor::convert(

@@ -47,7 +47,7 @@ public:
 private:
     CURLSH* m_curl_share_ptr { curl_share_init() };
 
-    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};
+    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks {};
 
     friend auto curl_share_lock(
         CURL* curl_ptr,
@@ -209,10 +209,10 @@ private:
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
 
-    /// Lock for accessing curl handles.
-    std::mutex m_curl_handles_lock {};
-    /// List of CURL* handles to use for requests.
-    std::deque<CURL*> m_curl_handles {};
+    /// Lock for accessing executors.
+    std::mutex m_executors_lock {};
+    /// Pool of Executors for running requests.
+    std::deque<std::unique_ptr<Executor>> m_executors {};
 
     /// The set of resolve hosts to apply to all requests in this event loop.
     std::vector<lift::ResolveHost> m_resolve_hosts {};
@@ -293,8 +293,9 @@ private:
      */
     auto updateTimeouts() -> void;
 
-    auto acquireCurlHandle() -> CURL*;
-    auto returnCurlHandle(CURL* curl_handle) -> void;
+    auto acquireExecutor() -> std::unique_ptr<Executor>;
+    auto returnExecutor(
+        std::unique_ptr<Executor> executor_ptr) -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -400,7 +401,8 @@ auto EventLoop::StartRequests(
     // We'll prepare now since it won't block the event loop thread.
     // Since this might not be cheap do it outside the lock
     for (auto& request_ptr : requests) {
-        auto executor_ptr = Executor::make(std::move(request_ptr), this);
+        auto executor_ptr = acquireExecutor();
+        executor_ptr->startAsync(std::move(request_ptr));
         executor_ptr->prepare();
         executors.emplace_back(std::move(executor_ptr));
     }

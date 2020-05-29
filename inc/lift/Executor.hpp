@@ -40,7 +40,7 @@ public:
 
 private:
     /// The curl handle to execute against.
-    CURL* m_curl_handle { nullptr };
+    CURL* m_curl_handle { curl_easy_init() };
     /// The mime handle if present.
     curl_mime* m_mime_handle { nullptr };
     /// The HTTP curl request headers.
@@ -66,11 +66,10 @@ private:
     /// The HTTP response data.
     Response m_response;
 
-    static auto make(
-        RequestPtr request_ptr,
+    static auto make_unique(
         EventLoop* event_loop) -> std::unique_ptr<Executor>
     {
-        return std::unique_ptr<Executor>(new Executor { std::move(request_ptr), event_loop });
+        return std::unique_ptr<Executor>(new Executor { event_loop });
     }
 
     /**
@@ -81,14 +80,14 @@ private:
         Request* request);
 
     /**
-     * This constructor is used for executing an asynchronous request.
-     * @param request_ptr Pass ownership of the request being executed
-     *                    into this executor.
+     * This constructor is used for executing an asynchronous requests.
      * @param event_loop The event loop that will execute this request.
      */
     Executor(
-        RequestPtr request_ptr,
         EventLoop* event_loop);
+
+    auto startAsync(
+        RequestPtr request_ptr) -> void;
 
     /**
      * Synchronously performs the request and returns the Response.
@@ -114,6 +113,8 @@ private:
      */
     auto setTimesupResponse(
         std::chrono::milliseconds total_time) -> void;
+
+    auto reset() -> void;
 
     /**
      * Converts a CURLcode into a LiftStatus.

@@ -62,16 +62,7 @@ auto curl_share_lock(
     void* user_ptr) -> void
 {
     auto& share = *static_cast<Share*>(user_ptr);
-
-    if (data == CURL_LOCK_DATA_SHARE) {
-        share.m_curl_share_all_lock.lock();
-    } else if (data == CURL_LOCK_DATA_DNS) {
-        share.m_curl_share_dns_lock.lock();
-    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
-        share.m_curl_share_ssl_lock.lock();
-    } else if (data == CURL_LOCK_DATA_CONNECT) {
-        share.m_curl_share_data_lock.lock();
-    }
+    share.m_curl_locks[static_cast<uint64_t>(data)].lock();
 }
 
 auto curl_share_unlock(
@@ -80,16 +71,7 @@ auto curl_share_unlock(
     void* user_ptr) -> void
 {
     auto& share = *static_cast<Share*>(user_ptr);
-
-    if (data == CURL_LOCK_DATA_SHARE) {
-        share.m_curl_share_all_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_DNS) {
-        share.m_curl_share_dns_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_SSL_SESSION) {
-        share.m_curl_share_ssl_lock.unlock();
-    } else if (data == CURL_LOCK_DATA_CONNECT) {
-        share.m_curl_share_data_lock.unlock();
-    }
+    share.m_curl_locks[static_cast<uint64_t>(data)].unlock();
 }
 
 class CurlContext {
@@ -186,9 +168,9 @@ EventLoop::EventLoop(
     , m_share_ptr(std::move(share_ptr))
 {
     {
-        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
+        std::lock_guard<std::mutex> guard { m_executors_lock };
         for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
-            m_curl_handles.push_back(curl_easy_init());
+            m_executors.push_back(Executor::make_unique(this));
         }
     }
 
@@ -245,11 +227,8 @@ EventLoop::~EventLoop()
     m_background_thread.join();
 
     {
-        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
-        for (auto* curl_handle : m_curl_handles) {
-            curl_easy_cleanup(curl_handle);
-        }
-        m_curl_handles.clear();
+        std::lock_guard<std::mutex> guard { m_executors_lock };
+        m_executors.clear();
     }
 
     curl_multi_cleanup(m_cmh);
@@ -286,7 +265,8 @@ auto EventLoop::StartRequest(
     ++m_active_request_count;
 
     // Prepare now since it won't block the event loop thread.
-    auto executor_ptr = Executor::make(std::move(request_ptr), this);
+    auto executor_ptr = acquireExecutor();
+    executor_ptr->startAsync(std::move(request_ptr));
     executor_ptr->prepare();
     {
         std::lock_guard<std::mutex> guard { m_pending_requests_lock };
@@ -344,6 +324,8 @@ auto EventLoop::checkActions(
             completeRequestNormal(
                 *executor_ptr.get(),
                 Executor::convert(easy_result));
+
+            returnExecutor(std::move(executor_ptr));
         }
     }
 }
@@ -484,36 +466,33 @@ auto EventLoop::updateTimeouts() -> void
     }
 }
 
-auto EventLoop::acquireCurlHandle() -> CURL*
+auto EventLoop::acquireExecutor() -> std::unique_ptr<Executor>
 {
-    CURL* curl_handle { nullptr };
+    std::unique_ptr<Executor> executor_ptr { nullptr };
 
     {
-        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
-        if (!m_curl_handles.empty()) {
-            curl_handle = m_curl_handles.back();
-            m_curl_handles.pop_back();
+        std::lock_guard<std::mutex> guard { m_executors_lock };
+        if (!m_executors.empty()) {
+            executor_ptr = std::move(m_executors.back());
+            m_executors.pop_back();
         }
     }
 
-    // Out of re-usable curl handles, create a new one outside the lock.
-    if (curl_handle == nullptr) {
-        curl_handle = curl_easy_init();
+    if (executor_ptr == nullptr) {
+        executor_ptr = Executor::make_unique(this);
     }
 
-    if (m_share_ptr != nullptr) {
-        curl_easy_setopt(curl_handle, CURLOPT_SHARE, m_share_ptr->m_curl_share_ptr);
-    }
-
-    return curl_handle;
+    return executor_ptr;
 }
 
-auto EventLoop::returnCurlHandle(CURL* curl_handle) -> void
+auto EventLoop::returnExecutor(
+    std::unique_ptr<Executor> executor_ptr) -> void
 {
-    curl_easy_reset(curl_handle);
+    executor_ptr->reset();
+
     {
-        std::lock_guard<std::mutex> guard { m_curl_handles_lock };
-        m_curl_handles.push_back(curl_handle);
+        std::lock_guard<std::mutex> guard { m_executors_lock };
+        m_executors.push_back(std::move(executor_ptr));
     }
 }
 
@@ -656,6 +635,16 @@ auto on_uv_requests_accept_async(
     auto now = uv_now(event_loop->m_uv_loop);
 
     for (auto& executor_ptr : event_loop->m_grabbed_requests) {
+
+        // If this event loop is sharing curl information add it now, this is specifically done
+        // inside the event loop to reduce lock contention around adding the CURLOPT_SHARE setting
+        // as it will call the curl callback lock functions.
+        if (event_loop->m_share_ptr != nullptr) {
+            curl_easy_setopt(
+                executor_ptr->m_curl_handle,
+                CURLOPT_SHARE,
+                event_loop->m_share_ptr->m_curl_share_ptr);
+        }
 
         // This must be done before adding to the CURLM* object,
         // if not its possible a very fast request could complete

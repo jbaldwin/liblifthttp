@@ -8,22 +8,18 @@ option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 
 if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
-    set(LIFT_USER_LINK_LIBRARIES curl CACHE STRING "User specified additional link targets for custom curl and ssl libraries, defaults to system 'curl'.")
+    set(
+        LIFT_USER_LINK_LIBRARIES
+        curl z uv pthread dl stdc++fs
+        CACHE STRING
+        "Override ${PROJECT_NAME} required link libraries, defaults to [curl z uv pthread dl stdc++fs].  If changed all defaults must be accounted for manually."
+    )
 endif()
 
-set(LIFT_LINK_LIBRARIES
-    uv
-    pthread
-    z
-    dl
-    stdc++fs
-    ${LIFT_USER_LINK_LIBRARIES}
-)
-
-message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES = ${LIFT_BUILD_EXAMPLES}")
-message("${PROJECT_NAME} LIFT_BUILD_TESTS    = ${LIFT_BUILD_TESTS}")
-message("${PROJECT_NAME} LIFT_CODE_COVERAGE  = ${LIFT_CODE_COVERAGE}")
-message("${PROJECT_NAME} LIFT_LINK_LIBRARIES = ${LIFT_LINK_LIBRARIES}")
+message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")
+message("${PROJECT_NAME} LIFT_BUILD_TESTS         = ${LIFT_BUILD_TESTS}")
+message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
+message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 
 set(LIBLIFT_SOURCE_FILES
     inc/lift/Const.hpp
@@ -48,7 +44,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_LINK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_USER_LINK_LIBRARIES})
 
 if(LIFT_CODE_COVERAGE)
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage)

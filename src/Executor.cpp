@@ -1,5 +1,6 @@
 #include "lift/Executor.hpp"
 #include "lift/EventLoop.hpp"
+#include "lift/Init.hpp"
 
 namespace lift {
 auto curl_write_header(
@@ -49,11 +50,15 @@ auto Executor::startAsync(
 
 auto Executor::perform() -> Response
 {
+    global_init();
+
     prepare();
 
     auto curl_error_code = curl_easy_perform(m_curl_handle);
     m_response.m_lift_status = convert(curl_error_code);
     copyCurlToResponse();
+
+    global_cleanup();
 
     return std::move(m_response);
 }

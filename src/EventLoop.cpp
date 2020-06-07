@@ -1,4 +1,5 @@
 #include "lift/EventLoop.hpp"
+#include "lift/Init.hpp"
 
 #include <curl/curl.h>
 #include <curl/multi.h>
@@ -167,6 +168,8 @@ EventLoop::EventLoop(
     , m_resolve_hosts(std::move(resolve_hosts))
     , m_share_ptr(std::move(share_ptr))
 {
+    global_init();
+
     {
         std::lock_guard<std::mutex> guard { m_executors_lock };
         for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
@@ -233,6 +236,8 @@ EventLoop::~EventLoop()
 
     curl_multi_cleanup(m_cmh);
     uv_loop_close(m_uv_loop);
+
+    global_cleanup();
 }
 
 auto EventLoop::IsRunning() -> bool

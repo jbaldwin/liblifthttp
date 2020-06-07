@@ -27,10 +27,11 @@ set(LIBLIFT_SOURCE_FILES
     inc/lift/EventLoop.hpp src/EventLoop.cpp
     inc/lift/Executor.hpp src/Executor.cpp
     inc/lift/Header.hpp src/Header.cpp
-    inc/lift/Lift.hpp src/Lift.cpp
+    inc/lift/Http.hpp src/Http.cpp
+    inc/lift/Init.hpp src/Init.cpp
+    inc/lift/Lift.hpp
     inc/lift/LiftStatus.hpp src/LiftStatus.cpp
     inc/lift/MimeField.hpp src/MimeField.cpp
-    inc/lift/Http.hpp src/Http.cpp
     inc/lift/QueryBuilder.hpp src/QueryBuilder.cpp
     inc/lift/Request.hpp src/Request.cpp
     inc/lift/ResolveHost.hpp src/ResolveHost.cpp

@@ -1,20 +1,11 @@
 #include <lift/Lift.hpp>
-
 #include <iostream>
 
-int main(int argc, char* argv[])
+int main()
 {
-    (void)argc;
-    (void)argv;
-
     /**
      * This file is to make sure that the example code in the README compiles correctly.
      */
-
-    // libcurl requires some global functions to be called before being used.
-    // LibLiftHttp will call these appropriately if you place the following in
-    // the projects main.cpp file(s) where necessary.
-    static lift::GlobalScopeInitializer g_lifthttp_gsi {};
 
     // Synchronous requests can be created on the stack.
     lift::Request request { "http://www.example.com" };
@@ -35,8 +26,8 @@ int main(int argc, char* argv[])
     // on completion processing on this main thread you need to std::move() it back via a queue or inter-thread
     // communication.  This is imporant if any resources are shared between the threads.
     // NOTE: The request is created on the heap so ownership can be passed easily via an std::unique_ptr
-    // to the lift::EventLoop!  lift::Request::make() is a handy function to easily do so.
-    auto request_ptr = lift::Request::make(
+    // to the lift::EventLoop!  lift::Request::make_unique() is a handy function to easily do so.
+    auto request_ptr = lift::Request::make_unique(
         "http://www.example.com",
         std::chrono::seconds { 10 }, // Give the request 10 seconds to complete or timeout.
         [](lift::RequestPtr req_ptr, lift::Response response) {

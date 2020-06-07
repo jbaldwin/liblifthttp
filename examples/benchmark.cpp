@@ -45,9 +45,6 @@ int main(int argc, char* argv[])
     uint64_t connections = std::stoul(argv[3]);
     uint64_t threads = std::stoul(argv[4]);
 
-    // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
-
     std::atomic<uint64_t> success { 0 };
     std::atomic<uint64_t> error { 0 };
 
@@ -59,7 +56,7 @@ int main(int argc, char* argv[])
             for (uint64_t j = 0; j < connections; ++j) {
                 auto& event_loop = *event_loop_ptr;
 
-                auto request_ptr = lift::Request::make(
+                auto request_ptr = lift::Request::make_unique(
                     url,
                     1s,
                     [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {

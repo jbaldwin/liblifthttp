@@ -48,12 +48,12 @@ TEST_CASE("EventLoop ResolveHost")
 
     std::vector<lift::RequestPtr> requests;
     requests.emplace_back(
-        lift::Request::make(
+        lift::Request::make_unique(
             "testhostname",
             std::chrono::seconds { 60 },
             on_complete));
     requests.emplace_back(
-        lift::Request::make(
+        lift::Request::make_unique(
             "herpderp.com",
             std::chrono::seconds { 60 },
             on_complete));

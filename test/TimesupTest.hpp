@@ -11,7 +11,7 @@ TEST_CASE("Timesup single request")
 {
     lift::EventLoop ev { std::nullopt, std::nullopt, { std::chrono::seconds { 1 } } };
 
-    auto r = lift::Request::make(
+    auto r = lift::Request::make_unique(
         "http://www.reddit.com", // should be slow enough /shrug
         std::chrono::milliseconds { 25 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
@@ -35,7 +35,7 @@ TEST_CASE("Timesup two requests")
 
     std::vector<lift::RequestPtr> requests {};
 
-    requests.push_back(lift::Request::make(
+    requests.push_back(lift::Request::make_unique(
         "http://www.reddit.com", // should be slow enough /shrug
         std::chrono::milliseconds { 25 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
@@ -44,7 +44,7 @@ TEST_CASE("Timesup two requests")
             REQUIRE(response.TotalTime() == std::chrono::milliseconds { 25 });
         }));
 
-    requests.push_back(lift::Request::make(
+    requests.push_back(lift::Request::make_unique(
         "http://www.reddit.com", // should be slow enough /shrug
         std::chrono::milliseconds { 50 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {

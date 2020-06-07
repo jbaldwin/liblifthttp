@@ -19,14 +19,9 @@ static auto on_complete(std::unique_ptr<lift::Request> request_ptr, lift::Respon
     }
 }
 
-int main(int argc, char* argv[])
+int main()
 {
     using namespace std::chrono_literals;
-    (void)argc;
-    (void)argv;
-
-    // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
 
     std::vector<std::string> urls = {
         "http://www.example.com",
@@ -44,7 +39,7 @@ int main(int argc, char* argv[])
     std::chrono::milliseconds timeout = 250ms;
     for (auto& url : urls) {
         std::cout << "Requesting " << url << std::endl;
-        auto request_ptr = lift::Request::make(url, timeout, on_complete);
+        auto request_ptr = lift::Request::make_unique(url, timeout, on_complete);
         event_loop.StartRequest(std::move(request_ptr));
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);

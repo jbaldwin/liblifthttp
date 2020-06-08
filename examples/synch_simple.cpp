@@ -2,14 +2,8 @@
 
 #include <iostream>
 
-int main(int argc, char* argv[])
+int main()
 {
-    (void)argc;
-    (void)argv;
-
-    // Initialize must be called first before using the LiftHttp library.
-    lift::GlobalScopeInitializer lift_init {};
-
     {
         lift::Request request { "http://www.example.com" };
         std::cout << "Requesting http://www.example.com" << std::endl;

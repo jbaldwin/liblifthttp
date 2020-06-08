@@ -27,8 +27,6 @@ struct TestSetupInfo {
 
 #include <lift/Lift.hpp>
 
-static lift::GlobalScopeInitializer g_lift_gsi {};
-
 #include "AsyncRequestTest.hpp"
 #include "EscapeTest.hpp"
 #include "EventLoopTest.hpp"

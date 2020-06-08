@@ -8,16 +8,16 @@ TEST_CASE("ResolveHost synchronous perform")
 {
     lift::ResolveHost rhost {
         "testhostname",
-        80,
+        NGINX_PORT,
         SERVICE_IP_ADDRESS
     };
 
     REQUIRE(rhost.Host() == "testhostname");
-    REQUIRE(rhost.Port() == 80);
+    REQUIRE(rhost.Port() == NGINX_PORT);
     REQUIRE(rhost.IpAddr() == SERVICE_IP_ADDRESS);
 
     lift::Request request {
-        "http://testhostname:80/"
+        "http://testhostname:" + NGINX_PORT_STR + "/"
     };
 
     request.ResolveHost(std::move(rhost));
@@ -30,8 +30,8 @@ TEST_CASE("ResolveHost synchronous perform")
 TEST_CASE("EventLoop ResolveHost")
 {
     std::vector<lift::ResolveHost> rhosts {
-        lift::ResolveHost { "testhostname", 80, SERVICE_IP_ADDRESS },
-        lift::ResolveHost { "herpderp.com", 80, SERVICE_IP_ADDRESS }
+        lift::ResolveHost { "testhostname", NGINX_PORT, SERVICE_IP_ADDRESS },
+        lift::ResolveHost { "herpderp.com", NGINX_PORT, SERVICE_IP_ADDRESS }
     };
 
     lift::EventLoop ev {
@@ -49,12 +49,12 @@ TEST_CASE("EventLoop ResolveHost")
     std::vector<lift::RequestPtr> requests;
     requests.emplace_back(
         lift::Request::make_unique(
-            "testhostname",
+            "testhostname:" + NGINX_PORT_STR,
             std::chrono::seconds { 60 },
             on_complete));
     requests.emplace_back(
         lift::Request::make_unique(
-            "herpderp.com",
+            "herpderp.com:" + NGINX_PORT_STR,
             std::chrono::seconds { 60 },
             on_complete));
 

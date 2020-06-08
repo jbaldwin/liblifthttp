@@ -171,16 +171,16 @@ private:
     std::atomic<uint64_t> m_active_request_count { 0 };
 
     /// The UV event loop to drive libcurl.
-    uv_loop_t* m_uv_loop { uv_loop_new() };
+    uv_loop_t m_uv_loop {};
     /// The async trigger for injecting new requests into the event loop.
-    uv_async_t m_async {};
+    uv_async_t m_uv_async {};
     /// libcurl requires a single timer to drive internal timeouts/wake-ups.
-    uv_timer_t m_timer_curl {};
+    uv_timer_t m_uv_timer_curl {};
     /// If set, the amount of time connections are allowed to connect, this can be
     /// longer than the timeout of the request.
     std::optional<std::chrono::milliseconds> m_connection_time { std::nullopt };
     /// Timeout timer.
-    uv_timer_t m_timer_timeout {};
+    uv_timer_t m_uv_timer_timeout {};
     /// The libcurl multi handle for driving multiple easy handles at once.
     CURLM* m_cmh { curl_multi_init() };
 
@@ -224,13 +224,6 @@ private:
     /// If the event loop is provided a Share object then connection information like
     // DNS/SSL/Data pipelining can be shared across event loops.
     std::shared_ptr<Share> m_share_ptr { nullptr };
-
-    /// Flag to denote that the m_async handle has been closed on shutdown.
-    std::atomic<bool> m_async_closed { false };
-    /// Flag to denote that the curl timer has been closed on shutdown.
-    std::atomic<bool> m_timer_curl_closed { false };
-    /// Flag to denote that the timer for timeouts has been closed.
-    std::atomic<bool> m_timer_timeout_closed { false };
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -418,7 +411,7 @@ auto EventLoop::StartRequests(
     }
 
     // Notify the even loop thread that there are requests waiting to be picked up.
-    uv_async_send(&m_async);
+    uv_async_send(&m_uv_async);
 
     return true;
 }

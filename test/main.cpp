@@ -12,12 +12,15 @@ static const std::string SERVICE_IP_ADDRESS = "172.18.0.3";
 static const std::string NGINX_HOSTNAME = "nginx";
 #endif
 
+static const uint16_t NGINX_PORT = 80;
+static const std::string NGINX_PORT_STR = "80";
+
 struct TestSetupInfo {
     TestSetupInfo()
     {
         std::cout << "SERVICE_IP_ADDRESS = " << SERVICE_IP_ADDRESS << "\n";
         std::cout << "NGINX_HOSTNAME = "
-                  << "http://" << NGINX_HOSTNAME << ":80/"
+                  << "http://" << NGINX_HOSTNAME << ":" << NGINX_PORT_STR << "/"
                   << "\n";
     }
 

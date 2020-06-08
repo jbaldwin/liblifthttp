@@ -9,7 +9,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add a request.")
     lift::EventLoop ev {};
 
     auto request = lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -19,7 +19,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add a request.")
     REQUIRE(ev.StartRequest(std::move(request)));
 
     request = lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -38,7 +38,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
 
     std::vector<lift::RequestPtr> requests1;
     requests1.emplace_back(lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -47,7 +47,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
 
     std::vector<lift::RequestPtr> requests2;
     requests2.emplace_back(lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -80,7 +80,7 @@ TEST_CASE("EventLoop Share synchronous")
     };
 
     auto request1 = lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -88,7 +88,7 @@ TEST_CASE("EventLoop Share synchronous")
         });
 
     auto request2 = lift::Request::make_unique(
-        "http://" + NGINX_HOSTNAME + ":80/",
+        "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds { 60 },
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
@@ -132,8 +132,8 @@ TEST_CASE("EventLoop Share Overlapping requests")
 
         for (size_t i = 0; i < N_REQUESTS; ++i) {
             auto request_ptr = lift::Request::make_unique(
-                "http://" + NGINX_HOSTNAME + ":80/",
-                std::chrono::seconds { 60 },
+                "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
+                std::chrono::seconds { 5 },
                 [&](std::unique_ptr<lift::Request>, lift::Response response) {
                     ++count;
                 });
@@ -142,6 +142,7 @@ TEST_CASE("EventLoop Share Overlapping requests")
         }
 
         while (event_loop.ActiveRequestCount() > 0) {
+            // std::cerr << "Active=" << event_loop.ActiveRequestCount() << "\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     };

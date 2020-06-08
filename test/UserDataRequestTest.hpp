@@ -28,7 +28,7 @@ TEST_CASE("User data")
     // more like an example we'll include a unique "request_id" that gets captured as the user data.
     uint64_t request_id = 1;
 
-    auto req1 = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/", std::chrono::seconds { 1 });
+    auto req1 = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/", std::chrono::seconds { 1 });
     req1->OnCompleteHandler(
         [request_id](lift::RequestPtr request, lift::Response response) {
             user_data_on_complete(std::move(request), std::move(response), request_id, 100.5);
@@ -37,7 +37,7 @@ TEST_CASE("User data")
 
     request_id = 2;
 
-    auto req2 = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":80/", std::chrono::seconds { 1 });
+    auto req2 = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/", std::chrono::seconds { 1 });
     req2->OnCompleteHandler(
         [request_id](lift::RequestPtr request, lift::Response response) {
             user_data_on_complete(std::move(request), std::move(response), request_id, 1234.567);

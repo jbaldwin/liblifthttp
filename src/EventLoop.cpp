@@ -177,14 +177,16 @@ EventLoop::EventLoop(
         }
     }
 
-    uv_async_init(m_uv_loop, &m_async, on_uv_requests_accept_async);
-    m_async.data = this;
+    uv_loop_init(&m_uv_loop);
 
-    uv_timer_init(m_uv_loop, &m_timer_curl);
-    m_timer_curl.data = this;
+    uv_async_init(&m_uv_loop, &m_uv_async, on_uv_requests_accept_async);
+    m_uv_async.data = this;
 
-    uv_timer_init(m_uv_loop, &m_timer_timeout);
-    m_timer_timeout.data = this;
+    uv_timer_init(&m_uv_loop, &m_uv_timer_curl);
+    m_uv_timer_curl.data = this;
+
+    uv_timer_init(&m_uv_loop, &m_uv_timer_timeout);
+    m_uv_timer_timeout.data = this;
 
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETFUNCTION, curl_handle_socket_actions);
     curl_multi_setopt(m_cmh, CURLMOPT_SOCKETDATA, this);
@@ -215,17 +217,18 @@ EventLoop::~EventLoop()
         std::this_thread::sleep_for(1ms);
     }
 
-    uv_timer_stop(&m_timer_curl);
-    uv_timer_stop(&m_timer_timeout);
-    uv_close(uv_type_cast<uv_handle_t>(&m_timer_curl), uv_close_callback);
-    uv_close(uv_type_cast<uv_handle_t>(&m_timer_timeout), uv_close_callback);
-    uv_close(uv_type_cast<uv_handle_t>(&m_async), uv_close_callback);
+    uv_timer_stop(&m_uv_timer_curl);
+    uv_timer_stop(&m_uv_timer_timeout);
+    uv_close(uv_type_cast<uv_handle_t>(&m_uv_timer_curl), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&m_uv_timer_timeout), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&m_uv_async), uv_close_callback);
 
-    while (!m_timer_curl_closed && !m_timer_timeout_closed && !m_async_closed) {
+    while (uv_loop_alive(&m_uv_loop)) {
         std::this_thread::sleep_for(1ms);
-        uv_async_send(&m_async); // fake a request to make sure the loop wakes up
+        uv_async_send(&m_uv_async); // fake a request to make sure the loop wakes up
     }
-    uv_stop(m_uv_loop);
+    uv_stop(&m_uv_loop);
+    uv_loop_close(&m_uv_loop);
 
     m_background_thread.join();
 
@@ -235,8 +238,6 @@ EventLoop::~EventLoop()
     }
 
     curl_multi_cleanup(m_cmh);
-    uv_loop_close(m_uv_loop);
-
     global_cleanup();
 }
 
@@ -277,7 +278,7 @@ auto EventLoop::StartRequest(
         std::lock_guard<std::mutex> guard { m_pending_requests_lock };
         m_pending_requests.emplace_back(std::move(executor_ptr));
     }
-    uv_async_send(&m_async);
+    uv_async_send(&m_uv_async);
 
     return true;
 }
@@ -293,7 +294,7 @@ auto EventLoop::run() -> void
     m_native_handle = pthread_self();
 
     m_is_running = true;
-    uv_run(m_uv_loop, UV_RUN_DEFAULT);
+    uv_run(&m_uv_loop, UV_RUN_DEFAULT);
     m_is_running = false;
 }
 
@@ -398,7 +399,7 @@ auto EventLoop::addTimeout(
             auto connection_time = m_connection_time.value();
 
             if (connection_time > timeout) {
-                auto now = uv_now(m_uv_loop);
+                auto now = uv_now(&m_uv_loop);
                 TimePoint time_point = now + timeout.count();
                 executor.m_timeout_iterator = m_timeouts.emplace(time_point, &executor);
 
@@ -448,7 +449,7 @@ auto EventLoop::updateTimeouts() -> void
     // setting the timer every single time.
 
     if (!m_timeouts.empty()) {
-        auto now = uv_now(m_uv_loop);
+        auto now = uv_now(&m_uv_loop);
         auto first = m_timeouts.begin()->first;
 
         // If the first item is already 'expired' setting the timer to zero
@@ -460,14 +461,14 @@ auto EventLoop::updateTimeouts() -> void
             timer_value = first - now;
         }
 
-        uv_timer_stop(&m_timer_timeout);
+        uv_timer_stop(&m_uv_timer_timeout);
         uv_timer_start(
-            &m_timer_timeout,
+            &m_uv_timer_timeout,
             on_uv_timesup_callback,
             timer_value,
             0);
     } else {
-        uv_timer_stop(&m_timer_timeout);
+        uv_timer_stop(&m_uv_timer_timeout);
     }
 }
 
@@ -509,11 +510,11 @@ auto curl_start_timeout(
     auto* event_loop = static_cast<EventLoop*>(user_data);
 
     // Stop the current timer regardless.
-    uv_timer_stop(&event_loop->m_timer_curl);
+    uv_timer_stop(&event_loop->m_uv_timer_curl);
 
     if (timeout_ms > 0) {
         uv_timer_start(
-            &event_loop->m_timer_curl,
+            &event_loop->m_uv_timer_curl,
             on_uv_timeout_callback,
             static_cast<uint64_t>(timeout_ms),
             0);
@@ -546,7 +547,7 @@ auto curl_handle_socket_actions(
                 event_loop->m_curl_context_ready.pop_front();
             }
 
-            curl_context->Init(event_loop->m_uv_loop, socket);
+            curl_context->Init(&event_loop->m_uv_loop, socket);
             curl_multi_assign(event_loop->m_cmh, socket, static_cast<void*>(curl_context));
         }
     }
@@ -578,13 +579,10 @@ auto curl_handle_socket_actions(
 auto uv_close_callback(uv_handle_t* handle) -> void
 {
     auto* event_loop = static_cast<EventLoop*>(handle->data);
-    if (handle == uv_type_cast<uv_handle_t>(&event_loop->m_async)) {
-        event_loop->m_async_closed = true;
-    } else if (handle == uv_type_cast<uv_handle_t>(&event_loop->m_timer_curl)) {
-        event_loop->m_timer_curl_closed = true;
-    } else if (handle == uv_type_cast<uv_handle_t>(&event_loop->m_timer_timeout)) {
-        event_loop->m_timer_timeout_closed = true;
-    }
+    (void)event_loop;
+
+    // Currently nothing needs to be done since all handles the event loop uses
+    // are allocated within the lift::EventLoop object and not separate on the heap.
 }
 
 auto on_uv_timeout_callback(
@@ -637,7 +635,7 @@ auto on_uv_requests_accept_async(
             event_loop->m_pending_requests);
     }
 
-    auto now = uv_now(event_loop->m_uv_loop);
+    auto now = uv_now(&event_loop->m_uv_loop);
 
     for (auto& executor_ptr : event_loop->m_grabbed_requests) {
 
@@ -696,7 +694,7 @@ auto on_uv_timesup_callback(
         return;
     }
 
-    auto now = uv_now(event_loop->m_uv_loop);
+    auto now = uv_now(&event_loop->m_uv_loop);
 
     // While the items in the timesup map are <= now "timesup" them to the client.
     auto iter = timesup.begin();

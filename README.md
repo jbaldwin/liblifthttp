@@ -22,7 +22,7 @@ You're using curl? Do you even lift?
 * Easy to use Synchronous and Asynchronous HTTP Request APIs.
 * Safe C++17 client library API, modern memory move semantics.
 * Background IO thread(s) for sending and receiving Async HTTP requests.
-* Request pooling for re-using HTTP requests.
+* Request pooling for re-using HTTP requests and sharing of connection information.
 
 # Usage #
 
@@ -116,10 +116,17 @@ int main()
 
 CMake options:
 
-    LIFT_BUILD_EXAMPLES "Build the examples. Default=ON"
-    LIFT_BUILD_TESTS    "Build the tests. Default=ON"
-    LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF"
-    LIFT_LINK_TARGETS   "User specified additional link targets for custom curl and ssl libraries, defaults to system 'curl'."
+| Name                     | Default                       | Description                            |
+|:-------------------------|:------------------------------|:---------------------------------------|
+| LIFT_BUILD_EXAMPLES      | ON                            | Should the examples be built?          |
+| LIFT_BUILD_TESTS         | ON                            | Should the tests be built?             |
+| LIFT_CODE_COVERAGE       | OFF                           | Should code coverage be enabled?       |
+| LIFT_USER_LINK_LIBRARIES | curl z uv pthread dl stdc++fs | Override lift's target link libraries. |
+
+
+Note on `LIFT_USER_LINK_LIBRARIES`, if override the value then all of the default link libraries/targets must be
+accounted for in the override.  E.g. if you are building with a custom curl target but defaults for everything else
+then `-DLIFT_USER_LINK_LIBRARIES="custom_curl_target z uv pthread dl stdc++fs"` would be the correct setting.
 
 #### add_subdirectory()
 To use within your cmake project you can clone the project or use git submodules and then `add_subdirectory` in the parent project's `CMakeList.txt`,

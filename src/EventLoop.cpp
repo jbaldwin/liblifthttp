@@ -20,61 +20,6 @@ static auto uv_type_cast(I* i) -> O*
     return static_cast<O*>(void_ptr);
 }
 
-auto curl_share_lock(
-    CURL* curl_ptr,
-    curl_lock_data data,
-    curl_lock_access access,
-    void* user_ptr) -> void;
-
-auto curl_share_unlock(
-    CURL* curl_ptr,
-    curl_lock_data data,
-    void* user_ptr) -> void;
-
-Share::Share(
-    ShareOptions share_options)
-{
-    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_LOCKFUNC, curl_share_lock);
-    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_UNLOCKFUNC, curl_share_unlock);
-    curl_share_setopt(m_curl_share_ptr, CURLSHOPT_USERDATA, this);
-
-    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::DNS)) {
-        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
-    }
-
-    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::SSL)) {
-        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
-    }
-
-    if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::DATA)) {
-        curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
-    }
-}
-
-Share::~Share()
-{
-    curl_share_cleanup(m_curl_share_ptr);
-}
-
-auto curl_share_lock(
-    CURL*,
-    curl_lock_data data,
-    curl_lock_access,
-    void* user_ptr) -> void
-{
-    auto& share = *static_cast<Share*>(user_ptr);
-    share.m_curl_locks[static_cast<uint64_t>(data)].lock();
-}
-
-auto curl_share_unlock(
-    CURL*,
-    curl_lock_data data,
-    void* user_ptr) -> void
-{
-    auto& share = *static_cast<Share*>(user_ptr);
-    share.m_curl_locks[static_cast<uint64_t>(data)].unlock();
-}
-
 class CurlContext {
 public:
     explicit CurlContext(
@@ -163,18 +108,15 @@ EventLoop::EventLoop(
     std::optional<uint64_t> max_connections,
     std::optional<std::chrono::milliseconds> connection_time,
     std::vector<ResolveHost> resolve_hosts,
-    std::shared_ptr<Share> share_ptr)
+    SharePtr share_ptr)
     : m_connection_time(std::move(connection_time))
     , m_resolve_hosts(std::move(resolve_hosts))
     , m_share_ptr(std::move(share_ptr))
 {
     global_init();
 
-    {
-        std::lock_guard<std::mutex> guard { m_executors_lock };
-        for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
-            m_executors.push_back(Executor::make_unique(this));
-        }
+    for (std::size_t i = 0; i < reserve_connections.value_or(0); ++i) {
+        m_executors.push_back(Executor::make_unique(this));
     }
 
     uv_loop_init(&m_uv_loop);
@@ -231,11 +173,7 @@ EventLoop::~EventLoop()
     uv_loop_close(&m_uv_loop);
 
     m_background_thread.join();
-
-    {
-        std::lock_guard<std::mutex> guard { m_executors_lock };
-        m_executors.clear();
-    }
+    m_executors.clear();
 
     curl_multi_cleanup(m_cmh);
     global_cleanup();
@@ -270,13 +208,9 @@ auto EventLoop::StartRequest(
     // Do this now so that the event loop takes into account 'pending' requests as well.
     ++m_active_request_count;
 
-    // Prepare now since it won't block the event loop thread.
-    auto executor_ptr = acquireExecutor();
-    executor_ptr->startAsync(std::move(request_ptr));
-    executor_ptr->prepare();
     {
         std::lock_guard<std::mutex> guard { m_pending_requests_lock };
-        m_pending_requests.emplace_back(std::move(executor_ptr));
+        m_pending_requests.emplace_back(std::move(request_ptr));
     }
     uv_async_send(&m_uv_async);
 
@@ -476,12 +410,9 @@ auto EventLoop::acquireExecutor() -> std::unique_ptr<Executor>
 {
     std::unique_ptr<Executor> executor_ptr { nullptr };
 
-    {
-        std::lock_guard<std::mutex> guard { m_executors_lock };
-        if (!m_executors.empty()) {
-            executor_ptr = std::move(m_executors.back());
-            m_executors.pop_back();
-        }
+    if (!m_executors.empty()) {
+        executor_ptr = std::move(m_executors.back());
+        m_executors.pop_back();
     }
 
     if (executor_ptr == nullptr) {
@@ -495,11 +426,7 @@ auto EventLoop::returnExecutor(
     std::unique_ptr<Executor> executor_ptr) -> void
 {
     executor_ptr->reset();
-
-    {
-        std::lock_guard<std::mutex> guard { m_executors_lock };
-        m_executors.push_back(std::move(executor_ptr));
-    }
+    m_executors.push_back(std::move(executor_ptr));
 }
 
 auto curl_start_timeout(
@@ -637,17 +564,10 @@ auto on_uv_requests_accept_async(
 
     auto now = uv_now(&event_loop->m_uv_loop);
 
-    for (auto& executor_ptr : event_loop->m_grabbed_requests) {
-
-        // If this event loop is sharing curl information add it now, this is specifically done
-        // inside the event loop to reduce lock contention around adding the CURLOPT_SHARE setting
-        // as it will call the curl callback lock functions.
-        if (event_loop->m_share_ptr != nullptr) {
-            curl_easy_setopt(
-                executor_ptr->m_curl_handle,
-                CURLOPT_SHARE,
-                event_loop->m_share_ptr->m_curl_share_ptr);
-        }
+    for (auto& request_ptr : event_loop->m_grabbed_requests) {
+        auto executor_ptr = event_loop->acquireExecutor();
+        executor_ptr->startAsync(std::move(request_ptr), event_loop->m_share_ptr.get());
+        executor_ptr->prepare();
 
         // This must be done before adding to the CURLM* object,
         // if not its possible a very fast request could complete

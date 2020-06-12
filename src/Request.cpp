@@ -14,9 +14,10 @@ Request::Request(
 {
 }
 
-auto Request::Perform() -> Response
+auto Request::Perform(
+    SharePtr share_ptr) -> Response
 {
-    Executor executor { this };
+    Executor executor { this, share_ptr.get() };
     return executor.perform();
 }
 

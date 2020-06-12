@@ -16,7 +16,7 @@ TEST_CASE("Timesup single request")
         std::chrono::milliseconds { 25 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::TIMEOUT);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_UNKNOWN);
+            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT);
             REQUIRE(response.TotalTime() == std::chrono::milliseconds { 25 });
             REQUIRE(response.NumConnects() == 0);
             REQUIRE(response.NumRedirects() == 0);
@@ -40,7 +40,7 @@ TEST_CASE("Timesup two requests")
         std::chrono::milliseconds { 25 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::TIMEOUT);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_UNKNOWN);
+            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT);
             REQUIRE(response.TotalTime() == std::chrono::milliseconds { 25 });
         }));
 
@@ -49,7 +49,7 @@ TEST_CASE("Timesup two requests")
         std::chrono::milliseconds { 50 },
         [](std::unique_ptr<lift::Request> rh, lift::Response response) -> void {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::TIMEOUT);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_UNKNOWN);
+            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT);
             REQUIRE(response.TotalTime() == std::chrono::milliseconds { 50 });
         }));
 

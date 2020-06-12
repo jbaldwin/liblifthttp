@@ -286,7 +286,7 @@ auto Executor::copyCurlToResponse() -> void
 auto Executor::setTimesupResponse(
     std::chrono::milliseconds total_time) -> void
 {
-    m_response.m_status_code = lift::http::StatusCode::HTTP_UNKNOWN;
+    m_response.m_status_code = lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT;
     m_response.m_total_time = total_time;
     m_response.m_num_connects = 0;
     m_response.m_num_redirects = 0;

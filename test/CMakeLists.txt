@@ -12,6 +12,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     MimeFieldTest.hpp
     QueryBuilderTest.hpp
     ResolveHostTest.hpp
+    ShareTest.hpp
     SyncRequestTest.hpp
     TimesupTest.hpp
     TransferProgressRequest.hpp

@@ -23,10 +23,14 @@ auto curl_xfer_info(
     curl_off_t upload_now_bytes) -> int;
 
 Executor::Executor(
-    Request* request)
+    Request* request,
+    Share* share)
     : m_request_sync(request)
     , m_request(m_request_sync)
 {
+    if(share != nullptr) {
+        m_curl_share_handle = share->m_curl_share_ptr;
+    }
 }
 
 Executor::Executor(
@@ -42,10 +46,14 @@ Executor::~Executor()
 }
 
 auto Executor::startAsync(
-    RequestPtr request_ptr) -> void
+    RequestPtr request_ptr,
+    Share* share) -> void
 {
     m_request_async = std::move(request_ptr);
     m_request = m_request_async.get();
+    if(share != nullptr) {
+        m_curl_share_handle = share->m_curl_share_ptr;
+    }
 }
 
 auto Executor::perform() -> Response
@@ -248,6 +256,11 @@ auto Executor::prepare() -> void
     } else {
         curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 1L);
     }
+
+    // Note that this will lock the mutexes in the share callbacks.
+    if (m_curl_share_handle != nullptr) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, m_curl_share_handle);
+    }
 }
 
 auto Executor::copyCurlToResponse() -> void
@@ -306,6 +319,8 @@ auto Executor::reset() -> void
     m_response = Response {};
 
     curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
+    m_curl_share_handle = nullptr;
+
     curl_easy_reset(m_curl_handle);
 }
 

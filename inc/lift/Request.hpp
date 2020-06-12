@@ -5,6 +5,7 @@
 #include "lift/MimeField.hpp"
 #include "lift/ResolveHost.hpp"
 #include "lift/Response.hpp"
+#include "lift/Share.hpp"
 
 #include <chrono>
 #include <functional>
@@ -74,25 +75,6 @@ public:
      * @param on_complete_handler For asynchronous requests provide this if you want to
      *                            know when the request completes with the Response information.
      */
-    [[deprecated]] static auto make(
-        std::string url,
-        std::optional<std::chrono::milliseconds> timeout = std::nullopt,
-        OnCompleteHandlerType on_complete_handler = nullptr) -> std::unique_ptr<Request>
-    {
-        return std::make_unique<Request>(std::move(url), std::move(timeout), std::move(on_complete_handler));
-    }
-
-    /**
-     * Creates a new request on the heap, this is a useful utility for asynchronous requests.
-     *
-     * Note that requests may be re-used after completing.
-     *
-     * @param url The url to request.
-     * @param timeout An optional timeout for this request.  If not provided the request
-     *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to
-     *                            know when the request completes with the Response information.
-     */
     static auto make_unique(
         std::string url,
         std::optional<std::chrono::milliseconds> timeout = std::nullopt,
@@ -111,8 +93,12 @@ public:
      *
      * Note: If there is no timeout set on the request and the remote
      * server fails to respond this call can block forever.
+     *
+     * @param share_ptr An optional lift::Share for reusing/sharing connection information.
+     * @return The HTTP response.
      */
-    auto Perform() -> Response;
+    auto Perform(
+        SharePtr share_ptr = nullptr) -> Response;
 
     /**
      * This on complete handler event is called when a Request is executed

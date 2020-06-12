@@ -3,6 +3,7 @@
 #include "lift/Executor.hpp"
 #include "lift/Request.hpp"
 #include "lift/ResolveHost.hpp"
+#include "lift/Share.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -17,52 +18,6 @@
 #include <vector>
 
 namespace lift {
-
-enum class ShareOptions : uint64_t {
-    /// Share nothing across event loops.
-    NOTHING = 0,
-    /// Share DNS information across event loops.
-    DNS = 1 << 1,
-    /// Share SSL information across event loops.
-    SSL = 1 << 2,
-    /// Share Data pipeline'ing across event loops.
-    DATA = 1 << 3,
-    /// Share all available types
-    ALL = (DNS + SSL + DATA)
-};
-
-class Share {
-    friend EventLoop;
-
-public:
-    Share(
-        ShareOptions share_options);
-    ~Share();
-
-    Share(const Share&) = delete;
-    Share(Share&&) = delete;
-    auto operator=(const Share&) -> Share& = delete;
-    auto operator=(Share &&) -> Share& = delete;
-
-private:
-    CURLSH* m_curl_share_ptr { curl_share_init() };
-
-    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks {};
-
-    friend auto curl_share_lock(
-        CURL* curl_ptr,
-        curl_lock_data data,
-        curl_lock_access access,
-        void* user_ptr) -> void;
-
-    friend auto curl_share_unlock(
-        CURL* curl_ptr,
-        curl_lock_data data,
-        void* user_ptr) -> void;
-
-    friend auto on_uv_requests_accept_async(
-        uv_async_t* handle) -> void;
-};
 
 class CurlContext;
 using CurlContextPtr = std::unique_ptr<CurlContext>;
@@ -92,7 +47,7 @@ public:
         std::optional<uint64_t> max_connections = std::nullopt,
         std::optional<std::chrono::milliseconds> connection_time = std::nullopt,
         std::vector<ResolveHost> resolve_hosts = {},
-        std::shared_ptr<Share> share_ptr = nullptr);
+        SharePtr share_ptr = nullptr);
 
     ~EventLoop();
 
@@ -195,9 +150,9 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<ExecutorPtr> m_pending_requests {};
+    std::vector<RequestPtr> m_pending_requests {};
     /// Only accessible from within the EventLoop thread.
-    std::vector<ExecutorPtr> m_grabbed_requests {};
+    std::vector<RequestPtr> m_grabbed_requests {};
 
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread {};
@@ -209,8 +164,6 @@ private:
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
 
-    /// Lock for accessing executors.
-    std::mutex m_executors_lock {};
     /// Pool of Executors for running requests.
     std::deque<std::unique_ptr<Executor>> m_executors {};
 
@@ -222,8 +175,8 @@ private:
     std::multimap<TimePoint, Executor*> m_timeouts {};
 
     /// If the event loop is provided a Share object then connection information like
-    // DNS/SSL/Data pipelining can be shared across event loops.
-    std::shared_ptr<Share> m_share_ptr { nullptr };
+    /// DNS/SSL/Data pipelining can be shared across event loops.
+    SharePtr m_share_ptr { nullptr };
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -388,25 +341,13 @@ auto EventLoop::StartRequests(
         return false;
     }
 
-    std::vector<ExecutorPtr> executors {};
-    executors.reserve(std::size(requests));
-
-    // We'll prepare now since it won't block the event loop thread.
-    // Since this might not be cheap do it outside the lock
-    for (auto& request_ptr : requests) {
-        auto executor_ptr = acquireExecutor();
-        executor_ptr->startAsync(std::move(request_ptr));
-        executor_ptr->prepare();
-        executors.emplace_back(std::move(executor_ptr));
-    }
-
     m_active_request_count += std::size(requests);
 
     // Lock scope
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
-        for (auto& executor_ptr : executors) {
-            m_pending_requests.emplace_back(std::move(executor_ptr));
+        for (auto& request_ptr : requests) {
+            m_pending_requests.emplace_back(std::move(request_ptr));
         }
     }
 

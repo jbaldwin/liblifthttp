@@ -38,6 +38,7 @@ struct TestSetupInfo {
 #include "MimeFieldTest.hpp"
 #include "QueryBuilderTest.hpp"
 #include "ResolveHostTest.hpp"
+#include "ShareTest.hpp"
 #include "SyncRequestTest.hpp"
 #include "TimesupTest.hpp"
 #include "TransferProgressRequest.hpp"

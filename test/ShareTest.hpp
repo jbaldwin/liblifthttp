@@ -8,7 +8,7 @@ TEST_CASE("Share Requests ALL")
 {
     auto lift_share_ptr = std::make_shared<lift::Share>(lift::ShareOptions::ALL);
 
-    for(std::size_t i = 0; i < 5; ++i) {
+    for (std::size_t i = 0; i < 5; ++i) {
         lift::Request request {
             "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
             std::chrono::seconds { 60 }
@@ -25,7 +25,7 @@ TEST_CASE("Share Requests NOTHING")
 {
     auto lift_share_ptr = std::make_shared<lift::Share>(lift::ShareOptions::NOTHING);
 
-    for(std::size_t i = 0; i < 5; ++i) {
+    for (std::size_t i = 0; i < 5; ++i) {
         lift::Request request {
             "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
             std::chrono::seconds { 60 }

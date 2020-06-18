@@ -20,10 +20,9 @@ Share::Share(
     curl_share_setopt(m_curl_share_ptr, CURLSHOPT_UNLOCKFUNC, curl_share_unlock);
     curl_share_setopt(m_curl_share_ptr, CURLSHOPT_USERDATA, this);
 
-    if(share_options == ShareOptions::NOTHING) {
+    if (share_options == ShareOptions::NOTHING) {
         curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_NONE);
-    }
-    else {
+    } else {
         if (static_cast<uint64_t>(share_options) & static_cast<uint64_t>(ShareOptions::DNS)) {
             curl_share_setopt(m_curl_share_ptr, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
         }

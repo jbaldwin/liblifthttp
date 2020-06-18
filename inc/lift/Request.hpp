@@ -223,6 +223,18 @@ public:
     auto MimeField(
         lift::MimeField mime_field) -> void;
 
+    /**
+     * https://en.wikipedia.org/wiki/Happy_Eyeballs
+     * @param timeout Sets the happy eyeballs algorithm timeout.
+     */
+    auto HappyEyeballsTimeout(
+        std::chrono::milliseconds timeout) -> void { m_happy_eyeballs_timeout = timeout; }
+
+    /**
+     * @return Gets the setting of the happy eyeballs timeout if set.
+     */
+    auto HappyEyeballsTimeout() const -> const std::optional<std::chrono::milliseconds>& { return m_happy_eyeballs_timeout; }
+
 private:
     /// The on complete handler callback.
     OnCompleteHandlerType m_on_complete_handler { nullptr };
@@ -258,6 +270,8 @@ private:
     /// The Mime request fields, mutually exclusive with POST request body data.
     bool m_mime_fields_set { false };
     std::vector<lift::MimeField> m_mime_fields {};
+    /// Happy eyeballs algorithm timeout https://curl.haxx.se/libcurl/c/CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS.html
+    std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout {};
 
     // libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(

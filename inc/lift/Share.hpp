@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <mutex>
 #include <memory>
+#include <mutex>
 
 #include <curl/curl.h>
 
@@ -25,6 +25,7 @@ enum class ShareOptions : uint64_t {
 
 class Share {
     friend Executor;
+
 public:
     /**
      * @param share_options The specific items to share between requests.
@@ -36,7 +37,7 @@ public:
     Share(const Share&) = delete;
     Share(Share&&) = delete;
     auto operator=(const Share&) noexcept -> Share& = delete;
-    auto operator=(Share &&) noexcept -> Share& = delete;
+    auto operator=(Share&&) noexcept -> Share& = delete;
 
 private:
     CURLSH* m_curl_share_ptr { curl_share_init() };

@@ -28,7 +28,7 @@ Executor::Executor(
     : m_request_sync(request)
     , m_request(m_request_sync)
 {
-    if(share != nullptr) {
+    if (share != nullptr) {
         m_curl_share_handle = share->m_curl_share_ptr;
     }
 }
@@ -51,7 +51,7 @@ auto Executor::startAsync(
 {
     m_request_async = std::move(request_ptr);
     m_request = m_request_async.get();
-    if(share != nullptr) {
+    if (share != nullptr) {
         m_curl_share_handle = share->m_curl_share_ptr;
     }
 }
@@ -255,6 +255,10 @@ auto Executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 0L);
     } else {
         curl_easy_setopt(m_curl_handle, CURLOPT_NOPROGRESS, 1L);
+    }
+
+    if (const auto& timeout = m_request->HappyEyeballsTimeout(); timeout.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS, static_cast<long>(timeout.value().count()));
     }
 
     // Note that this will lock the mutexes in the share callbacks.

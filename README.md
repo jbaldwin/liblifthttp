@@ -94,13 +94,13 @@ int main()
     CMake
     make or ninja
     pthreads
-    libcurl-devel
+    libcurl-devel >= 7.59
     libuv-devel
     zlib-devel
+    openssl-devel (or equivalent curl support ssl library)
     stdc++fs
 
     Tested on:
-        ubuntu:18.04
         ubuntu:20.04
         fedora:31
 

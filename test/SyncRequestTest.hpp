@@ -2,6 +2,7 @@
 
 #include "catch.hpp"
 
+#include <chrono>
 #include <lift/Lift.hpp>
 
 TEST_CASE("Synchronous 200")
@@ -81,4 +82,16 @@ TEST_CASE("Multiple headers added")
     }
 
     REQUIRE(count_found == 5);
+}
+
+TEST_CASE("Happy Eyeballs Test")
+{
+    using namespace std::chrono_literals;
+    lift::Request request { "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/" };
+    request.HappyEyeballsTimeout(0ms);
+
+    const auto& response = request.Perform();
+
+    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
+    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
 }

@@ -209,7 +209,7 @@ public:
      * @param verify_ssl_status Should the SSL/TLS certificate status be checked?
      */
     auto VerifySslStatus(
-        bool verify_ssl_satus) -> void { m_verify_ssl_status = verify_ssl_satus; }
+        bool verify_ssl_status) -> void { m_verify_ssl_status = verify_ssl_status; }
 
     /**
      * @return Is the SSL/TLS certificate status be checked?
@@ -225,7 +225,7 @@ public:
     /**
      * @return The SSL/TLS certificate file being used.
      */
-    auto SslCert() const -> const std::optional<std::filesystem::path>& { return m_cert_file; };
+    auto SslCert() const -> const std::optional<std::filesystem::path>& { return m_cert_file; }
 
     /**
      * @param type The SSL/TLS certificate type.
@@ -239,7 +239,7 @@ public:
     auto SslCertType() const -> const std::optional<SslCertificateType>& { return m_ssl_cert_type; }
 
     /**
-     * @param key The SSL/TLS key file to use.
+     * @param key_file The SSL/TLS key file to use.
      */
     auto SslKey(
         std::filesystem::path key_file) -> void { m_ssl_key_file = std::move(key_file); }

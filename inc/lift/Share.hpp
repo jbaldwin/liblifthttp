@@ -19,6 +19,13 @@ enum class ShareOptions : uint64_t {
     SSL = 1 << 2,
     /// Share Data pipeline'ing across requests.
     DATA = 1 << 3,
+
+    /// Share DNS with SSL.
+    DNS_SSL = (DNS + SSL),
+    /// Share DNS with Data.
+    DNS_DATA = (DNS + DATA),
+    /// Share SSL with Data.
+    SSL_DATA = (SSL + DATA),
     /// Share all available types.
     ALL = (DNS + SSL + DATA)
 };

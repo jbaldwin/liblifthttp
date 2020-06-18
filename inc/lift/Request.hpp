@@ -19,6 +19,14 @@ namespace lift {
 class EventLoop;
 class Executor;
 
+enum class SslCertificateType {
+    PEM,
+    DER
+};
+
+auto to_string(
+    SslCertificateType type) -> const std::string&;
+
 class Request {
     friend EventLoop;
     friend Executor;
@@ -131,34 +139,131 @@ public:
     auto Url(
         std::string url) -> void { m_url = std::move(url); }
 
+    /**
+     * @return The HTTP method this request will use.
+     */
     auto Method() const -> http::Method { return m_method; }
+
+    /**
+     * @param method The HTTP method this request should use.
+     */
     auto Method(
         http::Method method) -> void { m_method = method; }
 
+    /**
+     * @return The HTTP version this request will use.
+     */
     auto Version() const -> http::Version { return m_version; }
+
+    /**
+     * @param version The HTTP version this request should use.
+     */
     auto Version(
         http::Version version) -> void { m_version = version; }
 
+    /**
+     * @return Is the HTTP request automatically following redirects?
+     */
     auto FollowRedirects() const -> bool { return m_follow_redirects; }
+
+    /**
+     * @return If following HTTP redirects, what is the maximum allowed to follow?
+     */
     auto MaxRedirects() const -> int64_t { return m_max_redirects; }
+
     /**
      * Sets if this request should follow redirects.  By default following redirects is
      * enabled.
      * @param follow_redirects True to follow redirects, false to stop.
-     * @param max_redirects The maximum number of redirects to follow, -1 is infinite, 0 is none.
+     * @param max_redirects The maximum number of redirects to follow, if not provided then infinite.
      */
     auto FollowRedirects(
         bool follow_redirects,
-        int64_t max_redirects = -1) -> void;
+        std::optional<uint64_t> max_redirects = std::nullopt) -> void;
 
+    /**
+     * @return Is the peer SSL/TLS verified?
+     */
     auto VerifySslPeer() const -> bool { return m_verify_ssl_peer; }
+
+    /**
+     * This feature defaults to enabled.
+     * @param verify_ssl_peer Should the SSl/TLS peer be verified?
+     */
     auto VerifySslPeer(
         bool verify_ssl_peer) -> void { m_verify_ssl_peer = verify_ssl_peer; }
 
+    /**
+     * This feature defaultes to enabled.
+     * @return Is the SSL/TLS host verified?
+     */
     auto VerifySslHost() const -> bool { return m_verify_ssl_host; }
+
+    /**
+     * @param verify_ssl_host Should the SSL/TLS host be verified?
+     */
     auto VerifySslHost(
         bool verify_ssl_host) -> void { m_verify_ssl_host = verify_ssl_host; }
 
+    /**
+     * @param verify_ssl_status Should the SSL/TLS certificate status be checked?
+     */
+    auto VerifySslStatus(
+        bool verify_ssl_satus) -> void { m_verify_ssl_status = verify_ssl_satus; }
+
+    /**
+     * @return Is the SSL/TLS certificate status be checked?
+     */
+    auto VerifySslStatus() const -> bool { return m_verify_ssl_status; }
+
+    /**
+     * @param cert_file The SSL/TLS certificate file to use.
+     */
+    auto SslCert(
+        std::filesystem::path cert_file) -> void { m_cert_file = std::move(cert_file); }
+
+    /**
+     * @return The SSL/TLS certificate file being used.
+     */
+    auto SslCert() const -> const std::optional<std::filesystem::path>& { return m_cert_file; };
+
+    /**
+     * @param type The SSL/TLS certificate type.
+     */
+    auto SslCertType(
+        SslCertificateType type) -> void { m_ssl_cert_type = type; }
+
+    /**
+     * @return The SSL/TSL certificate type being used.
+     */
+    auto SslCertType() const -> const std::optional<SslCertificateType>& { return m_ssl_cert_type; }
+
+    /**
+     * @param key The SSL/TLS key file to use.
+     */
+    auto SslKey(
+        std::filesystem::path key_file) -> void { m_ssl_key_file = std::move(key_file); }
+
+    /**
+     * @return The SSL/TLS key file being used.
+     */
+    auto SslKey() const -> const std::optional<std::filesystem::path>& { return m_ssl_key_file; }
+
+    /**
+     * @param password The pass phrase for the private key.
+     */
+    auto KeyPassword(
+        std::string password) -> void { m_password = std::move(password); }
+
+    /**
+     * @return The pass phrase for the private key.
+     */
+    auto KeyPassword() const -> const std::optional<std::string>& { return m_password; }
+
+    /**
+     * @return The list of currently set HTTP Accept-Encoding values.  Note that if set via
+     *         `AcceptEndcodingAllAvaliable()` this function will return an empty list.
+     */
     auto AcceptEncodings() const -> const std::optional<std::vector<std::string>>& { return m_accept_encodings; }
     /**
      * IMPORTANT: Using this is mutually exclusive with adding your own Accept-Encoding header.
@@ -172,9 +277,20 @@ public:
      */
     auto AcceptEncodingAllAvailable() -> void { m_accept_encodings = std::vector<std::string> {}; }
 
+    /**
+     * @return Custom `host:port => ip_addr` resolve hosts for this request.
+     */
     auto ResolveHosts() const -> const std::vector<lift::ResolveHost>& { return m_resolve_hosts; }
+
+    /**
+     * @param resolve_host Adds a resolve host to this request to bypass DNS lookups.
+     */
     auto ResolveHost(
         lift::ResolveHost resolve_host) -> void { m_resolve_hosts.emplace_back(std::move(resolve_host)); }
+
+    /**
+     * Clears all set resolve hosts on this request.
+     */
     auto ClearResolveHosts() -> void { m_resolve_hosts.clear(); }
 
     /**
@@ -205,7 +321,11 @@ public:
      */
     auto ClearHeaders() -> void { m_request_headers.clear(); }
 
+    /**
+     * @return The HTTP body data for this request, if it was never set this will be an empty string.
+     */
     auto Data() const -> const std::string& { return m_request_data; }
+
     /**
      * Sets the request to HTTP POST and the body of the request
      * to the provided data.  Override the method after this call to PUT if desired.
@@ -219,7 +339,14 @@ public:
     auto Data(
         std::string data) -> void;
 
+    /**
+     * @return The set mime fields for this request.
+     */
     auto MimeFields() const -> const std::vector<lift::MimeField>& { return m_mime_fields; }
+
+    /**
+     * @param mime_field Adds this mime field to this mime HTTP request.
+     */
     auto MimeField(
         lift::MimeField mime_field) -> void;
 
@@ -258,6 +385,16 @@ private:
     bool m_verify_ssl_peer { true };
     /// Should the host be ssl verified?
     bool m_verify_ssl_host { true };
+    /// Should the ssl certificate status be verified?
+    bool m_verify_ssl_status { false };
+    /// The SSL/TLS certificate file to use.
+    std::optional<std::filesystem::path> m_cert_file {};
+    /// The SSL/TLS certificate type.
+    std::optional<SslCertificateType> m_ssl_cert_type {};
+    /// The SSL/TLS key file.
+    std::optional<std::filesystem::path> m_ssl_key_file {};
+    /// The SSL/TLS key file's pass phrase.
+    std::optional<std::string> m_password {};
     /// Specific Accept-Encoding header fields.
     std::optional<std::vector<std::string>> m_accept_encodings {};
     /// A set of host:port to ip addresses that will be resolved before DNS.

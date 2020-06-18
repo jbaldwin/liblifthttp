@@ -95,3 +95,8 @@ TEST_CASE("Happy Eyeballs Test")
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
 }
+
+TEST_CASE("SSL functions")
+{
+    // TODO, some of these require files.
+}

@@ -140,18 +140,39 @@ auto Executor::prepare() -> void
         }
     }
 
-    // Timesup is handled when injecting into the CURLM* event loop for asynchronous requests.
+    // Connection timeout is handled when injecting into the CURLM* event loop for asynchronous requests.
 
-    long curl_value = (m_request->FollowRedirects()) ? 1L : 0L;
-    curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, curl_value);
-    curl_easy_setopt(m_curl_handle, CURLOPT_MAXREDIRS, static_cast<long>(m_request->MaxRedirects()));
+    if (m_request->FollowRedirects()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(m_curl_handle, CURLOPT_MAXREDIRS, static_cast<long>(m_request->MaxRedirects()));
+    } else {
+        curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 0L);
+    }
 
     // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, (m_request->VerifySslPeer()) ? 1L : 0L);
-
     // Note that 1L is valid, but curl docs say its basically deprecated.
     // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYHOST.html
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYHOST, (m_request->VerifySslHost()) ? 2L : 0L);
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYSTATUS.html
+    curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYSTATUS, (m_request->VerifySslStatus()) ? 1L : 0L);
+
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSLCERT.html
+    if (const auto& cert = m_request->SslCert(); cert.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_SSLCERT, cert.value().c_str());
+    }
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSLCERTTYPE.html
+    if (const auto& cert_type = m_request->SslCertType(); cert_type.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_SSLCERTTYPE, to_string(cert_type.value()).data());
+    }
+    // https://curl.haxx.se/libcurl/c/CURLOPT_SSLKEY.html
+    if (const auto& key = m_request->SslKey(); key.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_SSLKEY, key.value().c_str());
+    }
+    // https://curl.haxx.se/libcurl/c/CURLOPT_KEYPASSWD.html
+    if (const auto& password = m_request->KeyPassword(); password.has_value()) {
+        curl_easy_setopt(m_curl_handle, CURLOPT_KEYPASSWD, password.value().data());
+    }
 
     const auto& encodings = m_request->AcceptEncodings();
     if (encodings.has_value()) {

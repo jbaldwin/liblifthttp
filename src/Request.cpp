@@ -4,6 +4,24 @@
 
 namespace lift {
 
+using namespace std::string_literals;
+static const std::string SSL_CERT_TYPE_UNKNOWN = "UNKNOWN"s;
+static const std::string SSL_CERT_TYPE_PEM = "PEM"s;
+static const std::string SSL_CERT_TYPE_DER = "DER"s;
+
+auto to_string(
+    SslCertificateType type) -> const std::string&
+{
+    switch (type) {
+    case SslCertificateType::PEM:
+        return SSL_CERT_TYPE_PEM;
+    case SslCertificateType::DER:
+        return SSL_CERT_TYPE_DER;
+    default:
+        return SSL_CERT_TYPE_UNKNOWN;
+    }
+}
+
 Request::Request(
     std::string url,
     std::optional<std::chrono::milliseconds> timeout,
@@ -39,18 +57,20 @@ auto Request::TransferProgressHandler(
 
 auto Request::FollowRedirects(
     bool follow_redirects,
-    int64_t max_redirects) -> void
+    std::optional<uint64_t> max_redirects) -> void
 {
     if (follow_redirects) {
         m_follow_redirects = true;
-        if (max_redirects >= -1) {
-            m_max_redirects = max_redirects;
+        if (max_redirects.has_value()) {
+            m_max_redirects = max_redirects.value();
         } else {
-            // treat any negative number as -1 (infinite).
+            // curl uses -1 as infinite.
             m_max_redirects = -1;
         }
     } else {
         m_follow_redirects = false;
+        // curl uses 0 as no redirects.
+        m_max_redirects = 0;
     }
 }
 

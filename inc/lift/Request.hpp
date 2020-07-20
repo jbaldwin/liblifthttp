@@ -117,6 +117,11 @@ public:
         OnCompleteHandlerType on_complete_handler) -> void;
 
     /**
+     * @return The current on complete handler callback.
+     */
+    auto OnCompleteHandler() const -> const OnCompleteHandlerType& { return m_on_complete_handler; }
+
+    /**
      * Sets or unsets a transfer progress handler callback.  Called periodically to update the
      * application of the status of this requests in terms of uploaded bytes and downloaded bytes.
      * @param transfer_progress_handler If an empty optional then transfer progress callbacks are disabled,

@@ -24,6 +24,36 @@ enum class SslCertificateType {
     DER
 };
 
+enum class ProxyType {
+    HTTP,
+    HTTPS
+};
+
+enum class HttpAuthType {
+    /// Basic HTTP authentication, this is the default value.
+    BASIC,
+    /// Sets all available authentication methods and attempts to pick the most secure.
+    ANY,
+    /// Sets all available 'secure/safe' authentication methods.
+    ANY_SAFE
+    // TODO: Support setting individual http authentication methods.
+};
+
+struct ProxyData {
+    /// The type of HTTP proxy to connect to, HTTP or HTTPS.
+    ProxyType m_type;
+    /// The proxy hostname to connect to.
+    std::string m_host;
+    /// The proxy port to connect to.
+    uint32_t m_port{80};
+    /// The username for authentication with the proxy.
+    std::optional<std::string> m_username;
+    /// The password for authentication with the proxy.
+    std::optional<std::string> m_password;
+    /// The authentication type(s) to use for communication with the proxy, if not specified ANY is used.
+    std::optional<std::vector<HttpAuthType>> m_auth_types;
+};
+
 auto to_string(
     SslCertificateType type) -> const std::string&;
 
@@ -266,6 +296,49 @@ public:
     auto KeyPassword() const -> const std::optional<std::string>& { return m_password; }
 
     /**
+     * @return The proxy information for this request.
+     */
+    auto Proxy() const -> const std::optional<ProxyData>& { return m_proxy_data; }
+
+    /**
+     * Sets proxy information for this request.
+     * @param type The type of HTTP proxy to connect to, HTTP or HTTPS.
+     * @param host The proxy hostname to connect to.
+     * @param port The proxy port to connect to, default=80.
+     * @param username The username for authentication with the proxy, default=std::nullopt.
+     * @param password The password for authentication with the proxy, default=std::nullopt.
+     * @param auth_types The authentication type(s) to use for communication with the proxy.
+     *                   If not specified BASIC is used, default=std::nullopt (BASIC).
+     */
+    auto Proxy(
+        ProxyType type,
+        std::string host,
+        uint32_t port = 80,
+        std::optional<std::string> username = std::nullopt,
+        std::optional<std::string> password = std::nullopt,
+        std::optional<std::vector<HttpAuthType>> auth_types = std::nullopt) -> void
+    {
+        m_proxy_data = ProxyData{
+            type,
+            std::move(host),
+            port,
+            std::move(username),
+            std::move(password),
+            std::move(auth_types)
+        };
+    }
+
+    /**
+     * Sets proxy information for this request.
+     * @param data The full proxy data to set for this request, @see `ProxyData`.
+     */
+    auto Proxy(
+        ProxyData data) -> void
+    {
+        m_proxy_data = std::move(data);
+    }
+
+    /**
      * @return The list of currently set HTTP Accept-Encoding values.  Note that if set via
      *         `AcceptEndcodingAllAvaliable()` this function will return an empty list.
      */
@@ -400,6 +473,8 @@ private:
     std::optional<std::filesystem::path> m_ssl_key_file {};
     /// The SSL/TLS key file's pass phrase.
     std::optional<std::string> m_password {};
+    /// Proxy information.
+    std::optional<ProxyData> m_proxy_data {};
     /// Specific Accept-Encoding header fields.
     std::optional<std::vector<std::string>> m_accept_encodings {};
     /// A set of host:port to ip addresses that will be resolved before DNS.

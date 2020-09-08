@@ -350,6 +350,10 @@ auto Executor::copyCurlToResponse() -> void
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
     m_response.m_status_code = http::to_enum(static_cast<int32_t>(http_response_code));
 
+    long http_version = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_HTTP_VERSION, &http_version);
+    m_response.m_version = static_cast<http::Version>(http_version);
+
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
     // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.

@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <curl/curl.h>
+
 namespace lift::http {
 
 extern const std::string METHOD_UNKNOWN; // = "UNKNOWN"s;
@@ -40,13 +42,19 @@ extern const std::string VERSION_V2_0_TLS; //= "HTTP/2.0-TLS"s;
 extern const std::string VERSION_V2_0_ONLY; // = "HTTP/2.0-only"s;
 
 enum class Version {
-    UNKNOWN,
-    USE_BEST, ///< Use the best version available.
-    V1_0, ///< Use HTTP 1.0.
-    V1_1, ///< Use HTTP 1.1.
-    V2_0, ///< Attempt HTTP 2 requests but fallback to 1.1 on failure.
-    V2_0_TLS, ///< Attempt HTTP 2 over TLS (HTTPS) but fallback to 1.1 on failure.
-    V2_0_ONLY ///< Use HTTP 2.0 non-TLS with no fallback to 1.1.
+    UNKNOWN = -9999,
+    /// Use the best version available.
+    USE_BEST = CURL_HTTP_VERSION_NONE,
+    /// Use HTTP 1.0.
+    V1_0 = CURL_HTTP_VERSION_1_0,
+    /// Use HTTP 1.1.
+    V1_1 = CURL_HTTP_VERSION_1_1,
+    /// Attempt HTTP 2 requests but fallback to 1.1 on failure.
+    V2_0 = CURL_HTTP_VERSION_2_0,
+    /// Attempt HTTP 2 over TLS (HTTPS) but fallback to 1.1 on failure.
+    V2_0_TLS = CURL_HTTP_VERSION_2TLS,
+    /// Use HTTP 2.0 non-TLS with no fallback to 1.1.
+    V2_0_ONLY = CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE
 };
 
 auto to_string(

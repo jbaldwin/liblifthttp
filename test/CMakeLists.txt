@@ -10,6 +10,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     HeaderTest.hpp
     HttpTest.hpp
     MimeFieldTest.hpp
+    ProxyTest.hpp
     QueryBuilderTest.hpp
     ResolveHostTest.hpp
     ShareTest.hpp

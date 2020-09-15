@@ -10,6 +10,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <iostream>
 
 namespace lift {
 class EventLoop;
@@ -37,6 +38,11 @@ public:
      * @return Gets the request completion status.
      */
     [[nodiscard]] auto LiftStatus() const -> lift::LiftStatus { return m_lift_status; }
+
+    /**
+     * @return The HTTP version of the response.
+     */
+    auto Version() const -> http::Version { return m_version; }
 
     /**
      * @return The HTTP response status code.
@@ -68,6 +74,11 @@ public:
      */
     [[nodiscard]] auto NumRedirects() const -> uint64_t { return m_num_redirects; }
 
+    /**
+     * Formats the response in the raw HTTP format.
+     */
+    friend auto operator<<(std::ostream& os, const Response& r) -> std::ostream&;
+
 private:
     /// The status of this HTTP request.
     lift::LiftStatus m_lift_status { lift::LiftStatus::BUILDING };
@@ -75,6 +86,8 @@ private:
     std::vector<Header> m_headers {};
     /// The response data if any.
     std::string m_data {};
+    /// The HTTP response version.
+    http::Version m_version {http::Version::V1_1};
     /// The HTTP response status code.
     lift::http::StatusCode m_status_code { lift::http::StatusCode::HTTP_UNKNOWN };
     /// The total time in milliseconds to execute the request.

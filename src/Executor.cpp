@@ -174,6 +174,62 @@ auto Executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_KEYPASSWD, password.value().data());
     }
 
+    // Set proxy information for the requst if provided.
+    // https://curl.haxx.se/libcurl/c/CURLOPT_PROXY.html
+    if(m_request->Proxy().has_value())
+    {
+        auto& proxy_data = m_request->Proxy().value();
+
+        curl_easy_setopt(m_curl_handle, CURLOPT_PROXY, proxy_data.m_host.data());
+
+        switch(proxy_data.m_type)
+        {
+            case ProxyType::HTTPS:
+                curl_easy_setopt(m_curl_handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+                break;
+            case ProxyType::HTTP:
+            default:
+                curl_easy_setopt(m_curl_handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+                break;
+        }
+
+        curl_easy_setopt(m_curl_handle, CURLOPT_PROXYPORT, proxy_data.m_port);
+
+        if(proxy_data.m_username.has_value())
+        {
+            curl_easy_setopt(m_curl_handle, CURLOPT_PROXYUSERNAME, proxy_data.m_username.value().data());
+        }
+        if(proxy_data.m_password.has_value())
+        {
+            curl_easy_setopt(m_curl_handle, CURLOPT_PROXYPASSWORD, proxy_data.m_password.value().data());
+        }
+
+        if(proxy_data.m_auth_types.has_value())
+        {
+            int64_t auth_types{0};
+            for(const auto& auth_type : proxy_data.m_auth_types.value())
+            {
+                switch(auth_type)
+                {
+                    case HttpAuthType::BASIC:
+                        auth_types |= CURLAUTH_BASIC;
+                        break;
+                    case HttpAuthType::ANY:
+                        auth_types |= CURLAUTH_ANY;
+                        break;
+                    case HttpAuthType::ANY_SAFE:
+                        auth_types |= CURLAUTH_ANYSAFE;
+                        break;
+                }
+            }
+
+            if(auth_types != 0)
+            {
+                curl_easy_setopt(m_curl_handle, CURLOPT_PROXYAUTH, auth_types);
+            }
+        }
+    }
+
     const auto& encodings = m_request->AcceptEncodings();
     if (encodings.has_value()) {
         if (!encodings.value().empty()) {
@@ -293,6 +349,10 @@ auto Executor::copyCurlToResponse() -> void
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
     m_response.m_status_code = http::to_enum(static_cast<int32_t>(http_response_code));
+
+    long http_version = 0;
+    curl_easy_getinfo(m_curl_handle, CURLINFO_HTTP_VERSION, &http_version);
+    m_response.m_version = static_cast<http::Version>(http_version);
 
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);

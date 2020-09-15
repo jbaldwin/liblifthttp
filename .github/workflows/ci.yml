@@ -14,6 +14,8 @@ jobs:
         services:
             nginx:
                 image: nginx:stable
+            haproxy:
+                image: jbaldwindh/liblifthttp-automation-haproxy:0.1
         steps:
             -   name: Checkout
                 uses: actions/checkout@v2
@@ -31,7 +33,11 @@ jobs:
                         clang-9 \
                         zlib1g-dev \
                         libcurl4-openssl-dev \
-                        libuv1-dev
+                        libuv1-dev \
+                        curl
+            -   name: check-haproxy
+                run: |
+                    curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
             -   name: build-release-g++
                 run: |
                     mkdir build-release-g++
@@ -57,11 +63,13 @@ jobs:
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
-                    ctest -v
+                    ./test/liblifthttp_tests
+                    # ctest -v
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
-                    ctest -v
+                    ./test/liblifthttp_tests
+                    # ctest -v
     build-fedora-31:
         name: fedora-31
         runs-on: ubuntu-latest
@@ -70,6 +78,8 @@ jobs:
         services:
             nginx:
                 image: nginx:stable
+            haproxy:
+                image: jbaldwindh/liblifthttp-automation-haproxy:0.1
         steps:
             -   name: Checkout
                 uses: actions/checkout@v2
@@ -85,10 +95,14 @@ jobs:
                         zlib-devel \
                         libcurl-devel \
                         libuv-devel \
-                        iputils
+                        iputils \
+                        curl
             -   name: ping
                 run: |
                     ping -c1 nginx
+            -   name: check-haproxy
+                run: |
+                    curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
             -   name: build-debug-g++
                 run: |
                     mkdir build-debug-g++
@@ -126,11 +140,13 @@ jobs:
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
-                    ctest -v
+                    ./test/liblifthttp_tests
+                    # ctest -v
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
-                    ctest -v
+                    ./test/liblifthttp_tests
+                    # ctest -v
             -   name: Build coverage info
                 run: |
                     cd build-debug-g++

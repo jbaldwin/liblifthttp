@@ -316,18 +316,22 @@ class EventLoop
 template<typename Container>
 auto EventLoop::StartRequests(Container requests) -> bool
 {
-    if (m_is_stopping)
+    if (m_is_stopping.load(std::memory_order_acquire))
     {
         return false;
     }
 
-    m_active_request_count += std::size(requests);
+    m_active_request_count.fetch_add(std::size(requests), std::memory_order_relaxed);
 
     // Lock scope
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
         for (auto& request_ptr : requests)
         {
+            if(request_ptr == nullptr)
+            {
+                continue;
+            }
             m_pending_requests.emplace_back(std::move(request_ptr));
         }
     }

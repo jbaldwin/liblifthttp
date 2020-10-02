@@ -9,6 +9,7 @@ ResolveHost::ResolveHost(
     : m_resolve_host(std::move(resolve_host))
     , m_resolve_port(resolve_port)
     , m_resolved_ip_addr(std::move(resolved_ip_addr))
+    , m_curl_formatted()
 {
     constexpr size_t RESERVE_BYTES_PORT = 16; // ports are 2^16 which is maximum 5 bytes, this should do.
 

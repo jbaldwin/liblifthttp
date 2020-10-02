@@ -27,6 +27,7 @@ Executor::Executor(
     Share* share)
     : m_request_sync(request)
     , m_request(m_request_sync)
+    , m_response()
 {
     if (share != nullptr) {
         m_curl_share_handle = share->m_curl_share_ptr;

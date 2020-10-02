@@ -328,7 +328,7 @@ auto EventLoop::StartRequests(Container requests) -> bool
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
         for (auto& request_ptr : requests)
         {
-            if(request_ptr == nullptr)
+            if (request_ptr == nullptr)
             {
                 continue;
             }

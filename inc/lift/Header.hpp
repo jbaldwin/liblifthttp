@@ -3,29 +3,27 @@
 #include <string>
 #include <string_view>
 
-namespace lift {
-
+namespace lift
+{
 class Executor;
 
-class Header {
+class Header
+{
     friend Executor;
 
-public:
+  public:
     /**
      * Creates an owned header.
      * @param name The name of the header.
      * @param value The value of the header.
      */
-    explicit Header(
-        std::string_view name,
-        std::string_view value);
+    explicit Header(std::string_view name, std::string_view value);
 
     /**
      * Creates an owned header.
      * @param header_full The full "<name>: <value>" header field.
      */
-    explicit Header(
-        std::string header_full);
+    explicit Header(std::string header_full);
 
     /**
      * @return The entire header, e.g. "Connection: Keep-Alive"
@@ -38,7 +36,7 @@ public:
     [[nodiscard]] auto Name() const -> std::string_view
     {
         std::string_view name = m_header;
-        name = name.substr(0, m_colon_pos);
+        name                  = name.substr(0, m_colon_pos);
         return name;
     }
 
@@ -53,13 +51,13 @@ public:
         return value;
     }
 
-private:
+  private:
     /// The full header data.
-    std::string m_header {};
-    std::size_t m_colon_pos { 0 };
+    std::string m_header{};
+    std::size_t m_colon_pos{0};
 
     // Executor requires a char* to pass into the curlslist.
     [[nodiscard]] auto headerFull() -> std::string& { return m_header; }
 };
 
-} // lift
+} // namespace lift

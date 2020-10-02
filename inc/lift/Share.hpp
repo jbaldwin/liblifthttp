@@ -6,11 +6,12 @@
 
 #include <curl/curl.h>
 
-namespace lift {
-
+namespace lift
+{
 class Executor;
 
-enum class ShareOptions : uint64_t {
+enum class ShareOptions : uint64_t
+{
     /// Share nothing across requests.
     NOTHING = 0,
     /// Share DNS information across requests.
@@ -30,37 +31,30 @@ enum class ShareOptions : uint64_t {
     ALL = (DNS + SSL + DATA)
 };
 
-class Share {
+class Share
+{
     friend Executor;
 
-public:
+  public:
     /**
      * @param share_options The specific items to share between requests.
      */
-    Share(
-        ShareOptions share_options);
+    Share(ShareOptions share_options);
     ~Share();
 
     Share(const Share&) = delete;
-    Share(Share&&) = delete;
+    Share(Share&&)      = delete;
     auto operator=(const Share&) noexcept -> Share& = delete;
     auto operator=(Share&&) noexcept -> Share& = delete;
 
-private:
-    CURLSH* m_curl_share_ptr { curl_share_init() };
+  private:
+    CURLSH* m_curl_share_ptr{curl_share_init()};
 
-    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks {};
+    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};
 
-    friend auto curl_share_lock(
-        CURL* curl_ptr,
-        curl_lock_data data,
-        curl_lock_access access,
-        void* user_ptr) -> void;
+    friend auto curl_share_lock(CURL* curl_ptr, curl_lock_data data, curl_lock_access access, void* user_ptr) -> void;
 
-    friend auto curl_share_unlock(
-        CURL* curl_ptr,
-        curl_lock_data data,
-        void* user_ptr) -> void;
+    friend auto curl_share_unlock(CURL* curl_ptr, curl_lock_data data, void* user_ptr) -> void;
 };
 
 using SharePtr = std::shared_ptr<Share>;

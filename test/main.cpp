@@ -5,21 +5,22 @@
 
 #ifdef LIFT_LOCALHOST_TESTS
 static const std::string SERVICE_IP_ADDRESS = "127.0.0.1";
-static const std::string NGINX_HOSTNAME = "localhost";
-static const std::string HAPROXY_HOSTNAME = "localhost";
+static const std::string NGINX_HOSTNAME     = "localhost";
+static const std::string HAPROXY_HOSTNAME   = "localhost";
 #else
 // Note that this IP Address is asigned by github actions and is subject to change.
 static const std::string SERVICE_IP_ADDRESS = "172.18.0.3";
-static const std::string NGINX_HOSTNAME = "nginx";
-static const std::string HAPROXY_HOSTNAME = "haproxy";
+static const std::string NGINX_HOSTNAME     = "nginx";
+static const std::string HAPROXY_HOSTNAME   = "haproxy";
 #endif
 
-static const uint16_t NGINX_PORT = 80;
-static const std::string NGINX_PORT_STR = "80";
-static const uint32_t HAPROXY_PORT = 3128;
+static const uint16_t    NGINX_PORT       = 80;
+static const std::string NGINX_PORT_STR   = "80";
+static const uint32_t    HAPROXY_PORT     = 3128;
 static const std::string HAPROXY_PORT_STR = "3128";
 
-struct TestSetupInfo {
+struct TestSetupInfo
+{
     TestSetupInfo()
     {
         std::cout << "SERVICE_IP_ADDRESS = " << SERVICE_IP_ADDRESS << "\n";

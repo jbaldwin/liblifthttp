@@ -6,7 +6,7 @@
 
 TEST_CASE("MimeField field_value")
 {
-    lift::MimeField mime { "name", std::string { "value" } };
+    lift::MimeField mime{"name", std::string{"value"}};
 
     REQUIRE(mime.Name() == "name");
     REQUIRE(std::holds_alternative<std::string>(mime.Value()));
@@ -16,7 +16,7 @@ TEST_CASE("MimeField field_value")
 
 TEST_CASE("MimeField field_filepath")
 {
-    lift::MimeField mime { "name2", std::filesystem::path { "/var/log/lift.log" } };
+    lift::MimeField mime{"name2", std::filesystem::path{"/var/log/lift.log"}};
 
     REQUIRE(mime.Name() == "name2");
     REQUIRE(std::holds_alternative<std::filesystem::path>(mime.Value()));
@@ -26,10 +26,10 @@ TEST_CASE("MimeField field_filepath")
 
 TEST_CASE("MimeField added to Request")
 {
-    lift::MimeField mime1 { "name1", std::string { "value" } };
-    lift::MimeField mime2 { "name2", std::filesystem::path { "/var/log/lift.log" } };
+    lift::MimeField mime1{"name1", std::string{"value"}};
+    lift::MimeField mime2{"name2", std::filesystem::path{"/var/log/lift.log"}};
 
-    lift::Request request { "http://derp.com" };
+    lift::Request request{"http://derp.com"};
 
     request.MimeField(std::move(mime1));
     request.MimeField(std::move(mime2));

@@ -8,24 +8,26 @@
 #include <uv.h>
 
 #include <chrono>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
-namespace lift {
+namespace lift
+{
 class EventLoop;
 class Executor;
 
-class Response {
+class Response
+{
     friend EventLoop;
     friend Executor;
 
-public:
+  public:
     Response();
     ~Response() = default;
 
     Response(const Response&) = default;
-    Response(Response&&) = default;
+    Response(Response&&)      = default;
     auto operator=(const Response&) noexcept -> Response& = default;
     auto operator=(Response&&) noexcept -> Response& = default;
 
@@ -79,53 +81,43 @@ public:
      */
     friend auto operator<<(std::ostream& os, const Response& r) -> std::ostream&;
 
-private:
+  private:
     /// The status of this HTTP request.
-    lift::LiftStatus m_lift_status { lift::LiftStatus::BUILDING };
+    lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
     /// The response headers.
-    std::vector<Header> m_headers {};
+    std::vector<Header> m_headers{};
     /// The response data if any.
-    std::string m_data {};
+    std::string m_data{};
     /// The HTTP response version.
-    http::Version m_version {http::Version::V1_1};
+    http::Version m_version{http::Version::V1_1};
     /// The HTTP response status code.
-    lift::http::StatusCode m_status_code { lift::http::StatusCode::HTTP_UNKNOWN };
+    lift::http::StatusCode m_status_code{lift::http::StatusCode::HTTP_UNKNOWN};
     /// The total time in milliseconds to execute the request.
-    std::chrono::milliseconds m_total_time { 0 };
+    std::chrono::milliseconds m_total_time{0};
     /// The number of times attempted to connect to the remote server.
-    uint64_t m_num_connects { 0 };
+    uint64_t m_num_connects{0};
     /// The number of redirects traversed while processing the request.
-    uint64_t m_num_redirects { 0 };
+    uint64_t m_num_redirects{0};
 
     /// libcurl will call this function when a header is received for the HTTP request.
-    friend auto curl_write_header(
-        char* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
+    friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;
 
     /// libcurl will call this function when data is received for the HTTP request.
-    friend auto curl_write_data(
-        void* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
+    friend auto curl_write_data(void* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;
 
     /// libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(
-        void* clientp,
+        void*      clientp,
         curl_off_t download_total_bytes,
         curl_off_t download_now_bytes,
         curl_off_t upload_total_bytes,
         curl_off_t upload_now_bytes) -> int;
 
     /// libuv will call this function when the StartRequest() function is called.
-    friend auto on_uv_requests_accept_async(
-        uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
     /// For Timesup.
-    friend auto on_uv_timesup_callback(
-        uv_timer_t* handle) -> void;
+    friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };
 
 } // namespace lift

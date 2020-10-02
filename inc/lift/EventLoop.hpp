@@ -17,16 +17,17 @@
 #include <thread>
 #include <vector>
 
-namespace lift {
-
+namespace lift
+{
 class CurlContext;
 using CurlContextPtr = std::unique_ptr<CurlContext>;
 
-class EventLoop {
+class EventLoop
+{
     friend CurlContext;
     friend Executor;
 
-public:
+  public:
     // libuv uses simple uint64_t values for millisecond steady clocks.
     using TimePoint = uint64_t;
 
@@ -43,16 +44,16 @@ public:
      * @param share_ptr Should separate event loops share connection information?
      */
     explicit EventLoop(
-        std::optional<uint64_t> reserve_connections = std::nullopt,
-        std::optional<uint64_t> max_connections = std::nullopt,
-        std::optional<std::chrono::milliseconds> connection_time = std::nullopt,
-        std::vector<ResolveHost> resolve_hosts = {},
-        SharePtr share_ptr = nullptr);
+        std::optional<uint64_t>                  reserve_connections = std::nullopt,
+        std::optional<uint64_t>                  max_connections     = std::nullopt,
+        std::optional<std::chrono::milliseconds> connection_time     = std::nullopt,
+        std::vector<ResolveHost>                 resolve_hosts       = {},
+        SharePtr                                 share_ptr           = nullptr);
 
     ~EventLoop();
 
     EventLoop(const EventLoop& copy) = delete;
-    EventLoop(EventLoop&& move) = delete;
+    EventLoop(EventLoop&& move)      = delete;
     auto operator=(const EventLoop& copy_assign) noexcept -> EventLoop& = delete;
     auto operator=(EventLoop&& move_assign) noexcept -> EventLoop& = delete;
 
@@ -86,8 +87,7 @@ public:
      *                    will have its OnComplete() handler called
      *                    when its completed/error'ed/etc.
      */
-    auto StartRequest(
-        RequestPtr request_ptr) -> bool;
+    auto StartRequest(RequestPtr request_ptr) -> bool;
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
@@ -99,16 +99,18 @@ public:
      * @tparam Container A container of class RequestPtr.
      * @param requests The batch of requests to process.
      */
-    template <typename Container>
-    auto StartRequests(
-        Container requests) -> bool;
+    template<typename Container>
+    auto StartRequests(Container requests) -> bool;
 
     /**
      * Gets the background event loop's native thread id.  This will only be available after the
      * background thread has started, e.g. `IsRunning()` returns `true`.
      * @return std::thread::native_handle_type for the background event loop thread.
      */
-    [[nodiscard]] auto NativeThreadHandle() const -> const std::optional<std::atomic<std::thread::native_handle_type>>& { return m_native_handle; }
+    [[nodiscard]] auto NativeThreadHandle() const -> const std::optional<std::atomic<std::thread::native_handle_type>>&
+    {
+        return m_native_handle;
+    }
 
     /**
      * Gets the background event loop's native operating system thread id.  This will only be available
@@ -117,30 +119,30 @@ public:
      */
     [[nodiscard]] auto OperatingSystemThreadId() const -> const std::optional<std::atomic<pid_t>>& { return m_tid; }
 
-private:
+  private:
     /// Set to true if the EventLoop is currently running.
-    std::atomic<bool> m_is_running { false };
+    std::atomic<bool> m_is_running{false};
     /// Set to true if the EventLoop is currently shutting down.
-    std::atomic<bool> m_is_stopping { false };
+    std::atomic<bool> m_is_stopping{false};
     /// The active number of requests running.
-    std::atomic<uint64_t> m_active_request_count { 0 };
+    std::atomic<uint64_t> m_active_request_count{0};
 
     /// The UV event loop to drive libcurl.
-    uv_loop_t m_uv_loop {};
+    uv_loop_t m_uv_loop{};
     /// The async trigger for injecting new requests into the event loop.
-    uv_async_t m_uv_async {};
+    uv_async_t m_uv_async{};
     /// libcurl requires a single timer to drive internal timeouts/wake-ups.
-    uv_timer_t m_uv_timer_curl {};
+    uv_timer_t m_uv_timer_curl{};
     /// If set, the amount of time connections are allowed to connect, this can be
     /// longer than the timeout of the request.
-    std::optional<std::chrono::milliseconds> m_connection_time { std::nullopt };
+    std::optional<std::chrono::milliseconds> m_connection_time{std::nullopt};
     /// Timeout timer.
-    uv_timer_t m_uv_timer_timeout {};
+    uv_timer_t m_uv_timer_timeout{};
     /// The libcurl multi handle for driving multiple easy handles at once.
-    CURLM* m_cmh { curl_multi_init() };
+    CURLM* m_cmh{curl_multi_init()};
 
     /// Pending requests are safely queued via this lock.
-    std::mutex m_pending_requests_lock {};
+    std::mutex m_pending_requests_lock{};
     /**
      * Pending requests are stored in this vector until they are picked up on the next
      * uv loop iteration.  Any memory accesses to this object should first acquire the
@@ -150,33 +152,33 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<RequestPtr> m_pending_requests {};
+    std::vector<RequestPtr> m_pending_requests{};
     /// Only accessible from within the EventLoop thread.
-    std::vector<RequestPtr> m_grabbed_requests {};
+    std::vector<RequestPtr> m_grabbed_requests{};
 
     /// The background thread spawned to drive the event loop.
-    std::thread m_background_thread {};
+    std::thread m_background_thread{};
     /// The background thread operating system thread id.
-    std::optional<std::atomic<pid_t>> m_tid {};
+    std::optional<std::atomic<pid_t>> m_tid{};
     /// The background thread native handle type id (pthread_t).
-    std::optional<std::atomic<std::thread::native_handle_type>> m_native_handle {};
+    std::optional<std::atomic<std::thread::native_handle_type>> m_native_handle{};
 
     /// List of CurlContext objects to re-use for requests, cannot be initialized here due to CurlContext being private.
     std::deque<CurlContextPtr> m_curl_context_ready;
 
     /// Pool of Executors for running requests.
-    std::deque<std::unique_ptr<Executor>> m_executors {};
+    std::deque<std::unique_ptr<Executor>> m_executors{};
 
     /// The set of resolve hosts to apply to all requests in this event loop.
-    std::vector<lift::ResolveHost> m_resolve_hosts {};
+    std::vector<lift::ResolveHost> m_resolve_hosts{};
 
     /// When connection time is enabled on an event loop the curl timeout is the longer
     /// timeout value and these timeouts are the shorter value.
-    std::multimap<TimePoint, Executor*> m_timeouts {};
+    std::multimap<TimePoint, Executor*> m_timeouts{};
 
     /// If the event loop is provided a Share object then connection information like
     /// DNS/SSL/Data pipelining can be shared across event loops.
-    SharePtr m_share_ptr { nullptr };
+    SharePtr m_share_ptr{nullptr};
 
     /// The background thread runs from this function.
     auto run() -> void;
@@ -191,9 +193,7 @@ private:
      * @param socket The socket to check current actions on.
      * @param event_bitmask The type of action (IN|OUT|INOUT|ERR).
      */
-    auto checkActions(
-        curl_socket_t socket,
-        int event_bitmask) -> void;
+    auto checkActions(curl_socket_t socket, int event_bitmask) -> void;
 
     /**
      * Completes a request to pass ownership back to the user land.
@@ -202,16 +202,13 @@ private:
      * @param executor The request handle to complete.
      * @param status The status of the request when completing.
      */
-    auto completeRequestNormal(
-        Executor& executor,
-        LiftStatus status) -> void;
+    auto completeRequestNormal(Executor& executor, LiftStatus status) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.
      * @param executor The request to timeout.
      */
-    auto completeRequestTimeout(
-        Executor& executor) -> void;
+    auto completeRequestTimeout(Executor& executor) -> void;
 
     /**
      * Adds the request with the appropriate timeout.
@@ -223,16 +220,14 @@ private:
      *      timeout is set on the EventLoop
      * If no timeout exists nothing is set (infinite -- and could hang).
      */
-    auto addTimeout(
-        Executor& executor) -> void;
+    auto addTimeout(Executor& executor) -> void;
 
     /**
      * Removes the timeout from the EventLoop timer information.
      * Connection time can still fire from curl but the request's
      * on complete handler won't be called.
      */
-    auto removeTimeout(
-        Executor& executor) -> std::multimap<uint64_t, Executor*>::iterator;
+    auto removeTimeout(Executor& executor) -> std::multimap<uint64_t, Executor*>::iterator;
 
     /**
      * Updates the event loop timeout information.
@@ -240,8 +235,7 @@ private:
     auto updateTimeouts() -> void;
 
     auto acquireExecutor() -> std::unique_ptr<Executor>;
-    auto returnExecutor(
-        std::unique_ptr<Executor> executor_ptr) -> void;
+    auto returnExecutor(std::unique_ptr<Executor> executor_ptr) -> void;
 
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
@@ -253,10 +247,7 @@ private:
      * @param timeout_ms The timeout duration in milliseconds.
      * @param user_data This is a pointer to this EventLoop object.
      */
-    friend auto curl_start_timeout(
-        CURLM* cmh,
-        long timeout_ms,
-        void* user_data) -> void;
+    friend auto curl_start_timeout(CURLM* cmh, long timeout_ms, void* user_data) -> void;
 
     /**
      * This function is called by libcurl to handle socket actions and update each sockets
@@ -273,12 +264,8 @@ private:
      *                be a nullptr if this is a new request and will then be created.
      * @return Always returns zero.
      */
-    friend auto curl_handle_socket_actions(
-        CURL* curl,
-        curl_socket_t socket,
-        int action,
-        void* user_data,
-        void* socketp) -> int;
+    friend auto curl_handle_socket_actions(CURL* curl, curl_socket_t socket, int action, void* user_data, void* socketp)
+        -> int;
 
     /**
      * This function is called by uv_close() to say the handles resources are properly closed.
@@ -290,8 +277,7 @@ private:
      *
      * @param handle The handle that is being closed.
      */
-    friend auto uv_close_callback(
-        uv_handle_t* handle) -> void;
+    friend auto uv_close_callback(uv_handle_t* handle) -> void;
 
     /**
      * This function is called by libuv when the m_timeout_timer expires.
@@ -301,8 +287,7 @@ private:
      *
      * @param handle The timer object trigger, this will always be m_timeout_timer.
      */
-    friend auto on_uv_timeout_callback(
-        uv_timer_t* handle) -> void;
+    friend auto on_uv_timeout_callback(uv_timer_t* handle) -> void;
 
     /**
      * This function is called by libuv to call checkActions(socket, action) for a specific
@@ -313,10 +298,7 @@ private:
      *               e.g. IN|OUT.
      * @param events The poll items to register for, e.g. IN|OUT.
      */
-    friend auto on_uv_curl_perform_callback(
-        uv_poll_t* req,
-        int status,
-        int events) -> void;
+    friend auto on_uv_curl_perform_callback(uv_poll_t* req, int status, int events) -> void;
 
     /**
      * This function is called by libuv when the m_async is triggered with a new request.
@@ -326,18 +308,16 @@ private:
      *
      * @param handle The async object trigger, this will always be m_async.
      */
-    friend auto on_uv_requests_accept_async(
-        uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
-    friend auto on_uv_timesup_callback(
-        uv_timer_t* handle) -> void;
+    friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };
 
-template <typename Container>
-auto EventLoop::StartRequests(
-    Container requests) -> bool
+template<typename Container>
+auto EventLoop::StartRequests(Container requests) -> bool
 {
-    if (m_is_stopping) {
+    if (m_is_stopping)
+    {
         return false;
     }
 
@@ -346,7 +326,8 @@ auto EventLoop::StartRequests(
     // Lock scope
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
-        for (auto& request_ptr : requests) {
+        for (auto& request_ptr : requests)
+        {
             m_pending_requests.emplace_back(std::move(request_ptr));
         }
     }
@@ -357,4 +338,4 @@ auto EventLoop::StartRequests(
     return true;
 }
 
-} // lift
+} // namespace lift

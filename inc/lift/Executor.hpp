@@ -7,7 +7,8 @@
 
 #include <map>
 
-namespace lift {
+namespace lift
+{
 class Request;
 class EventLoop;
 
@@ -25,53 +26,53 @@ class EventLoop;
  * This class should never be used directly by the user of liblifthttp,
  * hence it has no public methods other than its destructor.
  */
-class Executor {
+class Executor
+{
     /// Allowed to create Executors and Timesup!
     friend EventLoop;
     /// Allowed to create Executors.
     friend Request;
 
-public:
+  public:
     Executor(const Executor&) = delete;
-    Executor(Executor&&) = delete;
+    Executor(Executor&&)      = delete;
     auto operator=(const Executor&) -> Executor& = delete;
     auto operator=(Executor &&) -> Executor& = delete;
     ~Executor();
 
-private:
+  private:
     /// The curl handle to execute against.
-    CURL* m_curl_handle { curl_easy_init() };
+    CURL* m_curl_handle{curl_easy_init()};
     /// The mime handle if present.
-    curl_mime* m_mime_handle { nullptr };
+    curl_mime* m_mime_handle{nullptr};
     /// The HTTP curl request headers.
-    curl_slist* m_curl_request_headers { nullptr };
+    curl_slist* m_curl_request_headers{nullptr};
     /// The HTTP curl resolve hosts.
-    curl_slist* m_curl_resolve_hosts { nullptr };
+    curl_slist* m_curl_resolve_hosts{nullptr};
     /// The curl share object to use for this request.
-    CURLSH* m_curl_share_handle { nullptr };
+    CURLSH* m_curl_share_handle{nullptr};
 
     /// If sync request the pointer to the request.
-    Request* m_request_sync { nullptr };
+    Request* m_request_sync{nullptr};
 
     /// If async request the event loop executing this request.
-    EventLoop* m_event_loop { nullptr };
+    EventLoop* m_event_loop{nullptr};
     /// If async request the pointer to the request.
-    RequestPtr m_request_async { nullptr };
+    RequestPtr m_request_async{nullptr};
     /// If the async request has a timeout set then this is the position to delete when completed.
-    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator { };
+    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator{};
     // Has the on complete callback been called already?
-    bool m_on_complete_callback_called { false };
+    bool m_on_complete_callback_called{false};
 
     /// Used internally to point at one of the sync or async requests.
-    Request* m_request { nullptr };
+    Request* m_request{nullptr};
 
     /// The HTTP response data.
     Response m_response{};
 
-    static auto make_unique(
-        EventLoop* event_loop) -> std::unique_ptr<Executor>
+    static auto make_unique(EventLoop* event_loop) -> std::unique_ptr<Executor>
     {
-        return std::unique_ptr<Executor>(new Executor { event_loop });
+        return std::unique_ptr<Executor>(new Executor{event_loop});
     }
 
     /**
@@ -79,24 +80,19 @@ private:
      * @param request The synchronous request pointer.
      * @param share Curl share handle to use for this request.
      */
-    Executor(
-        Request* request,
-        Share* share);
+    Executor(Request* request, Share* share);
 
     /**
      * This constructor is used for executing an asynchronous requests.
      * @param event_loop The event loop that will execute this request.
      */
-    Executor(
-        EventLoop* event_loop);
+    Executor(EventLoop* event_loop);
 
     /**
      * @param request_ptr The asynchronous request to execute.
      * @param share Curl share handle to use for this request.
      */
-    auto startAsync(
-        RequestPtr request_ptr,
-        Share* share) -> void;
+    auto startAsync(RequestPtr request_ptr, Share* share) -> void;
 
     /**
      * Synchronously performs the request and returns the Response.
@@ -120,8 +116,7 @@ private:
      * Sets the response object with appropriate times up values.
      * @param total_time The total time the request executed for.
      */
-    auto setTimesupResponse(
-        std::chrono::milliseconds total_time) -> void;
+    auto setTimesupResponse(std::chrono::milliseconds total_time) -> void;
 
     auto reset() -> void;
 
@@ -129,37 +124,26 @@ private:
      * Converts a CURLcode into a LiftStatus.
      * @param curl_code The CURLcode to convert.
      */
-    static auto convert(
-        CURLcode curl_code) -> LiftStatus;
+    static auto convert(CURLcode curl_code) -> LiftStatus;
 
     /// libcurl will call this function when a header is received for the HTTP request.
-    friend auto curl_write_header(
-        char* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
+    friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;
 
     /// libcurl will call this function when data is received for the HTTP request.
-    friend auto curl_write_data(
-        void* buffer,
-        size_t size,
-        size_t nitems,
-        void* user_ptr) -> size_t;
+    friend auto curl_write_data(void* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;
 
     /// libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(
-        void* clientp,
+        void*      clientp,
         curl_off_t download_total_bytes,
         curl_off_t download_now_bytes,
         curl_off_t upload_total_bytes,
         curl_off_t upload_now_bytes) -> int;
 
-    friend auto on_uv_requests_accept_async(
-        uv_async_t* handle) -> void;
+    friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
     /// For Timesup.
-    friend auto on_uv_timesup_callback(
-        uv_timer_t* handle) -> void;
+    friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };
 
 using ExecutorPtr = std::unique_ptr<Executor>;

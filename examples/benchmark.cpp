@@ -7,17 +7,13 @@
 #include <thread>
 #include <vector>
 
-static auto print_usage(
-    const std::string& program_name) -> void
+static auto print_usage(const std::string& program_name) -> void
 {
     std::cout << program_name << " <url> <duration_seconds> <connections> <threads>" << std::endl;
 }
 
-static auto print_stats(
-    std::chrono::seconds duration,
-    uint64_t threads,
-    uint64_t total_success,
-    uint64_t total_error) -> void
+static auto print_stats(std::chrono::seconds duration, uint64_t threads, uint64_t total_success, uint64_t total_error)
+    -> void
 {
     auto total = total_success + total_error;
     std::cout << "Thread Stats    Avg\n";
@@ -25,7 +21,8 @@ static auto print_stats(
 
     std::cout << "Global Stats\n";
     std::cout << "  " << total << " requests in " << duration.count() << "s\n";
-    if (total_error > 0) {
+    if (total_error > 0)
+    {
         std::cout << "  " << total_error << " errors\n";
     }
     std::cout << "  Req/sec: " << (total / static_cast<double>(duration.count())) << "\n";
@@ -33,7 +30,8 @@ static auto print_stats(
 
 int main(int argc, char* argv[])
 {
-    if (argc < 5) {
+    if (argc < 5)
+    {
         print_usage(argv[0]);
         return 0;
     }
@@ -41,28 +39,31 @@ int main(int argc, char* argv[])
     using namespace std::chrono_literals;
 
     std::string url(argv[1]);
-    auto duration = std::chrono::seconds { std::stoul(argv[2]) };
-    uint64_t connections = std::stoul(argv[3]);
-    uint64_t threads = std::stoul(argv[4]);
+    auto        duration    = std::chrono::seconds{std::stoul(argv[2])};
+    uint64_t    connections = std::stoul(argv[3]);
+    uint64_t    threads     = std::stoul(argv[4]);
 
-    std::atomic<uint64_t> success { 0 };
-    std::atomic<uint64_t> error { 0 };
+    std::atomic<uint64_t> success{0};
+    std::atomic<uint64_t> error{0};
 
     {
         std::vector<std::unique_ptr<lift::EventLoop>> loops;
-        for (uint64_t i = 0; i < threads; ++i) {
+        for (uint64_t i = 0; i < threads; ++i)
+        {
             auto event_loop_ptr = std::make_unique<lift::EventLoop>();
 
-            for (uint64_t j = 0; j < connections; ++j) {
+            for (uint64_t j = 0; j < connections; ++j)
+            {
                 auto& event_loop = *event_loop_ptr;
 
                 auto request_ptr = lift::Request::make_unique(
-                    url,
-                    1s,
-                    [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {
-                        if (response.LiftStatus() == lift::LiftStatus::SUCCESS) {
+                    url, 1s, [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {
+                        if (response.LiftStatus() == lift::LiftStatus::SUCCESS)
+                        {
                             ++success;
-                        } else {
+                        }
+                        else
+                        {
                             ++error;
                         }
 
@@ -80,7 +81,8 @@ int main(int argc, char* argv[])
 
         std::this_thread::sleep_for(duration);
 
-        for (auto& thread : loops) {
+        for (auto& thread : loops)
+        {
             thread->Stop();
         }
     }

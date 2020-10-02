@@ -60,11 +60,11 @@ int main(int argc, char* argv[])
                     url, 1s, [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {
                         if (response.LiftStatus() == lift::LiftStatus::SUCCESS)
                         {
-                            ++success;
+                            success.fetch_add(1, std::memory_order_relaxed);
                         }
                         else
                         {
-                            ++error;
+                            error.fetch_add(1, std::memory_order_relaxed);
                         }
 
                         // And request again until we are shutting down.

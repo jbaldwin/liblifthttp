@@ -135,7 +135,7 @@ EventLoop::EventLoop(
 
 EventLoop::~EventLoop()
 {
-    m_is_stopping = true;
+    m_is_stopping.exchange(true, std::memory_order_release);
 
     while (ActiveRequestCount() > 0)
     {
@@ -165,33 +165,33 @@ EventLoop::~EventLoop()
 
 auto EventLoop::IsRunning() -> bool
 {
-    return m_is_running;
+    return m_is_running.load(std::memory_order_acquire);
 }
 
 auto EventLoop::Stop() -> void
 {
-    m_is_stopping = true;
+    m_is_stopping.exchange(true, std::memory_order_release);
 }
 
 auto EventLoop::ActiveRequestCount() const -> uint64_t
 {
-    return m_active_request_count;
+    return m_active_request_count.load(std::memory_order_relaxed);
 }
 
 auto EventLoop::StartRequest(RequestPtr request_ptr) -> bool
 {
-    if (m_is_stopping)
-    {
-        return false;
-    }
-
     if (request_ptr == nullptr)
     {
         return false;
     }
 
+    if (m_is_stopping.load(std::memory_order_acquire))
+    {
+        return false;
+    }
+
     // Do this now so that the event loop takes into account 'pending' requests as well.
-    ++m_active_request_count;
+    m_active_request_count.fetch_add(1, std::memory_order_relaxed);
 
     {
         std::lock_guard<std::mutex> guard{m_pending_requests_lock};
@@ -212,9 +212,9 @@ auto EventLoop::run() -> void
      */
     m_native_handle = pthread_self();
 
-    m_is_running = true;
+    m_is_running.exchange(true, std::memory_order_release);
     uv_run(&m_uv_loop, UV_RUN_DEFAULT);
-    m_is_running = false;
+    m_is_running.exchange(false, std::memory_order_release);
 }
 
 auto EventLoop::checkActions() -> void
@@ -271,7 +271,7 @@ auto EventLoop::completeRequestNormal(Executor& executor, LiftStatus status) -> 
         }
     }
 
-    --m_active_request_count;
+    m_active_request_count.fetch_sub(1, std::memory_order_relaxed);
 }
 
 auto EventLoop::completeRequestTimeout(Executor& executor) -> void

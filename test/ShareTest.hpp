@@ -99,7 +99,7 @@ TEST_CASE("Share EventLoop overlapping requests")
             auto request_ptr = lift::Request::make_unique(
                 "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
                 std::chrono::seconds{5},
-                [&](std::unique_ptr<lift::Request>, lift::Response response) { ++count; });
+                [&](std::unique_ptr<lift::Request>, lift::Response response) { count.fetch_add(1, std::memory_order_relaxed); });
 
             event_loop.StartRequest(std::move(request_ptr));
         }

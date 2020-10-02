@@ -8,7 +8,7 @@
 TEST_CASE("Synchronous 200")
 {
     lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    const auto& response = request.Perform();
+    const auto&   response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
@@ -17,7 +17,7 @@ TEST_CASE("Synchronous 200")
 TEST_CASE("Synchronous 404")
 {
     lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/not/here");
-    const auto& response = request.Perform();
+    const auto&   response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_404_NOT_FOUND);
@@ -39,8 +39,10 @@ TEST_CASE("Synchronous custom headers")
     lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
     request.Header("x-custom-header-1", "custom-value-1");
 
-    for (const auto& header : request.Headers()) {
-        if (header.Name() == "x-custom-header-1") {
+    for (const auto& header : request.Headers())
+    {
+        if (header.Name() == "x-custom-header-1")
+        {
             REQUIRE(header.Value() == "custom-value-1");
         }
     }
@@ -62,20 +64,30 @@ TEST_CASE("Multiple headers added")
 
     std::size_t count_found = 0;
 
-    for (const auto& header : request.Headers()) {
-        if (header.Name() == "Connection") {
+    for (const auto& header : request.Headers())
+    {
+        if (header.Name() == "Connection")
+        {
             REQUIRE(header.Value() == "keep-alive");
             ++count_found;
-        } else if (header.Name() == "x-custom-header-1") {
+        }
+        else if (header.Name() == "x-custom-header-1")
+        {
             REQUIRE(header.Value() == "value1");
             ++count_found;
-        } else if (header.Name() == "x-custom-header-2") {
+        }
+        else if (header.Name() == "x-custom-header-2")
+        {
             REQUIRE(header.Value() == "value2");
             ++count_found;
-        } else if (header.Name() == "x-herp-derp") {
+        }
+        else if (header.Name() == "x-herp-derp")
+        {
             REQUIRE(header.Value() == "merp");
             ++count_found;
-        } else if (header.Name() == "x-420") {
+        }
+        else if (header.Name() == "x-420")
+        {
             REQUIRE(header.Value() == "blazeit");
             ++count_found;
         }
@@ -87,7 +99,7 @@ TEST_CASE("Multiple headers added")
 TEST_CASE("Happy Eyeballs Test")
 {
     using namespace std::chrono_literals;
-    lift::Request request { "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/" };
+    lift::Request request{"http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/"};
     request.HappyEyeballsTimeout(0ms);
 
     const auto& response = request.Perform();

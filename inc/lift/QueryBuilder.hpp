@@ -5,8 +5,8 @@
 #include <string_view>
 #include <vector>
 
-namespace lift {
-
+namespace lift
+{
 /**
  * The query builder is a simple url builder class to reduce string allocations
  * and copies.
@@ -20,8 +20,9 @@ namespace lift {
  * Note that the user is responsible for the lifetime of all string_view's
  * passed into the query builder.  They must be 'alive' until Build() is called.
  */
-class QueryBuilder {
-public:
+class QueryBuilder
+{
+  public:
     QueryBuilder() = default;
 
     /**
@@ -32,8 +33,7 @@ public:
      * @param scheme Examples are "http" or "https".
      * @return QueryBuilder
      */
-    auto Scheme(
-        std::string_view scheme) -> QueryBuilder&;
+    auto Scheme(std::string_view scheme) -> QueryBuilder&;
 
     /**
      * Sets the hostname for the url.
@@ -42,16 +42,14 @@ public:
      *                 sure it is already there.
      * @return QueryBuilder
      */
-    auto Hostname(
-        std::string_view hostname) -> QueryBuilder&;
+    auto Hostname(std::string_view hostname) -> QueryBuilder&;
 
     /**
      * Sets the port.
      * @param port The url port.
      * @return QueryBuidler
      */
-    auto Port(
-        uint16_t port) -> QueryBuilder&;
+    auto Port(uint16_t port) -> QueryBuilder&;
 
     /**
      * Adds a path part to the url.  Path parts shouldn't include '/' as the builder
@@ -65,8 +63,7 @@ public:
      * @param path_part The path part to add to the query.
      * @return QueryBuilder
      */
-    auto AppendPathPart(
-        std::string_view path_part) -> QueryBuilder&;
+    auto AppendPathPart(std::string_view path_part) -> QueryBuilder&;
 
     /**
      * Adds a query parameter to the url.
@@ -79,17 +76,14 @@ public:
      * @param value The unescaped value of the parameter.
      * @return QueryBuilder
      */
-    auto AppendQueryParameter(
-        std::string_view name,
-        std::string_view value) -> QueryBuilder&;
+    auto AppendQueryParameter(std::string_view name, std::string_view value) -> QueryBuilder&;
 
     /**
      * Sets the fragment for the url.
      * @param fragment #imafragment
      * @return QueryBuilder
      */
-    auto Fragment(
-        std::string_view fragment) -> QueryBuilder&;
+    auto Fragment(std::string_view fragment) -> QueryBuilder&;
 
     /**
      * This function will build the HTTP query string based on the provided
@@ -100,7 +94,7 @@ public:
      */
     auto Build() -> std::string;
 
-private:
+  private:
     /// A buffer for generating the url from its parts.
     std::stringstream m_query;
 
@@ -109,13 +103,11 @@ private:
     /// The url hostname.
     std::string_view m_hostname;
     /// The url port.
-    uint16_t m_port { 0 };
+    uint16_t m_port{0};
     /// The path parts in order.
     std::vector<std::string_view> m_path_parts;
     /// The query parameters (unescaped), they are escaped in Build().
-    std::vector<
-        std::pair<std::string_view, std::string_view>>
-        m_query_parameters;
+    std::vector<std::pair<std::string_view, std::string_view>> m_query_parameters;
     /// The url fragment.
     std::string_view m_fragment;
 
@@ -125,4 +117,4 @@ private:
     auto reset() -> void;
 };
 
-} // lift
+} // namespace lift

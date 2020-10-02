@@ -2,8 +2,8 @@
 
 #include <string>
 
-namespace lift {
-
+namespace lift
+{
 /**
  * This is the status of a request/response pair locally.  It does not
  * have anything in common with the http::StatusCode.  This will tell you
@@ -12,7 +12,8 @@ namespace lift {
  * completed!  Always check this value on the lift::Response before using
  * any other data.
  */
-enum class LiftStatus {
+enum class LiftStatus
+{
     /// The request is under construction.
     BUILDING,
     /// The request is being executed.
@@ -45,7 +46,6 @@ enum class LiftStatus {
  * @param status Convert the lift status to human readable string.
  * @return String representation of the status.
  */
-auto to_string(
-    LiftStatus status) -> const std::string&;
+auto to_string(LiftStatus status) -> const std::string&;
 
-} // lift
+} // namespace lift

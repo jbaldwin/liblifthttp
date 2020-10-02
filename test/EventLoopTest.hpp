@@ -6,11 +6,11 @@
 
 TEST_CASE("EventLoop Start event loop, then stop and add a request.")
 {
-    lift::EventLoop ev {};
+    lift::EventLoop ev{};
 
     auto request = lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
-        std::chrono::seconds { 60 },
+        std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
@@ -20,7 +20,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add a request.")
 
     request = lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
-        std::chrono::seconds { 60 },
+        std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
@@ -34,12 +34,12 @@ TEST_CASE("EventLoop Start event loop, then stop and add a request.")
 
 TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
 {
-    lift::EventLoop ev {};
+    lift::EventLoop ev{};
 
     std::vector<lift::RequestPtr> requests1;
     requests1.emplace_back(lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
-        std::chrono::seconds { 60 },
+        std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
@@ -48,7 +48,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
     std::vector<lift::RequestPtr> requests2;
     requests2.emplace_back(lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
-        std::chrono::seconds { 60 },
+        std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
             REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);

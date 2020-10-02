@@ -16,18 +16,18 @@ TEST_CASE("Proxy")
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
-    for(const auto& header : response.Headers())
+    for (const auto& header : response.Headers())
     {
-        if(header.Name() == "server")
+        if (header.Name() == "server")
         {
             REQUIRE(header.Value() == "nginx/1.18.0");
         }
-        else if(header.Name() == "content-length")
+        else if (header.Name() == "content-length")
         {
             uint64_t content_length = std::stoul(std::string{header.Value()});
             REQUIRE(content_length > 0);
         }
-        else if(header.Name() == "content-type")
+        else if (header.Name() == "content-type")
         {
             REQUIRE(header.Value() == "text/html");
         }
@@ -49,18 +49,18 @@ TEST_CASE("Proxy Basic Auth")
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
-    for(const auto& header : response.Headers())
+    for (const auto& header : response.Headers())
     {
-        if(header.Name() == "server")
+        if (header.Name() == "server")
         {
             REQUIRE(header.Value() == "nginx/1.18.0");
         }
-        else if(header.Name() == "content-length")
+        else if (header.Name() == "content-length")
         {
             uint64_t content_length = std::stoul(std::string{header.Value()});
             REQUIRE(content_length > 0);
         }
-        else if(header.Name() == "content-type")
+        else if (header.Name() == "content-type")
         {
             REQUIRE(header.Value() == "text/html");
         }
@@ -82,18 +82,18 @@ TEST_CASE("Proxy Any Auth")
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
     REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
-    for(const auto& header : response.Headers())
+    for (const auto& header : response.Headers())
     {
-        if(header.Name() == "server")
+        if (header.Name() == "server")
         {
             REQUIRE(header.Value() == "nginx/1.18.0");
         }
-        else if(header.Name() == "content-length")
+        else if (header.Name() == "content-length")
         {
             uint64_t content_length = std::stoul(std::string{header.Value()});
             REQUIRE(content_length > 0);
         }
-        else if(header.Name() == "content-type")
+        else if (header.Name() == "content-type")
         {
             REQUIRE(header.Value() == "text/html");
         }

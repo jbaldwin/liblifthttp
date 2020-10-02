@@ -44,14 +44,14 @@ public:
 
 private:
     /// The given input resolve host.
-    std::string m_resolve_host;
+    std::string m_resolve_host {};
     /// The given input resolve port.
-    uint16_t m_resolve_port;
+    uint16_t m_resolve_port {};
     /// The ip address to resolve the given host:port pair.
-    std::string m_resolved_ip_addr;
+    std::string m_resolved_ip_addr {};
 
     /// A curl formatted version of the host + port + resolved ip address.
-    std::string m_curl_formatted;
+    std::string m_curl_formatted {};
 
     /**
      * @return Gets the "host:port:ipaddress" curl formatted resolve host.

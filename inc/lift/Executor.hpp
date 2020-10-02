@@ -58,7 +58,7 @@ private:
     /// If async request the pointer to the request.
     RequestPtr m_request_async { nullptr };
     /// If the async request has a timeout set then this is the position to delete when completed.
-    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator;
+    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator { };
     // Has the on complete callback been called already?
     bool m_on_complete_callback_called { false };
 
@@ -66,7 +66,7 @@ private:
     Request* m_request { nullptr };
 
     /// The HTTP response data.
-    Response m_response;
+    Response m_response{};
 
     static auto make_unique(
         EventLoop* event_loop) -> std::unique_ptr<Executor>

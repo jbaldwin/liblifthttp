@@ -110,6 +110,7 @@ EventLoop::EventLoop(
     std::vector<ResolveHost> resolve_hosts,
     SharePtr share_ptr)
     : m_connection_time(std::move(connection_time))
+    , m_curl_context_ready()
     , m_resolve_hosts(std::move(resolve_hosts))
     , m_share_ptr(std::move(share_ptr))
 {
@@ -334,7 +335,7 @@ auto EventLoop::addTimeout(
 
             if (connection_time > timeout) {
                 auto now = uv_now(&m_uv_loop);
-                TimePoint time_point = now + timeout.count();
+                TimePoint time_point = now + static_cast<TimePoint>(timeout.count());
                 executor.m_timeout_iterator = m_timeouts.emplace(time_point, &executor);
 
                 updateTimeouts();
@@ -561,8 +562,6 @@ auto on_uv_requests_accept_async(
         event_loop->m_grabbed_requests.swap(
             event_loop->m_pending_requests);
     }
-
-    auto now = uv_now(&event_loop->m_uv_loop);
 
     for (auto& request_ptr : event_loop->m_grabbed_requests) {
         auto executor_ptr = event_loop->acquireExecutor();

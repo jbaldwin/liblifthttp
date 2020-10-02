@@ -56,7 +56,29 @@ endif()
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     target_compile_options(
         ${PROJECT_NAME} PRIVATE
-        -Wno-unknown-pragmas
+        -Wall
+        -Wextra
+        -Weffc++
+        # -Werror
+    )
+elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    target_compile_options(
+        ${PROJECT_NAME} PRIVATE
+        -Wall
+        -Wextra
+        -Weffc++
+        #-Werror
+        -Weverything
+        -Wpedantic
+        # -pedantic-errors
+        -Wno-c++98-compat
+        -Wno-c++98-compat-pedantic
+        -Wno-exit-time-destructors
+        -Wno-global-constructors
+        -Wno-padded
+        -Wno-switch-enum
+        -Wno-covered-switch-default
+        -Wno-disabled-macro-expansion
     )
 endif()
 

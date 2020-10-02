@@ -26,9 +26,9 @@ Request::Request(
     std::string url,
     std::optional<std::chrono::milliseconds> timeout,
     OnCompleteHandlerType on_complete_handler)
-    : m_url(std::move(url))
+    : m_on_complete_handler(std::move(on_complete_handler))
     , m_timeout(std::move(timeout))
-    , m_on_complete_handler(std::move(on_complete_handler))
+    , m_url(std::move(url))
 {
 }
 
@@ -62,7 +62,7 @@ auto Request::FollowRedirects(
     if (follow_redirects) {
         m_follow_redirects = true;
         if (max_redirects.has_value()) {
-            m_max_redirects = max_redirects.value();
+            m_max_redirects = static_cast<int64_t>(max_redirects.value());
         } else {
             // curl uses -1 as infinite.
             m_max_redirects = -1;

@@ -172,6 +172,9 @@ will use the hostname `nginx` setup in the CI settings.  After building and star
     # Or invoke directly to see error messages if tests are failing:
     ./test/liblifthttp_tests
 
+Note there are now proxy http requests that utilize an `haproxy` instance.  To run these locally you will also need
+to start an instance of `haproxy`.
+
 ## Benchmarks
 Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.  The benchmark is compared against `wrk` as that is basically optimal performance since
 `wrk` does zero parsing of the response whereas `lift` does.
@@ -180,22 +183,28 @@ Here is the CPU the benchmarks were run on:
 
     cat /proc/cpuinfo
     ...
-    Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+    Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz
 
-Here is how the benchmark application is called (similiar to `wrk`):
+Here is how the benchmark application is called:
 
-    $ ./examples/lift_benchmark
-    ./examples/lift_benchmark <url> <duration_seconds> <connections> <threads>
+    $ ./examples/lift_benchmark --help
+    Usage: ./examples/lift_benchmark<options> <url>
+        -c --connections  HTTP Connections to use.
+        -t --threads      Number of threads to use, connections are split
+                        evenly between each worker thread.
+        -d --duration     Duration of the test in seconds
+        -h --help         Print this help usage.
 
-Using `nginx` as the webserver with the default `ubuntu` configuration.
+Using `nginx` as the webserver with the default `fedora` configuration.
 
 | Connections | Threads | wrk Req/Sec | lift Req/Sec |
 |------------:|--------:|------------:|-------------:|
-| 1           | 1       | 28,093      | 18,009       |
-| 100         | 1       | 130,946     | 47,077       |
-| 100         | 2       | 165,981     | 73,181       |
-| 100         | 3       | 173,978     | 88,881       |
-| 100         | 4       | 171,778     | 96,355       |
+| 1           | 1       | 31,138      | 20,785       |
+| 100         | 1       | 148,121     | 44,393       |
+| 100         | 2       | 220,670     | 81,335       |
+| 100         | 3       | 241,839     | 104,747      |
+| 100         | 4       | 275,633     | 123,481      |
+| 100         | 8       | 249,845     | 143,911      |
 
 ## Support
 

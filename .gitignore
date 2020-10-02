@@ -1,8 +1,11 @@
 .idea/
 .vscode/
 /cmake-build-debug/
-/Release/
+/cmake-build-relwithdebinfo/
+/cmake-build-release/
 /Debug/
+/RelWithDebInfo/
+/Release/
 /build-debug-g++/
 /build-release-g++/
 /build-release-clang++/

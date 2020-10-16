@@ -22,7 +22,7 @@ static auto uv_type_cast(I* i) -> O*
 
 class CurlContext
 {
-  public:
+public:
     explicit CurlContext(EventLoop& event_loop) : m_event_loop(event_loop) { m_poll_handle.data = this; }
 
     ~CurlContext() = default;
@@ -61,7 +61,7 @@ class CurlContext
         curl_context->m_event_loop.m_curl_context_ready.emplace_back(curl_context);
     }
 
-  private:
+private:
     EventLoop&    m_event_loop;
     uv_poll_t     m_poll_handle{};
     curl_socket_t m_sock_fd{CURL_SOCKET_BAD};
@@ -84,10 +84,10 @@ auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 EventLoop::EventLoop(
     std::optional<uint64_t>                  reserve_connections,
     std::optional<uint64_t>                  max_connections,
-    std::optional<std::chrono::milliseconds> connection_time,
+    std::optional<std::chrono::milliseconds> connect_timeout,
     std::vector<ResolveHost>                 resolve_hosts,
     SharePtr                                 share_ptr)
-    : m_connection_time(std::move(connection_time)),
+    : m_connect_timeout(std::move(connect_timeout)),
       m_curl_context_ready(),
       m_resolve_hosts(std::move(resolve_hosts)),
       m_share_ptr(std::move(share_ptr))
@@ -293,7 +293,9 @@ auto EventLoop::completeRequestTimeout(Executor& executor) -> void
         // IMPORTANT! Copying here is required _OR_ shared ownership must be added as libcurl
         // maintains char* type pointers into the request data structure.  There is no guarantee
         // after moving into user land that it will stay alive long enough until curl finishes its
-        // own timeout.
+        // own timeout.  Shared ownership would most likely require locks as well since any curl
+        // handle still in the curl multi handle could be mutated by curl at any moment, copying
+        // seems far safer.
         auto copy_ptr = std::make_unique<Request>(*executor.m_request_async);
 
         on_complete_handler(std::move(copy_ptr), std::move(executor.m_response));
@@ -304,15 +306,25 @@ auto EventLoop::completeRequestTimeout(Executor& executor) -> void
 
 auto EventLoop::addTimeout(Executor& executor) -> void
 {
-    if (executor.m_request->Timeout().has_value())
+    auto* request = executor.m_request;
+    if (request->Timeout().has_value())
     {
         auto timeout = executor.m_request->Timeout().value();
 
-        if (m_connection_time.has_value())
+        std::optional<std::chrono::milliseconds> connect_timeout{std::nullopt};
+        if (request->ConnectTimeout().has_value())
         {
-            auto connection_time = m_connection_time.value();
+            // Prefer the individual connect timeout over the event loop default.
+            connect_timeout = request->ConnectTimeout().value();
+        }
+        else if (m_connect_timeout.has_value())
+        {
+            connect_timeout = m_connect_timeout;
+        }
 
-            if (connection_time > timeout)
+        if (connect_timeout.has_value())
+        {
+            if (connect_timeout.value() > timeout)
             {
                 auto      now               = uv_now(&m_uv_loop);
                 TimePoint time_point        = now + static_cast<TimePoint>(timeout.count());
@@ -321,7 +333,7 @@ auto EventLoop::addTimeout(Executor& executor) -> void
                 updateTimeouts();
 
                 curl_easy_setopt(
-                    executor.m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(connection_time.count()));
+                    executor.m_curl_handle, CURLOPT_TIMEOUT_MS, static_cast<long>(connect_timeout.value().count()));
             }
             else
             {

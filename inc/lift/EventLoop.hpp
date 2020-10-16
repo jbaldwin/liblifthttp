@@ -27,7 +27,7 @@ class EventLoop
     friend CurlContext;
     friend Executor;
 
-  public:
+public:
     // libuv uses simple uint64_t values for millisecond steady clocks.
     using TimePoint = uint64_t;
 
@@ -37,16 +37,21 @@ class EventLoop
      * @param max_connections The maximum number of connections this event loop should
      *                        hold open at any given time.  If exceeded the oldest connection
      *                        not in use will be removed.
-     * @param connection_time The amount of time new connections are allowed to setup the connection.
-     *                        This should always be larger than the timeout values set on individual
-     *                        requests
+     * @param connect_timeout The amount of time new connections are allowed to setup the connection.
+     *                        This value will be applied to every request that is executed through
+     *                        this event loop, but if the individual request has a connect timeout
+     *                        set on it then that value will be used instead.  Note that on individual
+     *                        requests this value should be less than the total timeout value, but on
+     *                        the event loop this should be larger than the total timeout, its a special
+     *                        feature to allow for long tail connects but very short requests once
+     *                        the keep-alive connection is established.
      * @param resolve_hosts A set of host:port combinations to bypass DNS resolving.
      * @param share_ptr Should separate event loops share connection information?
      */
     explicit EventLoop(
         std::optional<uint64_t>                  reserve_connections = std::nullopt,
         std::optional<uint64_t>                  max_connections     = std::nullopt,
-        std::optional<std::chrono::milliseconds> connection_time     = std::nullopt,
+        std::optional<std::chrono::milliseconds> connect_timeout     = std::nullopt,
         std::vector<ResolveHost>                 resolve_hosts       = {},
         SharePtr                                 share_ptr           = nullptr);
 
@@ -119,7 +124,7 @@ class EventLoop
      */
     [[nodiscard]] auto OperatingSystemThreadId() const -> const std::optional<std::atomic<pid_t>>& { return m_tid; }
 
-  private:
+private:
     /// Set to true if the EventLoop is currently running.
     std::atomic<bool> m_is_running{false};
     /// Set to true if the EventLoop is currently shutting down.
@@ -135,7 +140,7 @@ class EventLoop
     uv_timer_t m_uv_timer_curl{};
     /// If set, the amount of time connections are allowed to connect, this can be
     /// longer than the timeout of the request.
-    std::optional<std::chrono::milliseconds> m_connection_time{std::nullopt};
+    std::optional<std::chrono::milliseconds> m_connect_timeout{std::nullopt};
     /// Timeout timer.
     uv_timer_t m_uv_timer_timeout{};
     /// The libcurl multi handle for driving multiple easy handles at once.

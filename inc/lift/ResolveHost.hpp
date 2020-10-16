@@ -11,7 +11,7 @@ class ResolveHost
     /// For getCurlFormattedResolveHost().
     friend Executor;
 
-  public:
+public:
     /**
      * Sets a host and port combination to DNS resolve to the given IP Address.
      * @param resolve_host The host to resolve.
@@ -41,7 +41,7 @@ class ResolveHost
      */
     [[nodiscard]] auto IpAddr() const noexcept -> const std::string& { return m_resolved_ip_addr; }
 
-  private:
+private:
     /// The given input resolve host.
     std::string m_resolve_host{};
     /// The given input resolve port.

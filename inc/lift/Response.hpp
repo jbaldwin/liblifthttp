@@ -22,7 +22,7 @@ class Response
     friend EventLoop;
     friend Executor;
 
-  public:
+public:
     Response();
     ~Response() = default;
 
@@ -81,7 +81,7 @@ class Response
      */
     friend auto operator<<(std::ostream& os, const Response& r) -> std::ostream&;
 
-  private:
+private:
     /// The status of this HTTP request.
     lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
     /// The response headers.

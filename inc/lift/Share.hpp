@@ -35,7 +35,7 @@ class Share
 {
     friend Executor;
 
-  public:
+public:
     /**
      * @param share_options The specific items to share between requests.
      */
@@ -47,7 +47,7 @@ class Share
     auto operator=(const Share&) noexcept -> Share& = delete;
     auto operator=(Share&&) noexcept -> Share& = delete;
 
-  private:
+private:
     CURLSH* m_curl_share_ptr{curl_share_init()};
 
     std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};

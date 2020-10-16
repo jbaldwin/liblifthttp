@@ -22,7 +22,7 @@ namespace lift
  */
 class QueryBuilder
 {
-  public:
+public:
     QueryBuilder() = default;
 
     /**
@@ -94,7 +94,7 @@ class QueryBuilder
      */
     auto Build() -> std::string;
 
-  private:
+private:
     /// A buffer for generating the url from its parts.
     std::stringstream m_query;
 

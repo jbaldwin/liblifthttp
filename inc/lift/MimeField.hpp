@@ -8,7 +8,7 @@ namespace lift
 {
 class MimeField
 {
-  public:
+public:
     MimeField(std::string field_name, std::string field_value);
 
     /**
@@ -19,7 +19,7 @@ class MimeField
     auto Name() const -> const std::string& { return m_field_name; }
     auto Value() const -> const std::variant<std::string, std::filesystem::path>& { return m_field_value; }
 
-  private:
+private:
     std::string                                      m_field_name{};
     std::variant<std::string, std::filesystem::path> m_field_value{};
 };

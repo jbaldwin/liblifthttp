@@ -33,14 +33,14 @@ class Executor
     /// Allowed to create Executors.
     friend Request;
 
-  public:
+public:
     Executor(const Executor&) = delete;
     Executor(Executor&&)      = delete;
     auto operator=(const Executor&) -> Executor& = delete;
     auto operator=(Executor &&) -> Executor& = delete;
     ~Executor();
 
-  private:
+private:
     /// The curl handle to execute against.
     CURL* m_curl_handle{curl_easy_init()};
     /// The mime handle if present.

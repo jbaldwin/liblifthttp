@@ -65,7 +65,7 @@ class Request
     friend EventLoop;
     friend Executor;
 
-  public:
+public:
     /**
      * On complete handler callback signature.
      * @param request_ptr Passes ownership of the request back to the user of liblifthttp.
@@ -159,7 +159,31 @@ class Request
      */
     auto TransferProgressHandler(std::optional<TransferProgressHandlerType> transfer_progress_handler) -> void;
 
+    /**
+     * @return The amount of time for the request to connect, or std::nullopt signals the default, 300s.
+     */
+    auto ConnectTimeout() const -> const std::optional<std::chrono::milliseconds>& { return m_connect_timeout; }
+
+    /**
+     * This value for synchronous requests should be less than the total timeout value for the entire request.
+     * For requests run asynchronously through the event loop it can be longer for often repeated requests
+     * to allow for connections to establish but then require requests on keep-alive connections to timeout
+     * very quickly.
+     * @param connect_timeout The amount of time for the request to connect, or std::nullopt to use the default, 300s.
+     */
+    auto ConnectTimeout(std::optional<std::chrono::milliseconds> connect_timeout) -> void
+    {
+        m_connect_timeout = std::move(connect_timeout);
+    }
+
+    /**
+     * @return The amount of time for the request to complete, or std::nullopt if no timeout is set.
+     */
     auto Timeout() const -> const std::optional<std::chrono::milliseconds>& { return m_timeout; }
+
+    /**
+     * @param timeout The amount of time for the request to complete, or std::nullopt for no timeout.
+     */
     auto Timeout(std::optional<std::chrono::milliseconds> timeout) -> void { m_timeout = std::move(timeout); }
 
     /**
@@ -414,11 +438,13 @@ class Request
         return m_happy_eyeballs_timeout;
     }
 
-  private:
+private:
     /// The on complete handler callback.
     OnCompleteHandlerType m_on_complete_handler{nullptr};
     /// The transfer progress handler callback.
     TransferProgressHandlerType m_on_transfer_progress_handler{nullptr};
+    /// The timeout to connect, or none.
+    std::optional<std::chrono::milliseconds> m_connect_timeout{};
     /// The timeout for the request, or none.
     std::optional<std::chrono::milliseconds> m_timeout{};
     /// The timesup for the request, or none.

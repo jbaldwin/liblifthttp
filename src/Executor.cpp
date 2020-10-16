@@ -127,6 +127,14 @@ auto Executor::prepare() -> void
     // Asynchronous requests will handle timeouts on the event loop due to Connection Time.
     if (m_request_sync != nullptr)
     {
+        if (m_request->ConnectTimeout().has_value())
+        {
+            curl_easy_setopt(
+                m_curl_handle,
+                CURLOPT_CONNECTTIMEOUT_MS,
+                static_cast<long>(m_request->ConnectTimeout().value().count()));
+        }
+
         if (m_request->Timeout().has_value())
         {
             curl_easy_setopt(

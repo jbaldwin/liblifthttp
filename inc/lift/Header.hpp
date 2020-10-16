@@ -11,7 +11,7 @@ class Header
 {
     friend Executor;
 
-  public:
+public:
     /**
      * Creates an owned header.
      * @param name The name of the header.
@@ -51,7 +51,7 @@ class Header
         return value;
     }
 
-  private:
+private:
     /// The full header data.
     std::string m_header{};
     std::size_t m_colon_pos{0};

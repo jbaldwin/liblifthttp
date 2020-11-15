@@ -3,10 +3,6 @@
 
 int main()
 {
-    /**
-     * This file is to make sure that the example code in the README compiles correctly.
-     */
-
     // Synchronous requests can be created on the stack.
     lift::Request request{"http://www.example.com"};
     // This is the blocking synchronous HTTP call.

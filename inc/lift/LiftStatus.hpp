@@ -12,7 +12,7 @@ namespace lift
  * completed!  Always check this value on the lift::Response before using
  * any other data.
  */
-enum class LiftStatus
+enum class LiftStatus : uint8_t
 {
     /// The request is under construction.
     BUILDING,

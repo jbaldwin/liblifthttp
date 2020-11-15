@@ -17,7 +17,7 @@ auto operator<<(std::ostream& os, const Response& r) -> std::ostream&
         os << header.HeaderFull() << "\r\n";
     }
     os << "\r\n";
-    os << r.m_data;
+    os << std::string_view{r.m_data.data(), r.m_data.size()};
 
     return os;
 }

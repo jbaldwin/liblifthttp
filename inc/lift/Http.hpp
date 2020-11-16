@@ -16,7 +16,7 @@ extern const std::string METHOD_CONNECT; // = "CONNECT"s;
 extern const std::string METHOD_OPTIONS; // = "OPTIONS"s;
 extern const std::string METHOD_PATCH;   // = "PATCH"s;
 
-enum class Method
+enum class Method : uint8_t
 {
     UNKNOWN,
     GET,
@@ -41,9 +41,9 @@ extern const std::string VERSION_V2_0;      // = "HTTP/2.0"s;
 extern const std::string VERSION_V2_0_TLS;  //= "HTTP/2.0-TLS"s;
 extern const std::string VERSION_V2_0_ONLY; // = "HTTP/2.0-only"s;
 
-enum class Version
+enum class Version : uint8_t
 {
-    UNKNOWN = -9999,
+    UNKNOWN = 255,
     /// Use the best version available.
     USE_BEST = CURL_HTTP_VERSION_NONE,
     /// Use HTTP 1.0.
@@ -134,7 +134,7 @@ extern const std::string
 /**
  * https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
  */
-enum class StatusCode : int32_t
+enum class StatusCode : uint16_t
 {
     HTTP_UNKNOWN = 0,
 
@@ -271,7 +271,7 @@ extern const std::string CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED; // = "a
  * as many values as needed.  The design here is to reduce
  * string copies/manipulation.
  */
-enum class ContentType : uint64_t
+enum class ContentType : uint16_t
 {
     UNKNOWN,
 
@@ -324,7 +324,7 @@ extern const std::string CONNECTION_TYPE_CLOSE;      // = "close"s;
 extern const std::string CONNECTION_TYPE_KEEP_ALIVE; // = "keep-alive"s;
 extern const std::string CONNECTION_TYPE_UPGRADE;    // = "upgrade"s;
 
-enum class ConnectionType : uint64_t
+enum class ConnectionType : uint8_t
 {
     CLOSE,
     KEEP_ALIVE,

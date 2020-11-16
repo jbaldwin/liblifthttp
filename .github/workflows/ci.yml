@@ -63,13 +63,11 @@ jobs:
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
-                    ./test/liblifthttp_tests
-                    # ctest -v
+                    ctest -VV
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
-                    ./test/liblifthttp_tests
-                    # ctest -v
+                    ctest -VV
     build-fedora-31:
         name: fedora-31
         runs-on: ubuntu-latest
@@ -140,17 +138,15 @@ jobs:
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
-                    ./test/liblifthttp_tests
-                    # ctest -v
+                    ctest -VV
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
-                    ./test/liblifthttp_tests
-                    # ctest -v
+                    ctest -VV
             -   name: Build coverage info
                 run: |
                     cd build-debug-g++
-                    ctest -v
+                    ctest -VV
                     gcov -o ./test/CMakeFiles/liblifthttp_tests.dir/main.cpp.o ./test/liblifthttp_tests
                     lcov --include "*/inc/lift/*" --include "*/src/*" --exclude "test/*" -o liblifthttp_tests.info -c -d .
             -   name: Coveralls GitHub Action

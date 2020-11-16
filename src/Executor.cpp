@@ -394,22 +394,26 @@ auto Executor::copyCurlToResponse() -> void
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
     // std::duration defaults to seconds, so don't need to duration_cast total time to seconds.
-    m_response.m_total_time =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{total_time});
+    m_response.m_total_time = static_cast<uint32_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>{total_time}).count());
 
     long connect_count = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_NUM_CONNECTS, &connect_count);
-    m_response.m_num_connects = static_cast<uint64_t>(connect_count);
+    m_response.m_num_connects = (connect_count >= std::numeric_limits<uint8_t>::max())
+                                    ? std::numeric_limits<uint8_t>::max()
+                                    : static_cast<uint8_t>(connect_count);
 
     long redirect_count = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_REDIRECT_COUNT, &redirect_count);
-    m_response.m_num_redirects = static_cast<uint64_t>(redirect_count);
+    m_response.m_num_redirects = (redirect_count >= std::numeric_limits<uint8_t>::max())
+                                     ? std::numeric_limits<uint8_t>::max()
+                                     : static_cast<uint8_t>(redirect_count);
 }
 
 auto Executor::setTimesupResponse(std::chrono::milliseconds total_time) -> void
 {
     m_response.m_status_code   = lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT;
-    m_response.m_total_time    = total_time;
+    m_response.m_total_time    = static_cast<uint32_t>(total_time.count());
     m_response.m_num_connects  = 0;
     m_response.m_num_redirects = 0;
 }
@@ -520,7 +524,10 @@ auto curl_write_data(void* buffer, size_t size, size_t nitems, void* user_ptr) -
     auto&  response     = executor_ptr->m_response;
     size_t data_length  = size * nitems;
 
-    response.m_data.append(static_cast<const char*>(buffer), data_length);
+    std::copy(
+        static_cast<const char*>(buffer),
+        static_cast<const char*>(buffer) + data_length,
+        std::back_inserter(response.m_data));
 
     return data_length;
 }

@@ -59,22 +59,25 @@ public:
     /**
      * @return The HTTP download payload.
      */
-    [[nodiscard]] auto Data() const -> const std::string& { return m_data; }
+    [[nodiscard]] auto Data() const -> std::string_view { return std::string_view{m_data.data(), m_data.size()}; }
 
     /**
      * @return The total HTTP request time in milliseconds.
      */
-    [[nodiscard]] auto TotalTime() const -> std::chrono::milliseconds { return m_total_time; }
+    [[nodiscard]] auto TotalTime() const -> std::chrono::milliseconds
+    {
+        return std::chrono::milliseconds{m_total_time};
+    }
 
     /**
      * @return The number of connections made to make this request
      */
-    [[nodiscard]] auto NumConnects() const -> uint64_t { return m_num_connects; }
+    [[nodiscard]] auto NumConnects() const -> uint8_t { return m_num_connects; }
 
     /**
      * @return The number of redirects made during this request.
      */
-    [[nodiscard]] auto NumRedirects() const -> uint64_t { return m_num_redirects; }
+    [[nodiscard]] auto NumRedirects() const -> uint8_t { return m_num_redirects; }
 
     /**
      * Formats the response in the raw HTTP format.
@@ -82,22 +85,25 @@ public:
     friend auto operator<<(std::ostream& os, const Response& r) -> std::ostream&;
 
 private:
-    /// The status of this HTTP request.
-    lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
+    /// Ordered by sizeof() since response gets std::moved()'ed back to the client.
+
     /// The response headers.
     std::vector<Header> m_headers{};
     /// The response data if any.
-    std::string m_data{};
-    /// The HTTP response version.
-    http::Version m_version{http::Version::V1_1};
+    std::vector<char> m_data{};
+    /// The total time in milliseconds to execute the request, stored as uint32_t since that is enough
+    /// time for 49~ days and saves 4 bytes from std::chrono::milliseconds.
+    uint32_t m_total_time{0};
     /// The HTTP response status code.
     lift::http::StatusCode m_status_code{lift::http::StatusCode::HTTP_UNKNOWN};
-    /// The total time in milliseconds to execute the request.
-    std::chrono::milliseconds m_total_time{0};
+    /// The status of this HTTP request.
+    lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
+    /// The HTTP response version.
+    http::Version m_version{http::Version::V1_1};
     /// The number of times attempted to connect to the remote server.
-    uint64_t m_num_connects{0};
+    uint8_t m_num_connects{0};
     /// The number of redirects traversed while processing the request.
-    uint64_t m_num_redirects{0};
+    uint8_t m_num_redirects{0};
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;

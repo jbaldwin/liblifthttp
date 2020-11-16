@@ -99,7 +99,7 @@ public:
      * @param on_complete_handler For asynchronous requests provide this if you want to
      *                            know when the request completes with the Response information.
      */
-    Request(
+    explicit Request(
         std::string                              url,
         std::optional<std::chrono::milliseconds> timeout             = std::nullopt,
         OnCompleteHandlerType                    on_complete_handler = nullptr);

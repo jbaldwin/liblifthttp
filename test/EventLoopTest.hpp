@@ -58,3 +58,10 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
     ev.Stop();
     REQUIRE_FALSE(ev.StartRequests(std::move(requests2)));
 }
+
+TEST_CASE("EventLoop Provide nullptr request")
+{
+    lift::EventLoop ev{};
+
+    REQUIRE_FALSE(ev.StartRequest(nullptr));
+}

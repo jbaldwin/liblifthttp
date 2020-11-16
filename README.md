@@ -14,10 +14,10 @@ You're using curl? Do you even lift?
 **liblifthttp** is licensed under the Apache 2.0 license.
 
 ## Overview
-  * Easy to use Synchronous and Asynchronous HTTP Request APIs.
-  * Safe C++17 client library API, modern memory move semantics.
-  * Background IO thread(s) for sending and receiving Async HTTP requests.
-  * Request pooling for re-using HTTP requests and sharing of connection information.
+* Easy to use Synchronous and Asynchronous HTTP Request APIs.
+* Safe C++17 client library API, modern memory move semantics.
+* Background IO thread(s) for sending and receiving Async HTTP requests.
+* Request pooling for re-using HTTP requests and sharing of connection information.
 
 ## Usage
 

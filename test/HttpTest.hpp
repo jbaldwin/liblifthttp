@@ -27,7 +27,7 @@ TEST_CASE("HTTP Version to_string")
     REQUIRE(to_string(Version::V2_0) == VERSION_V2_0);
     REQUIRE(to_string(Version::V2_0_TLS) == VERSION_V2_0_TLS);
     REQUIRE(to_string(Version::V2_0_ONLY) == VERSION_V2_0_ONLY);
-    REQUIRE(to_string(static_cast<Version>(1025)) == VERSION_UNKNOWN);
+    REQUIRE(to_string(static_cast<Version>(255)) == VERSION_UNKNOWN);
 }
 
 TEST_CASE("HTTP StatusCode to_string")

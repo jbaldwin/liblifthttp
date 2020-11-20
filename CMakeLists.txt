@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.0)
 project(lifthttp CXX)
 
+# Set the githooks directory to auto format and update the readme.
+message("git config core.hooksPath .githooks")
+execute_process(
+    COMMAND git config core.hooksPath .githooks
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(LIFT_BUILD_EXAMPLES "Build the examples. Default=ON" ON)

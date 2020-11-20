@@ -1,4 +1,4 @@
-#include <lift/Lift.hpp>
+#include <lift/lift.hpp>
 
 #include <atomic>
 #include <chrono>

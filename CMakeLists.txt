@@ -29,21 +29,21 @@ message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
 message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 
 set(LIBLIFT_SOURCE_FILES
-    inc/lift/Const.hpp
-    inc/lift/Escape.hpp src/Escape.cpp
-    inc/lift/EventLoop.hpp src/EventLoop.cpp
-    inc/lift/Executor.hpp src/Executor.cpp
-    inc/lift/Header.hpp src/Header.cpp
-    inc/lift/Http.hpp src/Http.cpp
-    inc/lift/Init.hpp src/Init.cpp
-    inc/lift/Lift.hpp
-    inc/lift/LiftStatus.hpp src/LiftStatus.cpp
-    inc/lift/MimeField.hpp src/MimeField.cpp
-    inc/lift/QueryBuilder.hpp src/QueryBuilder.cpp
-    inc/lift/Request.hpp src/Request.cpp
-    inc/lift/ResolveHost.hpp src/ResolveHost.cpp
-    inc/lift/Response.hpp src/Response.cpp
-    inc/lift/Share.hpp src/Share.cpp
+    inc/lift/const.hpp
+    inc/lift/escape.hpp src/escape.cpp
+    inc/lift/event_loop.hpp src/event_loop.cpp
+    inc/lift/executor.hpp src/executor.cpp
+    inc/lift/header.hpp src/header.cpp
+    inc/lift/http.hpp src/http.cpp
+    inc/lift/init.hpp src/init.cpp
+    inc/lift/lift_status.hpp src/lift_status.cpp
+    inc/lift/lift.hpp
+    inc/lift/mime_field.hpp src/mime_field.cpp
+    inc/lift/query_builder.hpp src/query_builder.cpp
+    inc/lift/request.hpp src/request.cpp
+    inc/lift/resolve_host.hpp src/resolve_host.cpp
+    inc/lift/response.hpp src/response.cpp
+    inc/lift/share.hpp src/share.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIBLIFT_SOURCE_FILES})

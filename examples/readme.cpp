@@ -1,5 +1,5 @@
 #include <iostream>
-#include <lift/Lift.hpp>
+#include <lift/lift.hpp>
 
 int main()
 {

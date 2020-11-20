@@ -29,7 +29,7 @@ to get your started on using liblifthttp with both the synchronous and asynchron
 #### Synchronous and Asynchronous Requests
 ```C++
     #include <iostream>
-    #include <lift/Lift.hpp>
+    #include <lift/lift.hpp>
     
     int main()
     {

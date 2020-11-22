@@ -14,13 +14,13 @@
 
 namespace lift
 {
-class EventLoop;
-class Executor;
+class event_loop;
+class executor;
 
 class Response
 {
-    friend EventLoop;
-    friend Executor;
+    friend event_loop;
+    friend executor;
 
 public:
     Response();
@@ -44,17 +44,17 @@ public:
     /**
      * @return The HTTP version of the response.
      */
-    auto Version() const -> http::Version { return m_version; }
+    auto Version() const -> http::version { return m_version; }
 
     /**
      * @return The HTTP response status code.
      */
-    [[nodiscard]] auto StatusCode() const -> http::StatusCode { return m_status_code; }
+    [[nodiscard]] auto StatusCode() const -> http::status_code { return m_status_code; }
 
     /**
      * @return The HTTP response headers.
      */
-    [[nodiscard]] auto Headers() const -> const std::vector<Header>& { return m_headers; }
+    [[nodiscard]] auto Headers() const -> const std::vector<header>& { return m_headers; }
 
     /**
      * @return The HTTP download payload.
@@ -88,18 +88,18 @@ private:
     /// Ordered by sizeof() since response gets std::moved()'ed back to the client.
 
     /// The response headers.
-    std::vector<Header> m_headers{};
+    std::vector<header> m_headers{};
     /// The response data if any.
     std::vector<char> m_data{};
     /// The total time in milliseconds to execute the request, stored as uint32_t since that is enough
     /// time for 49~ days and saves 4 bytes from std::chrono::milliseconds.
     uint32_t m_total_time{0};
     /// The HTTP response status code.
-    lift::http::StatusCode m_status_code{lift::http::StatusCode::HTTP_UNKNOWN};
+    lift::http::status_code m_status_code{lift::http::status_code::http_unknown};
     /// The status of this HTTP request.
     lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
     /// The HTTP response version.
-    http::Version m_version{http::Version::V1_1};
+    http::version m_version{http::version::v1_1};
     /// The number of times attempted to connect to the remote server.
     uint8_t m_num_connects{0};
     /// The number of redirects traversed while processing the request.
@@ -119,7 +119,7 @@ private:
         curl_off_t upload_total_bytes,
         curl_off_t upload_now_bytes) -> int;
 
-    /// libuv will call this function when the StartRequest() function is called.
+    /// libuv will call this function when the start_request() function is called.
     friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
     /// For Timesup.

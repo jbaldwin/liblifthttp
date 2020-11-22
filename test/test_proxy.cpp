@@ -13,21 +13,21 @@ TEST_CASE("Proxy")
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     for (const auto& header : response.Headers())
     {
-        if (header.Name() == "server")
+        if (header.name() == "server")
         {
-            REQUIRE(header.Value() == "nginx/1.18.0");
+            REQUIRE(header.value() == "nginx/1.18.0");
         }
-        else if (header.Name() == "content-length")
+        else if (header.name() == "content-length")
         {
-            uint64_t content_length = std::stoul(std::string{header.Value()});
+            uint64_t content_length = std::stoul(std::string{header.value()});
             REQUIRE(content_length > 0);
         }
-        else if (header.Name() == "content-type")
+        else if (header.name() == "content-type")
         {
-            REQUIRE(header.Value() == "text/html");
+            REQUIRE(header.value() == "text/html");
         }
     }
 }
@@ -46,21 +46,21 @@ TEST_CASE("Proxy Basic Auth")
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     for (const auto& header : response.Headers())
     {
-        if (header.Name() == "server")
+        if (header.name() == "server")
         {
-            REQUIRE(header.Value() == "nginx/1.18.0");
+            REQUIRE(header.value() == "nginx/1.18.0");
         }
-        else if (header.Name() == "content-length")
+        else if (header.name() == "content-length")
         {
-            uint64_t content_length = std::stoul(std::string{header.Value()});
+            uint64_t content_length = std::stoul(std::string{header.value()});
             REQUIRE(content_length > 0);
         }
-        else if (header.Name() == "content-type")
+        else if (header.name() == "content-type")
         {
-            REQUIRE(header.Value() == "text/html");
+            REQUIRE(header.value() == "text/html");
         }
     }
 }
@@ -79,21 +79,21 @@ TEST_CASE("Proxy Any Auth")
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     for (const auto& header : response.Headers())
     {
-        if (header.Name() == "server")
+        if (header.name() == "server")
         {
-            REQUIRE(header.Value() == "nginx/1.18.0");
+            REQUIRE(header.value() == "nginx/1.18.0");
         }
-        else if (header.Name() == "content-length")
+        else if (header.name() == "content-length")
         {
-            uint64_t content_length = std::stoul(std::string{header.Value()});
+            uint64_t content_length = std::stoul(std::string{header.value()});
             REQUIRE(content_length > 0);
         }
-        else if (header.Name() == "content-type")
+        else if (header.name() == "content-type")
         {
-            REQUIRE(header.Value() == "text/html");
+            REQUIRE(header.value() == "text/html");
         }
     }
 }

@@ -13,7 +13,7 @@ TEST_CASE("Share Requests ALL")
         auto response = request.Perform(lift_share_ptr);
 
         REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-        REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+        REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     }
 }
 
@@ -28,24 +28,24 @@ TEST_CASE("Share Requests NOTHING")
         auto response = request.Perform(lift_share_ptr);
 
         REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-        REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+        REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     }
 }
 
-TEST_CASE("Share EventLoop synchronous")
+TEST_CASE("Share event_loop synchronous")
 {
     auto lift_share_ptr = std::make_shared<lift::Share>(lift::ShareOptions::ALL);
 
-    lift::EventLoop ev1{std::nullopt, std::nullopt, std::nullopt, std::vector<lift::ResolveHost>{}, lift_share_ptr};
+    lift::event_loop ev1{lift::event_loop::options{.share_ptr = lift_share_ptr}};
 
-    lift::EventLoop ev2{std::nullopt, std::nullopt, std::nullopt, std::vector<lift::ResolveHost>{}, lift_share_ptr};
+    lift::event_loop ev2{lift::event_loop::options{.share_ptr = lift_share_ptr}};
 
     auto request1 = lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         });
 
     auto request2 = lift::Request::make_unique(
@@ -53,23 +53,23 @@ TEST_CASE("Share EventLoop synchronous")
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         });
 
-    ev1.StartRequest(std::move(request1));
+    ev1.start_request(std::move(request1));
 
-    while (ev1.ActiveRequestCount() > 0)
+    while (!ev1.empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    ev2.StartRequest(std::move(request2));
+    ev2.start_request(std::move(request2));
 
-    ev1.Stop();
-    ev2.Stop();
+    ev1.stop();
+    ev2.stop();
 }
 
-TEST_CASE("Share EventLoop overlapping requests")
+TEST_CASE("Share event_loop overlapping requests")
 {
     std::atomic<uint64_t> count{0};
 
@@ -84,13 +84,8 @@ TEST_CASE("Share EventLoop overlapping requests")
     }
 
     auto worker_func = [&count, &lift_share]() {
-        static size_t   share_counter{0};
-        lift::EventLoop event_loop{
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::vector<lift::ResolveHost>{},
-            lift_share[share_counter++ % N_SHARE]};
+        static size_t    share_counter{0};
+        lift::event_loop el{lift::event_loop::options{.share_ptr = lift_share[share_counter++ % N_SHARE]}};
 
         for (size_t i = 0; i < N_REQUESTS; ++i)
         {
@@ -101,12 +96,11 @@ TEST_CASE("Share EventLoop overlapping requests")
                     count.fetch_add(1, std::memory_order_relaxed);
                 });
 
-            event_loop.StartRequest(std::move(request_ptr));
+            el.start_request(std::move(request_ptr));
         }
 
-        while (event_loop.ActiveRequestCount() > 0)
+        while (!el.empty())
         {
-            // std::cerr << "Active=" << event_loop.ActiveRequestCount() << "\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     };

@@ -19,7 +19,7 @@ int main()
 
         for (const auto& header : response.Headers())
         {
-            std::cout << header.Name() << ": " << header.Value() << "\n";
+            std::cout << header.name() << ": " << header.value() << "\n";
         }
     }
 

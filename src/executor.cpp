@@ -15,7 +15,7 @@ auto curl_xfer_info(
     curl_off_t upload_total_bytes,
     curl_off_t upload_now_bytes) -> int;
 
-Executor::Executor(Request* request, Share* share) : m_request_sync(request), m_request(m_request_sync), m_response()
+executor::executor(Request* request, Share* share) : m_request_sync(request), m_request(m_request_sync), m_response()
 {
     if (share != nullptr)
     {
@@ -23,17 +23,17 @@ Executor::Executor(Request* request, Share* share) : m_request_sync(request), m_
     }
 }
 
-Executor::Executor(EventLoop* event_loop) : m_event_loop(event_loop)
+executor::executor(event_loop* event_loop) : m_event_loop(event_loop)
 {
 }
 
-Executor::~Executor()
+executor::~executor()
 {
     reset();
     curl_easy_cleanup(m_curl_handle);
 }
 
-auto Executor::startAsync(RequestPtr request_ptr, Share* share) -> void
+auto executor::start_async(RequestPtr request_ptr, Share* share) -> void
 {
     m_request_async = std::move(request_ptr);
     m_request       = m_request_async.get();
@@ -43,7 +43,7 @@ auto Executor::startAsync(RequestPtr request_ptr, Share* share) -> void
     }
 }
 
-auto Executor::perform() -> Response
+auto executor::perform() -> Response
 {
     global_init();
 
@@ -51,14 +51,14 @@ auto Executor::perform() -> Response
 
     auto curl_error_code     = curl_easy_perform(m_curl_handle);
     m_response.m_lift_status = convert(curl_error_code);
-    copyCurlToResponse();
+    copy_curl_to_response();
 
     global_cleanup();
 
     return std::move(m_response);
 }
 
-auto Executor::prepare() -> void
+auto executor::prepare() -> void
 {
     curl_easy_setopt(m_curl_handle, CURLOPT_PRIVATE, this);
     curl_easy_setopt(m_curl_handle, CURLOPT_HEADERFUNCTION, curl_write_header);
@@ -71,54 +71,54 @@ auto Executor::prepare() -> void
 
     switch (m_request->Method())
     {
-        case http::Method::UNKNOWN: // default to GET on unknown/bad value.
+        case http::method::unknown: // default to GET on unknown/bad value.
             /* INTENTIONAL FALLTHROUGH */
-        case http::Method::GET:
+        case http::method::get:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTPGET, 1L);
             break;
-        case http::Method::HEAD:
+        case http::method::head:
             curl_easy_setopt(m_curl_handle, CURLOPT_NOBODY, 1L);
             break;
-        case http::Method::POST:
+        case http::method::post:
             curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
             break;
-        case http::Method::PUT:
+        case http::method::put:
             curl_easy_setopt(m_curl_handle, CURLOPT_PUT, 1L);
             break;
-        case http::Method::DELETE:
+        case http::method::delete_t:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
             break;
-        case http::Method::CONNECT:
+        case http::method::connect:
             curl_easy_setopt(m_curl_handle, CURLOPT_CONNECT_ONLY, 1L);
             break;
-        case http::Method::OPTIONS:
+        case http::method::options:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "OPTIONS");
             break;
-        case http::Method::PATCH:
+        case http::method::patch:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
             break;
     }
 
     switch (m_request->Version())
     {
-        case http::Version::UNKNOWN: // default to USE_BEST on unknown/bad value.
+        case http::version::unknown: // default to USE_BEST on unknown/bad value.
             /* INTENTIONAL FALLTHROUGH */
-        case http::Version::USE_BEST:
+        case http::version::use_best:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
             break;
-        case http::Version::V1_0:
+        case http::version::v1_0:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
             break;
-        case http::Version::V1_1:
+        case http::version::v1_1:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             break;
-        case http::Version::V2_0:
+        case http::version::v2_0:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
             break;
-        case http::Version::V2_0_TLS:
+        case http::version::v2_0_tls:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
             break;
-        case http::Version::V2_0_ONLY:
+        case http::version::v2_0_only:
             curl_easy_setopt(m_curl_handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
             break;
     }
@@ -289,7 +289,7 @@ auto Executor::prepare() -> void
 
     for (auto& header : m_request->m_request_headers)
     {
-        m_curl_request_headers = curl_slist_append(m_curl_request_headers, header.headerFull().data());
+        m_curl_request_headers = curl_slist_append(m_curl_request_headers, header.data().data());
     }
 
     if (m_curl_request_headers != nullptr)
@@ -381,7 +381,7 @@ auto Executor::prepare() -> void
     }
 }
 
-auto Executor::copyCurlToResponse() -> void
+auto executor::copy_curl_to_response() -> void
 {
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
@@ -389,7 +389,7 @@ auto Executor::copyCurlToResponse() -> void
 
     long http_version = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_HTTP_VERSION, &http_version);
-    m_response.m_version = static_cast<http::Version>(http_version);
+    m_response.m_version = static_cast<http::version>(http_version);
 
     double total_time = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_TOTAL_TIME, &total_time);
@@ -410,15 +410,15 @@ auto Executor::copyCurlToResponse() -> void
                                      : static_cast<uint8_t>(redirect_count);
 }
 
-auto Executor::setTimesupResponse(std::chrono::milliseconds total_time) -> void
+auto executor::set_timesup_response(std::chrono::milliseconds total_time) -> void
 {
-    m_response.m_status_code   = lift::http::StatusCode::HTTP_504_GATEWAY_TIMEOUT;
+    m_response.m_status_code   = lift::http::status_code::http_504_gateway_timeout;
     m_response.m_total_time    = static_cast<uint32_t>(total_time.count());
     m_response.m_num_connects  = 0;
     m_response.m_num_redirects = 0;
 }
 
-auto Executor::reset() -> void
+auto executor::reset() -> void
 {
     if (m_mime_handle != nullptr)
     {
@@ -453,7 +453,7 @@ auto Executor::reset() -> void
     curl_easy_reset(m_curl_handle);
 }
 
-auto Executor::convert(CURLcode curl_code) -> LiftStatus
+auto executor::convert(CURLcode curl_code) -> LiftStatus
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
@@ -483,7 +483,7 @@ auto Executor::convert(CURLcode curl_code) -> LiftStatus
 
 auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t
 {
-    auto*        executor_ptr = static_cast<Executor*>(user_ptr);
+    auto*        executor_ptr = static_cast<executor*>(user_ptr);
     auto&        response     = executor_ptr->m_response;
     const size_t data_length  = size * nitems;
 
@@ -520,7 +520,7 @@ auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr)
 
 auto curl_write_data(void* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t
 {
-    auto*  executor_ptr = static_cast<Executor*>(user_ptr);
+    auto*  executor_ptr = static_cast<executor*>(user_ptr);
     auto&  response     = executor_ptr->m_response;
     size_t data_length  = size * nitems;
 
@@ -539,7 +539,7 @@ auto curl_xfer_info(
     curl_off_t upload_total_bytes,
     curl_off_t upload_now_bytes) -> int
 {
-    const auto* executor_ptr = static_cast<const Executor*>(clientp);
+    const auto* executor_ptr = static_cast<const executor*>(clientp);
 
     if (executor_ptr != nullptr && executor_ptr->m_request->m_on_transfer_progress_handler != nullptr)
     {

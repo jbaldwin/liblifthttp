@@ -22,7 +22,7 @@ static auto user_data_on_complete(
 
 TEST_CASE("User data")
 {
-    lift::EventLoop event_loop{};
+    lift::event_loop el{};
 
     // Technically can hard code in this instance for the lambda captures, but to make it a bit
     // more like an example we'll include a unique "request_id" that gets captured as the user data.
@@ -33,7 +33,7 @@ TEST_CASE("User data")
     req1->OnCompleteHandler([request_id](lift::RequestPtr request, lift::Response response) {
         user_data_on_complete(std::move(request), std::move(response), request_id, 100.5);
     });
-    event_loop.StartRequest(std::move(req1));
+    el.start_request(std::move(req1));
 
     request_id = 2;
 
@@ -42,9 +42,9 @@ TEST_CASE("User data")
     req2->OnCompleteHandler([request_id](lift::RequestPtr request, lift::Response response) {
         user_data_on_complete(std::move(request), std::move(response), request_id, 1234.567);
     });
-    event_loop.StartRequest(std::move(req2));
+    el.start_request(std::move(req2));
 
-    while (event_loop.ActiveRequestCount() > 0)
+    while (!el.empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }

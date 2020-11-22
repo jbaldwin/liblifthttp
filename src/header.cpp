@@ -4,7 +4,7 @@
 
 namespace lift
 {
-Header::Header(std::string_view name, std::string_view value)
+header::header(std::string_view name, std::string_view value)
 {
     m_header.reserve(name.length() + value.length() + 2);
     m_header.append(name.data(), name.length());
@@ -14,7 +14,7 @@ Header::Header(std::string_view name, std::string_view value)
     m_colon_pos = name.length();
 }
 
-Header::Header(std::string header_full) : m_header(std::move(header_full))
+header::header(std::string header_full) : m_header(std::move(header_full))
 {
     m_colon_pos = m_header.find(":");
     // class assumes the two bytes ": " always exist, enforce that.

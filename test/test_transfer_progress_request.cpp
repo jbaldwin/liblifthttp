@@ -19,7 +19,7 @@ TEST_CASE("Transfer Progress synchronous")
 
     REQUIRE(handler_called > 0);
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("Download <N> bytes test synchronous")
@@ -50,5 +50,5 @@ TEST_CASE("Download <N> bytes test synchronous")
 
     // Its possible the test downloads the entire file before finishing, take the appropriate action.
     REQUIRE(response.LiftStatus() == ((should_failed) ? lift::LiftStatus::ERROR : lift::LiftStatus::SUCCESS));
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 }

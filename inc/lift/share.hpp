@@ -8,7 +8,7 @@
 
 namespace lift
 {
-class Executor;
+class executor;
 
 enum class ShareOptions : uint64_t
 {
@@ -33,7 +33,7 @@ enum class ShareOptions : uint64_t
 
 class Share
 {
-    friend Executor;
+    friend executor;
 
 public:
     /**

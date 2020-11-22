@@ -4,12 +4,12 @@
 
 namespace lift
 {
-class Executor;
+class executor;
 
 class ResolveHost
 {
     /// For getCurlFormattedResolveHost().
-    friend Executor;
+    friend executor;
 
 public:
     /**

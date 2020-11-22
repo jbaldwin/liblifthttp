@@ -32,8 +32,8 @@ Request::Request(
 
 auto Request::Perform(SharePtr share_ptr) -> Response
 {
-    Executor executor{this, share_ptr.get()};
-    return executor.perform();
+    executor exe{this, share_ptr.get()};
+    return exe.perform();
 }
 
 auto Request::OnCompleteHandler(OnCompleteHandlerType on_complete_handler) -> void
@@ -90,7 +90,7 @@ auto Request::Data(std::string data) -> void
 
     m_request_data_set = true;
     m_request_data     = std::move(data);
-    m_method           = http::Method::POST;
+    m_method           = http::method::post;
 }
 
 auto Request::MimeField(lift::MimeField mime_field) -> void

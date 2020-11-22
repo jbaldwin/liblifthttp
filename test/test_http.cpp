@@ -2,248 +2,242 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("HTTP Method to_string")
+TEST_CASE("HTTP method to_string")
 {
     using namespace lift::http;
-    REQUIRE(to_string(Method::GET) == METHOD_GET);
-    REQUIRE(to_string(Method::HEAD) == METHOD_HEAD);
-    REQUIRE(to_string(Method::POST) == METHOD_POST);
-    REQUIRE(to_string(Method::PUT) == METHOD_PUT);
-    REQUIRE(to_string(Method::DELETE) == METHOD_DELETE);
-    REQUIRE(to_string(Method::CONNECT) == METHOD_CONNECT);
-    REQUIRE(to_string(Method::OPTIONS) == METHOD_OPTIONS);
-    REQUIRE(to_string(Method::PATCH) == METHOD_PATCH);
-    REQUIRE(to_string(static_cast<Method>(1024)) == METHOD_UNKNOWN);
+    REQUIRE(to_string(method::get) == method_get);
+    REQUIRE(to_string(method::head) == method_head);
+    REQUIRE(to_string(method::post) == method_post);
+    REQUIRE(to_string(method::put) == method_put);
+    REQUIRE(to_string(method::delete_t) == method_delete);
+    REQUIRE(to_string(method::connect) == method_connect);
+    REQUIRE(to_string(method::options) == method_options);
+    REQUIRE(to_string(method::patch) == method_patch);
+    REQUIRE(to_string(method::unknown) == method_unknown);
+    REQUIRE(to_string(static_cast<method>(1024)) == method_unknown);
 }
 
-TEST_CASE("HTTP Version to_string")
+TEST_CASE("HTTP version to_string")
 {
     using namespace lift::http;
-    REQUIRE(to_string(Version::USE_BEST) == VERSION_USE_BEST);
-    REQUIRE(to_string(Version::V1_0) == VERSION_V1_0);
-    REQUIRE(to_string(Version::V1_1) == VERSION_V1_1);
-    REQUIRE(to_string(Version::V2_0) == VERSION_V2_0);
-    REQUIRE(to_string(Version::V2_0_TLS) == VERSION_V2_0_TLS);
-    REQUIRE(to_string(Version::V2_0_ONLY) == VERSION_V2_0_ONLY);
-    REQUIRE(to_string(static_cast<Version>(255)) == VERSION_UNKNOWN);
+    REQUIRE(to_string(version::use_best) == version_use_best);
+    REQUIRE(to_string(version::v1_0) == version_v1_0);
+    REQUIRE(to_string(version::v1_1) == version_v1_1);
+    REQUIRE(to_string(version::v2_0) == version_v2_0);
+    REQUIRE(to_string(version::v2_0_tls) == version_v2_0_tls);
+    REQUIRE(to_string(version::v2_0_only) == version_v2_0_only);
+    REQUIRE(to_string(version::unknown) == version_unknown);
+    REQUIRE(to_string(static_cast<version>(255)) == version_unknown);
 }
 
-TEST_CASE("HTTP StatusCode to_string")
+TEST_CASE("HTTP status_code to_string")
 {
+    // clang-format off
     using namespace lift::http;
-    REQUIRE(to_string(StatusCode::HTTP_UNKNOWN) == STATUS_CODE_HTTP_UNKNOWN);
-    REQUIRE(to_string(static_cast<StatusCode>(9001)) == STATUS_CODE_HTTP_UNKNOWN);
+    REQUIRE(to_string(status_code::http_unknown) == status_code_http_unknown);
+    REQUIRE(to_string(static_cast<status_code>(9001)) == status_code_http_unknown);
 
-    REQUIRE(to_string(StatusCode::HTTP_100_CONTINUE) == STATUS_CODE_HTTP_100_CONTINUE);
-    REQUIRE(to_string(StatusCode::HTTP_101_SWITCHING_PROTOCOLS) == STATUS_CODE_HTTP_101_SWITCHING_PROTOCOLS);
-    REQUIRE(to_string(StatusCode::HTTP_102_PROCESSING) == STATUS_CODE_HTTP_102_PROCESSING);
-    REQUIRE(to_string(StatusCode::HTTP_103_EARLY_HINTS) == STATUS_CODE_HTTP_103_EARLY_HINTS);
+    REQUIRE(to_string(status_code::http_100_continue) == status_code_http_100_continue);
+    REQUIRE(to_string(status_code::http_101_switching_protocols) == status_code_http_101_switching_protocols);
+    REQUIRE(to_string(status_code::http_102_processing) == status_code_http_102_processing);
+    REQUIRE(to_string(status_code::http_103_early_hints) == status_code_http_103_early_hints);
 
-    REQUIRE(to_string(StatusCode::HTTP_200_OK) == STATUS_CODE_HTTP_200_OK);
-    REQUIRE(to_string(StatusCode::HTTP_201_CREATED) == STATUS_CODE_HTTP_201_CREATED);
-    REQUIRE(to_string(StatusCode::HTTP_202_ACCEPTED) == STATUS_CODE_HTTP_202_ACCEPTED);
-    REQUIRE(
-        to_string(StatusCode::HTTP_203_NON_AUTHORITATIVE_INFORMATION) ==
-        STATUS_CODE_HTTP_203_NON_AUTHORITATIVE_INFORMATION);
-    REQUIRE(to_string(StatusCode::HTTP_204_NO_CONTENT) == STATUS_CODE_HTTP_204_NO_CONTENT);
-    REQUIRE(to_string(StatusCode::HTTP_205_RESET_CONTENT) == STATUS_CODE_HTTP_205_RESET_CONTENT);
-    REQUIRE(to_string(StatusCode::HTTP_206_PARTIAL_CONTENT) == STATUS_CODE_HTTP_206_PARTIAL_CONTENT);
-    REQUIRE(to_string(StatusCode::HTTP_207_MULTI_STATUS) == STATUS_CODE_HTTP_207_MULTI_STATUS);
-    REQUIRE(to_string(StatusCode::HTTP_208_ALREADY_REPORTED) == STATUS_CODE_HTTP_208_ALREADY_REPORTED);
-    REQUIRE(to_string(StatusCode::HTTP_226_IM_USED) == STATUS_CODE_HTTP_226_IM_USED);
+    REQUIRE(to_string(status_code::http_200_ok) == status_code_http_200_ok);
+    REQUIRE(to_string(status_code::http_201_created) == status_code_http_201_created);
+    REQUIRE(to_string(status_code::http_202_accepted) == status_code_http_202_accepted);
+    REQUIRE(to_string(status_code::http_203_non_authoritative_information) == status_code_http_203_non_authoritative_information);
+    REQUIRE(to_string(status_code::http_204_no_content) == status_code_http_204_no_content);
+    REQUIRE(to_string(status_code::http_205_reset_content) == status_code_http_205_reset_content);
+    REQUIRE(to_string(status_code::http_206_partial_content) == status_code_http_206_partial_content);
+    REQUIRE(to_string(status_code::http_207_multi_status) == status_code_http_207_multi_status);
+    REQUIRE(to_string(status_code::http_208_already_reported) == status_code_http_208_already_reported);
+    REQUIRE(to_string(status_code::http_226_im_used) == status_code_http_226_im_used);
 
-    REQUIRE(to_string(StatusCode::HTTP_300_MULTIPLE_CHOICES) == STATUS_CODE_HTTP_300_MULTIPLE_CHOICES);
-    REQUIRE(to_string(StatusCode::HTTP_301_MOVED_PERMANENTLY) == STATUS_CODE_HTTP_301_MOVED_PERMANENTLY);
-    REQUIRE(to_string(StatusCode::HTTP_302_FOUND) == STATUS_CODE_HTTP_302_FOUND);
-    REQUIRE(to_string(StatusCode::HTTP_303_SEE_OTHER) == STATUS_CODE_HTTP_303_SEE_OTHER);
-    REQUIRE(to_string(StatusCode::HTTP_304_NOT_MODIFIED) == STATUS_CODE_HTTP_304_NOT_MODIFIED);
-    REQUIRE(to_string(StatusCode::HTTP_305_USE_PROXY) == STATUS_CODE_HTTP_305_USE_PROXY);
-    REQUIRE(to_string(StatusCode::HTTP_306_SWITCH_PROXY) == STATUS_CODE_HTTP_306_SWITCH_PROXY);
-    REQUIRE(to_string(StatusCode::HTTP_307_TEMPORARY_REDIRECT) == STATUS_CODE_HTTP_307_TEMPORARY_REDIRECT);
-    REQUIRE(to_string(StatusCode::HTTP_308_PERMANENT_REDIRECT) == STATUS_CODE_HTTP_308_PERMANENT_REDIRECT);
+    REQUIRE(to_string(status_code::http_300_multiple_choices) == status_code_http_300_multiple_choices);
+    REQUIRE(to_string(status_code::http_301_moved_permanently) == status_code_http_301_moved_permanently);
+    REQUIRE(to_string(status_code::http_302_found) == status_code_http_302_found);
+    REQUIRE(to_string(status_code::http_303_see_other) == status_code_http_303_see_other);
+    REQUIRE(to_string(status_code::http_304_not_modified) == status_code_http_304_not_modified);
+    REQUIRE(to_string(status_code::http_305_use_proxy) == status_code_http_305_use_proxy);
+    REQUIRE(to_string(status_code::http_306_switch_proxy) == status_code_http_306_switch_proxy);
+    REQUIRE(to_string(status_code::http_307_temporary_redirect) == status_code_http_307_temporary_redirect);
+    REQUIRE(to_string(status_code::http_308_permanent_redirect) == status_code_http_308_permanent_redirect);
 
-    REQUIRE(to_string(StatusCode::HTTP_400_BAD_REQUEST) == STATUS_CODE_HTTP_400_BAD_REQUEST);
-    REQUIRE(to_string(StatusCode::HTTP_401_UNAUTHORIZED) == STATUS_CODE_HTTP_401_UNAUTHORIZED);
-    REQUIRE(to_string(StatusCode::HTTP_402_PAYMENT_REQUIRED) == STATUS_CODE_HTTP_402_PAYMENT_REQUIRED);
-    REQUIRE(to_string(StatusCode::HTTP_403_FORBIDDEN) == STATUS_CODE_HTTP_403_FORBIDDEN);
-    REQUIRE(to_string(StatusCode::HTTP_404_NOT_FOUND) == STATUS_CODE_HTTP_404_NOT_FOUND);
-    REQUIRE(to_string(StatusCode::HTTP_405_METHOD_NOT_ALLOWED) == STATUS_CODE_HTTP_405_METHOD_NOT_ALLOWED);
-    REQUIRE(to_string(StatusCode::HTTP_406_NOT_ACCEPTABLE) == STATUS_CODE_HTTP_406_NOT_ACCEPTABLE);
-    REQUIRE(
-        to_string(StatusCode::HTTP_407_PROXY_AUTHENTICATION_REQUIRED) ==
-        STATUS_CODE_HTTP_407_PROXY_AUTHENTICATION_REQUIRED);
-    REQUIRE(to_string(StatusCode::HTTP_408_REQUEST_TIMEOUT) == STATUS_CODE_HTTP_408_REQUEST_TIMEOUT);
-    REQUIRE(to_string(StatusCode::HTTP_409_CONFLICT) == STATUS_CODE_HTTP_409_CONFLICT);
-    REQUIRE(to_string(StatusCode::HTTP_410_GONE) == STATUS_CODE_HTTP_410_GONE);
-    REQUIRE(to_string(StatusCode::HTTP_411_LENGTH_REQUIRED) == STATUS_CODE_HTTP_411_LENGTH_REQUIRED);
-    REQUIRE(to_string(StatusCode::HTTP_412_PRECONDITION_FAILED) == STATUS_CODE_HTTP_412_PRECONDITION_FAILED);
-    REQUIRE(to_string(StatusCode::HTTP_413_PAYLOAD_TOO_LARGE) == STATUS_CODE_HTTP_413_PAYLOAD_TOO_LARGE);
-    REQUIRE(to_string(StatusCode::HTTP_414_URI_TOO_LONG) == STATUS_CODE_HTTP_414_URI_TOO_LONG);
-    REQUIRE(to_string(StatusCode::HTTP_415_UNSUPPORTED_MEDIA_TYPE) == STATUS_CODE_HTTP_415_UNSUPPORTED_MEDIA_TYPE);
-    REQUIRE(to_string(StatusCode::HTTP_416_RANGE_NOT_SATISFIABLE) == STATUS_CODE_HTTP_416_RANGE_NOT_SATISFIABLE);
-    REQUIRE(to_string(StatusCode::HTTP_417_EXPECTATION_FAILED) == STATUS_CODE_HTTP_417_EXPECTATION_FAILED);
-    REQUIRE(to_string(StatusCode::HTTP_418_IM_A_TEAPOT) == STATUS_CODE_HTTP_418_IM_A_TEAPOT);
-    REQUIRE(to_string(StatusCode::HTTP_421_MISDIRECTED_REQUEST) == STATUS_CODE_HTTP_421_MISDIRECTED_REQUEST);
-    REQUIRE(to_string(StatusCode::HTTP_422_UNPROCESSABLE_ENTITY) == STATUS_CODE_HTTP_422_UNPROCESSABLE_ENTITY);
-    REQUIRE(to_string(StatusCode::HTTP_423_LOCKED) == STATUS_CODE_HTTP_423_LOCKED);
-    REQUIRE(to_string(StatusCode::HTTP_424_FAILED_DEPENDENCY) == STATUS_CODE_HTTP_424_FAILED_DEPENDENCY);
-    REQUIRE(to_string(StatusCode::HTTP_425_TOO_EARLY) == STATUS_CODE_HTTP_425_TOO_EARLY);
-    REQUIRE(to_string(StatusCode::HTTP_426_UPGRADE_REQUIRED) == STATUS_CODE_HTTP_426_UPGRADE_REQUIRED);
-    REQUIRE(to_string(StatusCode::HTTP_428_PRECONDITION_REQUIRED) == STATUS_CODE_HTTP_428_PRECONDITION_REQUIRED);
-    REQUIRE(to_string(StatusCode::HTTP_429_TOO_MANY_REQUESTS) == STATUS_CODE_HTTP_429_TOO_MANY_REQUESTS);
-    REQUIRE(
-        to_string(StatusCode::HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE) ==
-        STATUS_CODE_HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE);
-    REQUIRE(
-        to_string(StatusCode::HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS) ==
-        STATUS_CODE_HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS);
+    REQUIRE(to_string(status_code::http_400_bad_request) == status_code_http_400_bad_request);
+    REQUIRE(to_string(status_code::http_401_unauthorized) == status_code_http_401_unauthorized);
+    REQUIRE(to_string(status_code::http_402_payment_required) == status_code_http_402_payment_required);
+    REQUIRE(to_string(status_code::http_403_forbidden) == status_code_http_403_forbidden);
+    REQUIRE(to_string(status_code::http_404_not_found) == status_code_http_404_not_found);
+    REQUIRE(to_string(status_code::http_405_method_not_allowed) == status_code_http_405_method_not_allowed);
+    REQUIRE(to_string(status_code::http_406_not_acceptable) == status_code_http_406_not_acceptable);
+    REQUIRE(to_string(status_code::http_407_proxy_authentication_required) == status_code_http_407_proxy_authentication_required);
+    REQUIRE(to_string(status_code::http_408_request_timeout) == status_code_http_408_request_timeout);
+    REQUIRE(to_string(status_code::http_409_conflict) == status_code_http_409_conflict);
+    REQUIRE(to_string(status_code::http_410_gone) == status_code_http_410_gone);
+    REQUIRE(to_string(status_code::http_411_length_required) == status_code_http_411_length_required);
+    REQUIRE(to_string(status_code::http_412_precondition_failed) == status_code_http_412_precondition_failed);
+    REQUIRE(to_string(status_code::http_413_payload_too_large) == status_code_http_413_payload_too_large);
+    REQUIRE(to_string(status_code::http_414_uri_too_long) == status_code_http_414_uri_too_long);
+    REQUIRE(to_string(status_code::http_415_unsupported_media_type) == status_code_http_415_unsupported_media_type);
+    REQUIRE(to_string(status_code::http_416_range_not_satisfiable) == status_code_http_416_range_not_satisfiable);
+    REQUIRE(to_string(status_code::http_417_expectation_failed) == status_code_http_417_expectation_failed);
+    REQUIRE(to_string(status_code::http_418_im_a_teapot) == status_code_http_418_im_a_teapot);
+    REQUIRE(to_string(status_code::http_421_misdirected_request) == status_code_http_421_misdirected_request);
+    REQUIRE(to_string(status_code::http_422_unprocessable_entity) == status_code_http_422_unprocessable_entity);
+    REQUIRE(to_string(status_code::http_423_locked) == status_code_http_423_locked);
+    REQUIRE(to_string(status_code::http_424_failed_dependency) == status_code_http_424_failed_dependency);
+    REQUIRE(to_string(status_code::http_425_too_early) == status_code_http_425_too_early);
+    REQUIRE(to_string(status_code::http_426_upgrade_required) == status_code_http_426_upgrade_required);
+    REQUIRE(to_string(status_code::http_428_precondition_required) == status_code_http_428_precondition_required);
+    REQUIRE(to_string(status_code::http_429_too_many_requests) == status_code_http_429_too_many_requests);
+    REQUIRE(to_string(status_code::http_431_request_header_fields_too_large) == status_code_http_431_request_header_fields_too_large);
+    REQUIRE(to_string(status_code::http_451_unavailable_for_legal_reasons) == status_code_http_451_unavailable_for_legal_reasons);
 
-    REQUIRE(to_string(StatusCode::HTTP_500_INTERNAL_SERVER_ERROR) == STATUS_CODE_HTTP_500_INTERNAL_SERVER_ERROR);
-    REQUIRE(to_string(StatusCode::HTTP_501_NOT_IMPLEMENTED) == STATUS_CODE_HTTP_501_NOT_IMPLEMENTED);
-    REQUIRE(to_string(StatusCode::HTTP_502_BAD_GATEWAY) == STATUS_CODE_HTTP_502_BAD_GATEWAY);
-    REQUIRE(to_string(StatusCode::HTTP_503_SERVICE_UNAVAILABLE) == STATUS_CODE_HTTP_503_SERVICE_UNAVAILABLE);
-    REQUIRE(to_string(StatusCode::HTTP_504_GATEWAY_TIMEOUT) == STATUS_CODE_HTTP_504_GATEWAY_TIMEOUT);
-    REQUIRE(
-        to_string(StatusCode::HTTP_505_HTTP_VERSION_NOT_SUPPORTED) == STATUS_CODE_HTTP_505_HTTP_VERSION_NOT_SUPPORTED);
-    REQUIRE(to_string(StatusCode::HTTP_506_VARIANT_ALSO_NEGOTIATES) == STATUS_CODE_HTTP_506_VARIANT_ALSO_NEGOTIATES);
-    REQUIRE(to_string(StatusCode::HTTP_507_INSUFFICIENT_STORAGE) == STATUS_CODE_HTTP_507_INSUFFICIENT_STORAGE);
-    REQUIRE(to_string(StatusCode::HTTP_508_LOOP_DETECTED) == STATUS_CODE_HTTP_508_LOOP_DETECTED);
-    REQUIRE(to_string(StatusCode::HTTP_510_NOT_EXTENDED) == STATUS_CODE_HTTP_510_NOT_EXTENDED);
-    REQUIRE(
-        to_string(StatusCode::HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) ==
-        STATUS_CODE_HTTP_511_NETWORK_AUTHENTICATION_REQUIRED);
+    REQUIRE(to_string(status_code::http_500_internal_server_error) == status_code_http_500_internal_server_error);
+    REQUIRE(to_string(status_code::http_501_not_implemented) == status_code_http_501_not_implemented);
+    REQUIRE(to_string(status_code::http_502_bad_gateway) == status_code_http_502_bad_gateway);
+    REQUIRE(to_string(status_code::http_503_service_unavailable) == status_code_http_503_service_unavailable);
+    REQUIRE(to_string(status_code::http_504_gateway_timeout) == status_code_http_504_gateway_timeout);
+    REQUIRE(to_string(status_code::http_505_http_version_not_supported) == status_code_http_505_http_version_not_supported);
+    REQUIRE(to_string(status_code::http_506_variant_also_negotiates) == status_code_http_506_variant_also_negotiates);
+    REQUIRE(to_string(status_code::http_507_insufficient_storage) == status_code_http_507_insufficient_storage);
+    REQUIRE(to_string(status_code::http_508_loop_detected) == status_code_http_508_loop_detected);
+    REQUIRE(to_string(status_code::http_510_not_extended) == status_code_http_510_not_extended);
+    REQUIRE(to_string(status_code::http_511_network_authentication_required) == status_code_http_511_network_authentication_required);
+    // clang-format on
 }
 
-TEST_CASE("HTTP StatusCode to_enum")
+TEST_CASE("HTTP status_code to_enum")
 {
     using namespace lift::http;
 
-    REQUIRE(to_enum(0) == StatusCode::HTTP_UNKNOWN);
-    REQUIRE(to_enum(9001) == StatusCode::HTTP_UNKNOWN);
+    REQUIRE(to_enum(0) == status_code::http_unknown);
+    REQUIRE(to_enum(9001) == status_code::http_unknown);
 
-    REQUIRE(to_enum(100) == StatusCode::HTTP_100_CONTINUE);
-    REQUIRE(to_enum(101) == StatusCode::HTTP_101_SWITCHING_PROTOCOLS);
-    REQUIRE(to_enum(102) == StatusCode::HTTP_102_PROCESSING);
-    REQUIRE(to_enum(103) == StatusCode::HTTP_103_EARLY_HINTS);
+    REQUIRE(to_enum(100) == status_code::http_100_continue);
+    REQUIRE(to_enum(101) == status_code::http_101_switching_protocols);
+    REQUIRE(to_enum(102) == status_code::http_102_processing);
+    REQUIRE(to_enum(103) == status_code::http_103_early_hints);
 
-    REQUIRE(to_enum(200) == StatusCode::HTTP_200_OK);
-    REQUIRE(to_enum(201) == StatusCode::HTTP_201_CREATED);
-    REQUIRE(to_enum(202) == StatusCode::HTTP_202_ACCEPTED);
-    REQUIRE(to_enum(203) == StatusCode::HTTP_203_NON_AUTHORITATIVE_INFORMATION);
-    REQUIRE(to_enum(204) == StatusCode::HTTP_204_NO_CONTENT);
-    REQUIRE(to_enum(205) == StatusCode::HTTP_205_RESET_CONTENT);
-    REQUIRE(to_enum(206) == StatusCode::HTTP_206_PARTIAL_CONTENT);
-    REQUIRE(to_enum(207) == StatusCode::HTTP_207_MULTI_STATUS);
-    REQUIRE(to_enum(208) == StatusCode::HTTP_208_ALREADY_REPORTED);
-    REQUIRE(to_enum(226) == StatusCode::HTTP_226_IM_USED);
+    REQUIRE(to_enum(200) == status_code::http_200_ok);
+    REQUIRE(to_enum(201) == status_code::http_201_created);
+    REQUIRE(to_enum(202) == status_code::http_202_accepted);
+    REQUIRE(to_enum(203) == status_code::http_203_non_authoritative_information);
+    REQUIRE(to_enum(204) == status_code::http_204_no_content);
+    REQUIRE(to_enum(205) == status_code::http_205_reset_content);
+    REQUIRE(to_enum(206) == status_code::http_206_partial_content);
+    REQUIRE(to_enum(207) == status_code::http_207_multi_status);
+    REQUIRE(to_enum(208) == status_code::http_208_already_reported);
+    REQUIRE(to_enum(226) == status_code::http_226_im_used);
 
-    REQUIRE(to_enum(300) == StatusCode::HTTP_300_MULTIPLE_CHOICES);
-    REQUIRE(to_enum(301) == StatusCode::HTTP_301_MOVED_PERMANENTLY);
-    REQUIRE(to_enum(302) == StatusCode::HTTP_302_FOUND);
-    REQUIRE(to_enum(303) == StatusCode::HTTP_303_SEE_OTHER);
-    REQUIRE(to_enum(304) == StatusCode::HTTP_304_NOT_MODIFIED);
-    REQUIRE(to_enum(305) == StatusCode::HTTP_305_USE_PROXY);
-    REQUIRE(to_enum(306) == StatusCode::HTTP_306_SWITCH_PROXY);
-    REQUIRE(to_enum(307) == StatusCode::HTTP_307_TEMPORARY_REDIRECT);
-    REQUIRE(to_enum(308) == StatusCode::HTTP_308_PERMANENT_REDIRECT);
+    REQUIRE(to_enum(300) == status_code::http_300_multiple_choices);
+    REQUIRE(to_enum(301) == status_code::http_301_moved_permanently);
+    REQUIRE(to_enum(302) == status_code::http_302_found);
+    REQUIRE(to_enum(303) == status_code::http_303_see_other);
+    REQUIRE(to_enum(304) == status_code::http_304_not_modified);
+    REQUIRE(to_enum(305) == status_code::http_305_use_proxy);
+    REQUIRE(to_enum(306) == status_code::http_306_switch_proxy);
+    REQUIRE(to_enum(307) == status_code::http_307_temporary_redirect);
+    REQUIRE(to_enum(308) == status_code::http_308_permanent_redirect);
 
-    REQUIRE(to_enum(400) == StatusCode::HTTP_400_BAD_REQUEST);
-    REQUIRE(to_enum(401) == StatusCode::HTTP_401_UNAUTHORIZED);
-    REQUIRE(to_enum(402) == StatusCode::HTTP_402_PAYMENT_REQUIRED);
-    REQUIRE(to_enum(403) == StatusCode::HTTP_403_FORBIDDEN);
-    REQUIRE(to_enum(404) == StatusCode::HTTP_404_NOT_FOUND);
-    REQUIRE(to_enum(405) == StatusCode::HTTP_405_METHOD_NOT_ALLOWED);
-    REQUIRE(to_enum(406) == StatusCode::HTTP_406_NOT_ACCEPTABLE);
-    REQUIRE(to_enum(407) == StatusCode::HTTP_407_PROXY_AUTHENTICATION_REQUIRED);
-    REQUIRE(to_enum(408) == StatusCode::HTTP_408_REQUEST_TIMEOUT);
-    REQUIRE(to_enum(409) == StatusCode::HTTP_409_CONFLICT);
-    REQUIRE(to_enum(410) == StatusCode::HTTP_410_GONE);
-    REQUIRE(to_enum(411) == StatusCode::HTTP_411_LENGTH_REQUIRED);
-    REQUIRE(to_enum(412) == StatusCode::HTTP_412_PRECONDITION_FAILED);
-    REQUIRE(to_enum(413) == StatusCode::HTTP_413_PAYLOAD_TOO_LARGE);
-    REQUIRE(to_enum(414) == StatusCode::HTTP_414_URI_TOO_LONG);
-    REQUIRE(to_enum(415) == StatusCode::HTTP_415_UNSUPPORTED_MEDIA_TYPE);
-    REQUIRE(to_enum(416) == StatusCode::HTTP_416_RANGE_NOT_SATISFIABLE);
-    REQUIRE(to_enum(417) == StatusCode::HTTP_417_EXPECTATION_FAILED);
-    REQUIRE(to_enum(418) == StatusCode::HTTP_418_IM_A_TEAPOT);
-    REQUIRE(to_enum(421) == StatusCode::HTTP_421_MISDIRECTED_REQUEST);
-    REQUIRE(to_enum(422) == StatusCode::HTTP_422_UNPROCESSABLE_ENTITY);
-    REQUIRE(to_enum(423) == StatusCode::HTTP_423_LOCKED);
-    REQUIRE(to_enum(424) == StatusCode::HTTP_424_FAILED_DEPENDENCY);
-    REQUIRE(to_enum(425) == StatusCode::HTTP_425_TOO_EARLY);
-    REQUIRE(to_enum(426) == StatusCode::HTTP_426_UPGRADE_REQUIRED);
-    REQUIRE(to_enum(428) == StatusCode::HTTP_428_PRECONDITION_REQUIRED);
-    REQUIRE(to_enum(429) == StatusCode::HTTP_429_TOO_MANY_REQUESTS);
-    REQUIRE(to_enum(431) == StatusCode::HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE);
-    REQUIRE(to_enum(451) == StatusCode::HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS);
+    REQUIRE(to_enum(400) == status_code::http_400_bad_request);
+    REQUIRE(to_enum(401) == status_code::http_401_unauthorized);
+    REQUIRE(to_enum(402) == status_code::http_402_payment_required);
+    REQUIRE(to_enum(403) == status_code::http_403_forbidden);
+    REQUIRE(to_enum(404) == status_code::http_404_not_found);
+    REQUIRE(to_enum(405) == status_code::http_405_method_not_allowed);
+    REQUIRE(to_enum(406) == status_code::http_406_not_acceptable);
+    REQUIRE(to_enum(407) == status_code::http_407_proxy_authentication_required);
+    REQUIRE(to_enum(408) == status_code::http_408_request_timeout);
+    REQUIRE(to_enum(409) == status_code::http_409_conflict);
+    REQUIRE(to_enum(410) == status_code::http_410_gone);
+    REQUIRE(to_enum(411) == status_code::http_411_length_required);
+    REQUIRE(to_enum(412) == status_code::http_412_precondition_failed);
+    REQUIRE(to_enum(413) == status_code::http_413_payload_too_large);
+    REQUIRE(to_enum(414) == status_code::http_414_uri_too_long);
+    REQUIRE(to_enum(415) == status_code::http_415_unsupported_media_type);
+    REQUIRE(to_enum(416) == status_code::http_416_range_not_satisfiable);
+    REQUIRE(to_enum(417) == status_code::http_417_expectation_failed);
+    REQUIRE(to_enum(418) == status_code::http_418_im_a_teapot);
+    REQUIRE(to_enum(421) == status_code::http_421_misdirected_request);
+    REQUIRE(to_enum(422) == status_code::http_422_unprocessable_entity);
+    REQUIRE(to_enum(423) == status_code::http_423_locked);
+    REQUIRE(to_enum(424) == status_code::http_424_failed_dependency);
+    REQUIRE(to_enum(425) == status_code::http_425_too_early);
+    REQUIRE(to_enum(426) == status_code::http_426_upgrade_required);
+    REQUIRE(to_enum(428) == status_code::http_428_precondition_required);
+    REQUIRE(to_enum(429) == status_code::http_429_too_many_requests);
+    REQUIRE(to_enum(431) == status_code::http_431_request_header_fields_too_large);
+    REQUIRE(to_enum(451) == status_code::http_451_unavailable_for_legal_reasons);
 
-    REQUIRE(to_enum(500) == StatusCode::HTTP_500_INTERNAL_SERVER_ERROR);
-    REQUIRE(to_enum(501) == StatusCode::HTTP_501_NOT_IMPLEMENTED);
-    REQUIRE(to_enum(502) == StatusCode::HTTP_502_BAD_GATEWAY);
-    REQUIRE(to_enum(503) == StatusCode::HTTP_503_SERVICE_UNAVAILABLE);
-    REQUIRE(to_enum(504) == StatusCode::HTTP_504_GATEWAY_TIMEOUT);
-    REQUIRE(to_enum(505) == StatusCode::HTTP_505_HTTP_VERSION_NOT_SUPPORTED);
-    REQUIRE(to_enum(506) == StatusCode::HTTP_506_VARIANT_ALSO_NEGOTIATES);
-    REQUIRE(to_enum(507) == StatusCode::HTTP_507_INSUFFICIENT_STORAGE);
-    REQUIRE(to_enum(508) == StatusCode::HTTP_508_LOOP_DETECTED);
-    REQUIRE(to_enum(510) == StatusCode::HTTP_510_NOT_EXTENDED);
-    REQUIRE(to_enum(511) == StatusCode::HTTP_511_NETWORK_AUTHENTICATION_REQUIRED);
+    REQUIRE(to_enum(500) == status_code::http_500_internal_server_error);
+    REQUIRE(to_enum(501) == status_code::http_501_not_implemented);
+    REQUIRE(to_enum(502) == status_code::http_502_bad_gateway);
+    REQUIRE(to_enum(503) == status_code::http_503_service_unavailable);
+    REQUIRE(to_enum(504) == status_code::http_504_gateway_timeout);
+    REQUIRE(to_enum(505) == status_code::http_505_http_version_not_supported);
+    REQUIRE(to_enum(506) == status_code::http_506_variant_also_negotiates);
+    REQUIRE(to_enum(507) == status_code::http_507_insufficient_storage);
+    REQUIRE(to_enum(508) == status_code::http_508_loop_detected);
+    REQUIRE(to_enum(510) == status_code::http_510_not_extended);
+    REQUIRE(to_enum(511) == status_code::http_511_network_authentication_required);
 }
 
-TEST_CASE("HTTP ContentType to_string")
+TEST_CASE("HTTP content_type to_string")
 {
+    // clang-format off
     using namespace lift::http;
-    REQUIRE(to_string(ContentType::UNKNOWN) == CONTENT_TYPE_UNKNOWN);
-    REQUIRE(to_string(static_cast<ContentType>(928384)) == CONTENT_TYPE_UNKNOWN);
+    REQUIRE(to_string(content_type::unknown) == content_type_unknown);
+    REQUIRE(to_string(static_cast<content_type>(45678)) == content_type_unknown);
 
-    REQUIRE(to_string(ContentType::NO_CONTENT) == CONTENT_TYPE_NO_CONTENT);
+    REQUIRE(to_string(content_type::no_content) == content_type_no_content);
 
-    REQUIRE(to_string(ContentType::TEXT_CSS) == CONTENT_TYPE_TEXT_CSS);
-    REQUIRE(to_string(ContentType::TEXT_CSV) == CONTENT_TYPE_TEXT_CSV);
-    REQUIRE(to_string(ContentType::TEXT_HTML) == CONTENT_TYPE_TEXT_HTML);
-    REQUIRE(to_string(ContentType::TEXT_PLAIN) == CONTENT_TYPE_TEXT_PLAIN);
-    REQUIRE(to_string(ContentType::TEXT_XML) == CONTENT_TYPE_TEXT_XML);
+    REQUIRE(to_string(content_type::text_css) == content_type_text_css);
+    REQUIRE(to_string(content_type::text_csv) == content_type_text_csv);
+    REQUIRE(to_string(content_type::text_html) == content_type_text_html);
+    REQUIRE(to_string(content_type::text_plain) == content_type_text_plain);
+    REQUIRE(to_string(content_type::text_xml) == content_type_text_xml);
 
-    REQUIRE(to_string(ContentType::IMAGE_GIF) == CONTENT_TYPE_IMAGE_GIF);
-    REQUIRE(to_string(ContentType::IMAGE_JPEG) == CONTENT_TYPE_IMAGE_JPEG);
-    REQUIRE(to_string(ContentType::IMAGE_PNG) == CONTENT_TYPE_IMAGE_PNG);
-    REQUIRE(to_string(ContentType::IMAGE_TIFF) == CONTENT_TYPE_IMAGE_TIFF);
-    REQUIRE(to_string(ContentType::IMAGE_X_ICON) == CONTENT_TYPE_IMAGE_X_ICON);
-    REQUIRE(to_string(ContentType::IMAGE_SVG_XML) == CONTENT_TYPE_IMAGE_SVG_XML);
+    REQUIRE(to_string(content_type::image_gif) == content_type_image_gif);
+    REQUIRE(to_string(content_type::image_jpeg) == content_type_image_jpeg);
+    REQUIRE(to_string(content_type::image_png) == content_type_image_png);
+    REQUIRE(to_string(content_type::image_tiff) == content_type_image_tiff);
+    REQUIRE(to_string(content_type::image_x_icon) == content_type_image_x_icon);
+    REQUIRE(to_string(content_type::image_svg_xml) == content_type_image_svg_xml);
 
-    REQUIRE(to_string(ContentType::VIDEO_MPEG) == CONTENT_TYPE_VIDEO_MPEG);
-    REQUIRE(to_string(ContentType::VIDEO_MP4) == CONTENT_TYPE_VIDEO_MP4);
-    REQUIRE(to_string(ContentType::VIDEO_X_FLV) == CONTENT_TYPE_VIDEO_X_FLV);
-    REQUIRE(to_string(ContentType::VIDEO_WEBM) == CONTENT_TYPE_VIDEO_WEBM);
+    REQUIRE(to_string(content_type::video_mpeg) == content_type_video_mpeg);
+    REQUIRE(to_string(content_type::video_mp4) == content_type_video_mp4);
+    REQUIRE(to_string(content_type::video_x_flv) == content_type_video_x_flv);
+    REQUIRE(to_string(content_type::video_webm) == content_type_video_webm);
 
-    REQUIRE(to_string(ContentType::MULTIPART_MIXED) == CONTENT_TYPE_MULTIPART_MIXED);
-    REQUIRE(to_string(ContentType::MULTIPART_ALTERNATIVE) == CONTENT_TYPE_MULTIPART_ALTERNATIVE);
-    REQUIRE(to_string(ContentType::MULTIPART_RELATED) == CONTENT_TYPE_MULTIPART_RELATED);
-    REQUIRE(to_string(ContentType::MULTIPART_FORM_DATA) == CONTENT_TYPE_MULTIPART_FORM_DATA);
+    REQUIRE(to_string(content_type::multipart_mixed) == content_type_multipart_mixed);
+    REQUIRE(to_string(content_type::multipart_alternative) == content_type_multipart_alternative);
+    REQUIRE(to_string(content_type::multipart_related) == content_type_multipart_related);
+    REQUIRE(to_string(content_type::multipart_form_data) == content_type_multipart_form_data);
 
-    REQUIRE(to_string(ContentType::AUDIO_MPEG) == CONTENT_TYPE_AUDIO_MPEG);
-    REQUIRE(to_string(ContentType::AUDIO_X_MS_WMA) == CONTENT_TYPE_AUDIO_X_MS_WMA);
-    REQUIRE(to_string(ContentType::AUDIO_X_WAV) == CONTENT_TYPE_AUDIO_X_WAV);
+    REQUIRE(to_string(content_type::audio_mpeg) == content_type_audio_mpeg);
+    REQUIRE(to_string(content_type::audio_x_ms_wma) == content_type_audio_x_ms_wma);
+    REQUIRE(to_string(content_type::audio_x_wav) == content_type_audio_x_wav);
 
-    REQUIRE(to_string(ContentType::APPLICATION_JAVASCRIPT) == CONTENT_TYPE_APPLICATION_JAVASCRIPT);
-    REQUIRE(to_string(ContentType::APPLICATION_OCTET_STREAM) == CONTENT_TYPE_APPLICATION_OCTET_STREAM);
-    REQUIRE(to_string(ContentType::APPLICATION_OGG) == CONTENT_TYPE_APPLICATION_OGG);
-    REQUIRE(to_string(ContentType::APPLICATION_PDF) == CONTENT_TYPE_APPLICATION_PDF);
-    REQUIRE(to_string(ContentType::APPLICATION_XHTML_XML) == CONTENT_TYPE_APPLICATION_XHTML_XML);
-    REQUIRE(to_string(ContentType::APPLICATION_X_SHOCKWAVE_FLASH) == CONTENT_TYPE_APPLICATION_X_SHOCKWAVE_FLASH);
-    REQUIRE(to_string(ContentType::APPLICATION_JSON) == CONTENT_TYPE_APPLICATION_JSON);
-    REQUIRE(to_string(ContentType::APPLICATION_LD_JSON) == CONTENT_TYPE_APPLICATION_LD_JSON);
-    REQUIRE(to_string(ContentType::APPLICATION_XML) == CONTENT_TYPE_APPLICATION_XML);
-    REQUIRE(to_string(ContentType::APPLICATION_ZIP) == CONTENT_TYPE_APPLICATION_ZIP);
-    REQUIRE(
-        to_string(ContentType::APPLICATION_X_WWW_FORM_URLENCODED) == CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED);
+    REQUIRE(to_string(content_type::application_javascript) == content_type_application_javascript);
+    REQUIRE(to_string(content_type::application_octet_stream) == content_type_application_octet_stream);
+    REQUIRE(to_string(content_type::application_ogg) == content_type_application_ogg);
+    REQUIRE(to_string(content_type::application_pdf) == content_type_application_pdf);
+    REQUIRE(to_string(content_type::application_xhtml_xml) == content_type_application_xhtml_xml);
+    REQUIRE(to_string(content_type::application_x_shockwave_flash) == content_type_application_x_shockwave_flash);
+    REQUIRE(to_string(content_type::application_json) == content_type_application_json);
+    REQUIRE(to_string(content_type::application_ld_json) == content_type_application_ld_json);
+    REQUIRE(to_string(content_type::application_xml) == content_type_application_xml);
+    REQUIRE(to_string(content_type::application_zip) == content_type_application_zip);
+    REQUIRE(to_string(content_type::application_x_www_form_urlencoded) == content_type_application_x_www_form_urlencoded);
+    // clang-format on
 }
 
-TEST_CASE("HTTP ConnectionType to_string")
+TEST_CASE("HTTP connection_type to_string")
 {
     using namespace lift::http;
-    REQUIRE(to_string(ConnectionType::CLOSE) == CONNECTION_TYPE_CLOSE);
-    REQUIRE(to_string(ConnectionType::KEEP_ALIVE) == CONNECTION_TYPE_KEEP_ALIVE);
-    REQUIRE(to_string(ConnectionType::UPGRADE) == CONNECTION_TYPE_UPGRADE);
-    REQUIRE(to_string(static_cast<ConnectionType>(3839)) == CONNECTION_TYPE_UNKNOWN);
+    REQUIRE(to_string(connection_type::close) == connection_type_close);
+    REQUIRE(to_string(connection_type::keep_alive) == connection_type_keep_alive);
+    REQUIRE(to_string(connection_type::upgrade) == connection_type_upgrade);
+    REQUIRE(to_string(static_cast<connection_type>(3839)) == connection_type_unknown);
 }

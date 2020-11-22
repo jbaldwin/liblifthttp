@@ -16,8 +16,8 @@
 
 namespace lift
 {
-class EventLoop;
-class Executor;
+class event_loop;
+class executor;
 
 enum class SslCertificateType
 {
@@ -62,8 +62,8 @@ auto to_string(SslCertificateType type) -> const std::string&;
 
 class Request
 {
-    friend EventLoop;
-    friend Executor;
+    friend event_loop;
+    friend executor;
 
 public:
     /**
@@ -198,22 +198,22 @@ public:
     /**
      * @return The HTTP method this request will use.
      */
-    auto Method() const -> http::Method { return m_method; }
+    auto Method() const -> http::method { return m_method; }
 
     /**
      * @param method The HTTP method this request should use.
      */
-    auto Method(http::Method method) -> void { m_method = method; }
+    auto Method(http::method method) -> void { m_method = method; }
 
     /**
      * @return The HTTP version this request will use.
      */
-    auto Version() const -> http::Version { return m_version; }
+    auto Version() const -> http::version { return m_version; }
 
     /**
      * @param version The HTTP version this request should use.
      */
-    auto Version(http::Version version) -> void { m_version = version; }
+    auto Version(http::version version) -> void { m_version = version; }
 
     /**
      * @return Is the HTTP request automatically following redirects?
@@ -378,7 +378,7 @@ public:
      * allows for the user to manually remove them.
      * @param name The name of the header, e.g. 'Accept' or 'Expect'.
      */
-    auto RemoveHeader(std::string_view name) -> void { Header(name, std::string_view{}); }
+    auto RemoveHeader(std::string_view name) -> void { header(name, std::string_view{}); }
     /**
      * Adds a request header with its value.
      * @param name The name of the header, e.g. 'Connection'.
@@ -390,7 +390,7 @@ public:
      * @return The current list of headers added to this request.  Note that if more headers are added
      *         the Header classes Name() and Value() string_views might become invalidated.
      */
-    auto Headers() const -> const std::vector<lift::Header>& { return m_request_headers; }
+    auto Headers() const -> const std::vector<lift::header>& { return m_request_headers; }
 
     /**
      * Clears the current set of headers for this request.
@@ -452,9 +452,9 @@ private:
     /// The URL.
     std::string m_url{};
     /// The HTTP request method.
-    http::Method m_method{http::Method::GET};
+    http::method m_method{http::method::get};
     /// The HTTP version to use for this request.
-    http::Version m_version{http::Version::USE_BEST};
+    http::version m_version{http::version::use_best};
     /// Should this request automatically follow redirects?
     bool m_follow_redirects{true};
     /// How many redirects should be followed? -1 infinite, 0 none, <num>.
@@ -480,7 +480,7 @@ private:
     /// A set of host:port to ip addresses that will be resolved before DNS.
     std::vector<lift::ResolveHost> m_resolve_hosts{};
     /// The request headers preformatted into the curl "Header: value\0" format.
-    std::vector<lift::Header> m_request_headers{};
+    std::vector<lift::header> m_request_headers{};
     /// The POST request body data, mutually exclusive with MimeField requests.
     bool        m_request_data_set{false};
     std::string m_request_data{};

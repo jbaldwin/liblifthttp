@@ -2,23 +2,23 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("Header basic")
+TEST_CASE("header basic")
 {
-    lift::Header header{"name", "value"};
-    REQUIRE(header.HeaderFull() == "name: value");
-    REQUIRE(header.Name() == "name");
-    REQUIRE(header.Value() == "value");
+    lift::header h{"name", "value"};
+    REQUIRE(h.data() == "name: value");
+    REQUIRE(h.name() == "name");
+    REQUIRE(h.value() == "value");
 }
 
-TEST_CASE("Header no value")
+TEST_CASE("header no value")
 {
-    lift::Header header{"name", ""};
-    REQUIRE(header.HeaderFull() == "name: ");
-    REQUIRE(header.Name() == "name");
-    REQUIRE(header.Value() == "");
+    lift::header h{"name", ""};
+    REQUIRE(h.data() == "name: ");
+    REQUIRE(h.name() == "name");
+    REQUIRE(h.value() == "");
 }
 
-TEST_CASE("Header request that re-allocates the underlying vector a lot")
+TEST_CASE("header request that re-allocates the underlying vector a lot")
 {
     constexpr size_t N_HEADERS = 65'000; // lets make a lot of headers to re-allocate a few times
 
@@ -39,28 +39,28 @@ TEST_CASE("Header request that re-allocates the underlying vector a lot")
         auto value       = "value" + idx_str;
         auto header_full = name + ": " + value;
 
-        REQUIRE(header.HeaderFull() == header_full);
-        REQUIRE(header.Name() == name);
-        REQUIRE(header.Value() == value);
+        REQUIRE(header.data() == header_full);
+        REQUIRE(header.name() == name);
+        REQUIRE(header.value() == value);
 
         ++idx;
     }
 }
 
-TEST_CASE("Header from full")
+TEST_CASE("header from full")
 {
-    lift::Header header{"name: value"};
+    lift::header h{"name: value"};
 
-    REQUIRE(header.HeaderFull() == "name: value");
-    REQUIRE(header.Name() == "name");
-    REQUIRE(header.Value() == "value");
+    REQUIRE(h.data() == "name: value");
+    REQUIRE(h.name() == "name");
+    REQUIRE(h.value() == "value");
 }
 
-TEST_CASE("Header lots of allocations in a vector (simulate Response)")
+TEST_CASE("header lots of allocations in a vector (simulate Response)")
 {
     constexpr size_t N_HEADERS = 65'000; // lets make a lot of headers to re-allocate a few times
 
-    std::vector<lift::Header> headers{};
+    std::vector<lift::header> headers{};
 
     for (size_t i = 0; i < N_HEADERS; ++i)
     {
@@ -78,41 +78,41 @@ TEST_CASE("Header lots of allocations in a vector (simulate Response)")
         auto value       = "value" + idx_str;
         auto header_full = name + ": " + value;
 
-        REQUIRE(header.HeaderFull() == header_full);
-        REQUIRE(header.Name() == name);
-        REQUIRE(header.Value() == value);
+        REQUIRE(header.data() == header_full);
+        REQUIRE(header.name() == name);
+        REQUIRE(header.value() == value);
 
         ++idx;
     }
 }
 
-TEST_CASE("Header parsing : from full strings")
+TEST_CASE("header parsing : from full strings")
 {
     {
-        lift::Header header{"name"};
-        REQUIRE(header.HeaderFull() == "name: ");
-        REQUIRE(header.Name() == "name");
-        REQUIRE(header.Value() == "");
+        lift::header h{"name"};
+        REQUIRE(h.data() == "name: ");
+        REQUIRE(h.name() == "name");
+        REQUIRE(h.value() == "");
     }
 
     {
-        lift::Header header{"name:"};
-        REQUIRE(header.HeaderFull() == "name: ");
-        REQUIRE(header.Name() == "name");
-        REQUIRE(header.Value() == "");
+        lift::header h{"name:"};
+        REQUIRE(h.data() == "name: ");
+        REQUIRE(h.name() == "name");
+        REQUIRE(h.value() == "");
     }
 
     {
-        lift::Header header{"name:x"};
-        REQUIRE(header.HeaderFull() == "name: x");
-        REQUIRE(header.Name() == "name");
-        REQUIRE(header.Value() == "x");
+        lift::header h{"name:x"};
+        REQUIRE(h.data() == "name: x");
+        REQUIRE(h.name() == "name");
+        REQUIRE(h.value() == "x");
     }
 
     {
-        lift::Header header{"name :  x  "};
-        REQUIRE(header.HeaderFull() == "name :  x  ");
-        REQUIRE(header.Name() == "name ");
-        REQUIRE(header.Value() == " x  ");
+        lift::header h{"name :  x  "};
+        REQUIRE(h.data() == "name :  x  ");
+        REQUIRE(h.name() == "name ");
+        REQUIRE(h.value() == " x  ");
     }
 }

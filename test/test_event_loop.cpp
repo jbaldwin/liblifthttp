@@ -2,37 +2,37 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("EventLoop Start event loop, then stop and add a request.")
+TEST_CASE("event_loop Start event loop, then stop and add a request.")
 {
-    lift::EventLoop ev{};
+    lift::event_loop ev{};
 
     auto request = lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         });
 
-    REQUIRE(ev.StartRequest(std::move(request)));
+    REQUIRE(ev.start_request(std::move(request)));
 
     request = lift::Request::make_unique(
         "http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/",
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         });
 
     // Adding requests after stopping should return false that they cannot be started.
-    ev.Stop();
+    ev.stop();
 
-    REQUIRE_FALSE(ev.StartRequest(std::move(request)));
+    REQUIRE_FALSE(ev.start_request(std::move(request)));
 }
 
-TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
+TEST_CASE("event_loop Start event loop, then stop and add multiple requests.")
 {
-    lift::EventLoop ev{};
+    lift::event_loop ev{};
 
     std::vector<lift::RequestPtr> requests1;
     requests1.emplace_back(lift::Request::make_unique(
@@ -40,7 +40,7 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         }));
 
     std::vector<lift::RequestPtr> requests2;
@@ -49,17 +49,17 @@ TEST_CASE("EventLoop Start event loop, then stop and add multiple requests.")
         std::chrono::seconds{60},
         [&](std::unique_ptr<lift::Request>, lift::Response response) {
             REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-            REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+            REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
         }));
 
-    REQUIRE(ev.StartRequests(std::move(requests1)));
-    ev.Stop();
-    REQUIRE_FALSE(ev.StartRequests(std::move(requests2)));
+    REQUIRE(ev.start_requests(std::move(requests1)));
+    ev.stop();
+    REQUIRE_FALSE(ev.start_requests(std::move(requests2)));
 }
 
-TEST_CASE("EventLoop Provide nullptr request")
+TEST_CASE("event_loop Provide nullptr request")
 {
-    lift::EventLoop ev{};
+    lift::event_loop ev{};
 
-    REQUIRE_FALSE(ev.StartRequest(nullptr));
+    REQUIRE_FALSE(ev.start_request(nullptr));
 }

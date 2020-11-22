@@ -10,7 +10,7 @@
 namespace lift
 {
 class Request;
-class EventLoop;
+class event_loop;
 
 /**
  * This class's design is to encapsulate executing either a synchronous
@@ -26,19 +26,19 @@ class EventLoop;
  * This class should never be used directly by the user of liblifthttp,
  * hence it has no public methods other than its destructor.
  */
-class Executor
+class executor
 {
-    /// Allowed to create Executors and Timesup!
-    friend EventLoop;
-    /// Allowed to create Executors.
+    /// Allowed to create executor and Timesup!
+    friend event_loop;
+    /// Allowed to create executors.
     friend Request;
 
 public:
-    Executor(const Executor&) = delete;
-    Executor(Executor&&)      = delete;
-    auto operator=(const Executor&) -> Executor& = delete;
-    auto operator=(Executor &&) -> Executor& = delete;
-    ~Executor();
+    executor(const executor&) = delete;
+    executor(executor&&)      = delete;
+    auto operator=(const executor&) -> executor& = delete;
+    auto operator=(executor &&) -> executor& = delete;
+    ~executor();
 
 private:
     /// The curl handle to execute against.
@@ -56,11 +56,11 @@ private:
     Request* m_request_sync{nullptr};
 
     /// If async request the event loop executing this request.
-    EventLoop* m_event_loop{nullptr};
+    event_loop* m_event_loop{nullptr};
     /// If async request the pointer to the request.
     RequestPtr m_request_async{nullptr};
     /// If the async request has a timeout set then this is the position to delete when completed.
-    std::optional<std::multimap<uint64_t, Executor*>::iterator> m_timeout_iterator{};
+    std::optional<std::multimap<uint64_t, executor*>::iterator> m_timeout_iterator{};
     // Has the on complete callback been called already?
     bool m_on_complete_callback_called{false};
 
@@ -70,9 +70,9 @@ private:
     /// The HTTP response data.
     Response m_response{};
 
-    static auto make_unique(EventLoop* event_loop) -> std::unique_ptr<Executor>
+    static auto make_unique(event_loop* event_loop) -> std::unique_ptr<executor>
     {
-        return std::unique_ptr<Executor>(new Executor{event_loop});
+        return std::unique_ptr<executor>(new executor{event_loop});
     }
 
     /**
@@ -80,19 +80,19 @@ private:
      * @param request The synchronous request pointer.
      * @param share Curl share handle to use for this request.
      */
-    Executor(Request* request, Share* share);
+    executor(Request* request, Share* share);
 
     /**
      * This constructor is used for executing an asynchronous requests.
      * @param event_loop The event loop that will execute this request.
      */
-    Executor(EventLoop* event_loop);
+    executor(event_loop* event_loop);
 
     /**
      * @param request_ptr The asynchronous request to execute.
      * @param share Curl share handle to use for this request.
      */
-    auto startAsync(RequestPtr request_ptr, Share* share) -> void;
+    auto start_async(RequestPtr request_ptr, Share* share) -> void;
 
     /**
      * Synchronously performs the request and returns the Response.
@@ -110,13 +110,13 @@ private:
      * Copies all available HTTP response fields into the lift::Response from
      * the curl handle.
      */
-    auto copyCurlToResponse() -> void;
+    auto copy_curl_to_response() -> void;
 
     /**
      * Sets the response object with appropriate times up values.
      * @param total_time The total time the request executed for.
      */
-    auto setTimesupResponse(std::chrono::milliseconds total_time) -> void;
+    auto set_timesup_response(std::chrono::milliseconds total_time) -> void;
 
     auto reset() -> void;
 
@@ -146,6 +146,6 @@ private:
     friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };
 
-using ExecutorPtr = std::unique_ptr<Executor>;
+using executor_ptr = std::unique_ptr<executor>;
 
 } // namespace lift

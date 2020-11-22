@@ -10,7 +10,7 @@ TEST_CASE("Synchronous 200")
     const auto&   response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("Synchronous 404")
@@ -19,17 +19,17 @@ TEST_CASE("Synchronous 404")
     const auto&   response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_404_NOT_FOUND);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_404_not_found);
 }
 
 TEST_CASE("Synchronous HEAD")
 {
     lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    request.Method(lift::http::Method::HEAD);
+    request.Method(lift::http::method::head);
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     REQUIRE(response.Data().empty());
 }
 
@@ -40,9 +40,9 @@ TEST_CASE("Synchronous custom headers")
 
     for (const auto& header : request.Headers())
     {
-        if (header.Name() == "x-custom-header-1")
+        if (header.name() == "x-custom-header-1")
         {
-            REQUIRE(header.Value() == "custom-value-1");
+            REQUIRE(header.value() == "custom-value-1");
         }
     }
 }
@@ -59,35 +59,35 @@ TEST_CASE("Multiple headers added")
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 
     std::size_t count_found = 0;
 
     for (const auto& header : request.Headers())
     {
-        if (header.Name() == "Connection")
+        if (header.name() == "Connection")
         {
-            REQUIRE(header.Value() == "keep-alive");
+            REQUIRE(header.value() == "keep-alive");
             ++count_found;
         }
-        else if (header.Name() == "x-custom-header-1")
+        else if (header.name() == "x-custom-header-1")
         {
-            REQUIRE(header.Value() == "value1");
+            REQUIRE(header.value() == "value1");
             ++count_found;
         }
-        else if (header.Name() == "x-custom-header-2")
+        else if (header.name() == "x-custom-header-2")
         {
-            REQUIRE(header.Value() == "value2");
+            REQUIRE(header.value() == "value2");
             ++count_found;
         }
-        else if (header.Name() == "x-herp-derp")
+        else if (header.name() == "x-herp-derp")
         {
-            REQUIRE(header.Value() == "merp");
+            REQUIRE(header.value() == "merp");
             ++count_found;
         }
-        else if (header.Name() == "x-420")
+        else if (header.name() == "x-420")
         {
-            REQUIRE(header.Value() == "blazeit");
+            REQUIRE(header.value() == "blazeit");
             ++count_found;
         }
     }
@@ -104,7 +104,7 @@ TEST_CASE("Happy Eyeballs Test")
     const auto& response = request.Perform();
 
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("SSL functions")

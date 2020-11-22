@@ -5,8 +5,7 @@ namespace lift
 {
 Response::Response()
 {
-    m_headers.reserve(HEADER_DEFAULT_COUNT);
-    m_data.reserve(HEADER_DEFAULT_MEMORY_BYTES);
+    m_headers.reserve(header_default_count);
 }
 
 auto operator<<(std::ostream& os, const Response& r) -> std::ostream&
@@ -14,10 +13,13 @@ auto operator<<(std::ostream& os, const Response& r) -> std::ostream&
     os << lift::http::to_string(r.m_version) << ' ' << lift::http::to_string(r.m_status_code) << "\r\n";
     for (const auto& header : r.m_headers)
     {
-        os << header.HeaderFull() << "\r\n";
+        os << header << "\r\n";
     }
     os << "\r\n";
-    os << std::string_view{r.m_data.data(), r.m_data.size()};
+    if (!r.m_data.empty())
+    {
+        os << std::string_view{r.m_data.data(), r.m_data.size()};
+    }
 
     return os;
 }

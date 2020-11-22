@@ -16,20 +16,20 @@ TEST_CASE("ResolveHost synchronous perform")
 
     auto response = request.Perform();
     REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
 }
 
-TEST_CASE("EventLoop ResolveHost")
+TEST_CASE("ResolveHost event_loop")
 {
     std::vector<lift::ResolveHost> rhosts{
         lift::ResolveHost{"testhostname", NGINX_PORT, SERVICE_IP_ADDRESS},
         lift::ResolveHost{"herpderp.com", NGINX_PORT, SERVICE_IP_ADDRESS}};
 
-    lift::EventLoop ev{std::nullopt, std::nullopt, std::nullopt, std::move(rhosts)};
+    lift::event_loop ev{lift::event_loop::options{.resolve_hosts = std::move(rhosts)}};
 
     auto on_complete = [&](lift::RequestPtr, lift::Response response) -> void {
         REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-        REQUIRE(response.StatusCode() == lift::http::StatusCode::HTTP_200_OK);
+        REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
     };
 
     std::vector<lift::RequestPtr> requests;
@@ -38,5 +38,5 @@ TEST_CASE("EventLoop ResolveHost")
     requests.emplace_back(
         lift::Request::make_unique("herpderp.com:" + NGINX_PORT_STR, std::chrono::seconds{60}, on_complete));
 
-    REQUIRE(ev.StartRequests(std::move(requests)));
+    REQUIRE(ev.start_requests(std::move(requests)));
 }

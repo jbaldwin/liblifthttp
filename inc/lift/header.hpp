@@ -60,7 +60,7 @@ public:
 private:
     /// The full header data.
     std::string m_header{};
-    uint16_t    m_colon_pos{0};
+    std::size_t m_colon_pos{0};
 };
 
 } // namespace lift

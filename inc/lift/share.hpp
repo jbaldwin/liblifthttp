@@ -39,7 +39,7 @@ public:
     /**
      * @param opts The specific items to share between requests.
      */
-    share(options opts);
+    explicit share(options opts);
     ~share();
 
     share(const share&) = delete;

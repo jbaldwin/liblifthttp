@@ -4,20 +4,21 @@ project(liblifthttp_tests)
 option(LIFT_LOCALHOST_TESTS "Define ON if running tests locally." OFF)
 
 set(LIBLIFT_TEST_SOURCE_FILES
-    AsyncRequestTest.hpp
-    EscapeTest.hpp
-    EventLoopTest.hpp
-    HeaderTest.hpp
-    HttpTest.hpp
-    MimeFieldTest.hpp
-    ProxyTest.hpp
-    QueryBuilderTest.hpp
-    ResolveHostTest.hpp
-    ShareTest.hpp
-    SyncRequestTest.hpp
-    TimesupTest.hpp
-    TransferProgressRequest.hpp
-    UserDataRequestTest.hpp
+    setup.hpp
+    test_async_request.cpp
+    test_escape.cpp
+    test_event_loop.cpp
+    test_header.cpp
+    test_http.cpp
+    test_mime_field.cpp
+    test_proxy.cpp
+    test_query_builder.cpp
+    test_resolve_host.cpp
+    test_share.cpp
+    test_sync_request.cpp
+    test_timesup.cpp
+    test_transfer_progress_request.cpp
+    test_user_data_request.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})

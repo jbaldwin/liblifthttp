@@ -1,4 +1,4 @@
-#include <lift/Lift.hpp>
+#include <lift/lift.hpp>
 
 #include <atomic>
 #include <chrono>
@@ -99,18 +99,18 @@ int main(int argc, char* argv[])
     std::atomic<uint64_t> error{0};
 
     {
-        std::vector<std::unique_ptr<lift::EventLoop>> loops;
+        std::vector<std::unique_ptr<lift::event_loop>> loops;
         for (uint64_t i = 0; i < threads; ++i)
         {
-            auto event_loop_ptr = std::make_unique<lift::EventLoop>();
+            auto event_loop_ptr = std::make_unique<lift::event_loop>();
 
             for (uint64_t j = 0; j < connections; ++j)
             {
                 auto& event_loop = *event_loop_ptr;
 
-                auto request_ptr = lift::Request::make_unique(
-                    url, 30s, [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {
-                        if (response.LiftStatus() == lift::LiftStatus::SUCCESS)
+                auto request_ptr = lift::request::make_unique(
+                    url, 30s, [&event_loop, &success, &error](lift::request_ptr req_ptr, lift::response response) {
+                        if (response.lift_status() == lift::lift_status::success)
                         {
                             success.fetch_add(1, std::memory_order_relaxed);
                         }
@@ -120,12 +120,12 @@ int main(int argc, char* argv[])
                         }
 
                         // And request again until we are shutting down.
-                        event_loop.StartRequest(std::move(req_ptr));
+                        event_loop.start_request(std::move(req_ptr));
                     });
 
-                request_ptr->FollowRedirects(false);
-                request_ptr->Header("Connection", "Keep-Alive");
-                event_loop_ptr->StartRequest(std::move(request_ptr));
+                request_ptr->follow_redirects(false);
+                request_ptr->header("Connection", "Keep-Alive");
+                event_loop_ptr->start_request(std::move(request_ptr));
             }
 
             loops.emplace_back(std::move(event_loop_ptr));
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
         for (auto& thread : loops)
         {
-            thread->Stop();
+            thread->stop();
         }
     }
 

@@ -10,7 +10,7 @@ namespace lift
 {
 class executor;
 
-class share
+class share : public std::enable_shared_from_this<share>
 {
     friend executor;
 
@@ -46,6 +46,8 @@ public:
     share(share&&)      = delete;
     auto operator=(const share&) noexcept -> share& = delete;
     auto operator=(share&&) noexcept -> share& = delete;
+
+    static auto make_shared(options opts) -> std::shared_ptr<share> { return std::make_shared<share>(std::move(opts)); }
 
 private:
     CURLSH* m_curl_share_ptr{curl_share_init()};

@@ -2,13 +2,13 @@
 
 namespace lift
 {
-MimeField::MimeField(std::string field_name, std::string field_value)
+mime_field::mime_field(std::string field_name, std::string field_value)
     : m_field_name(std::move(field_name)),
       m_field_value(std::move(field_value))
 {
 }
 
-MimeField::MimeField(std::string field_name, std::filesystem::path field_filepath)
+mime_field::mime_field(std::string field_name, std::filesystem::path field_filepath)
     : m_field_name(std::move(field_name)),
       m_field_value(std::move(field_filepath))
 {

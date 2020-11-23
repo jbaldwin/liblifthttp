@@ -6,15 +6,15 @@
 #include <string>
 #include <thread>
 
-static auto on_complete(std::unique_ptr<lift::Request> request_ptr, lift::Response response) -> void
+static auto on_complete(lift::request_ptr request_ptr, lift::response response) -> void
 {
-    if (response.LiftStatus() == lift::LiftStatus::SUCCESS)
+    if (response.lift_status() == lift::lift_status::success)
     {
-        std::cout << "Completed " << request_ptr->Url() << " ms:" << response.TotalTime().count() << std::endl;
+        std::cout << "Completed " << request_ptr->url() << " ms:" << response.total_time().count() << std::endl;
     }
     else
     {
-        std::cout << "Error: " << request_ptr->Url() << " : " << lift::to_string(response.LiftStatus()) << std::endl;
+        std::cout << "Error: " << request_ptr->url() << " : " << lift::to_string(response.lift_status()) << std::endl;
     }
 }
 
@@ -35,7 +35,7 @@ int main()
     for (auto& url : urls)
     {
         std::cout << "Requesting " << url << std::endl;
-        auto request_ptr = lift::Request::make_unique(url, timeout, on_complete);
+        auto request_ptr = lift::request::make_unique(url, timeout, on_complete);
         el.start_request(std::move(request_ptr));
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);

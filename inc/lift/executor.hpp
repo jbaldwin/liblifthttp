@@ -9,7 +9,7 @@
 
 namespace lift
 {
-class Request;
+class request;
 class event_loop;
 
 /**
@@ -19,8 +19,8 @@ class event_loop;
  * A previous design exposed the CURL* as well as CURLM* objects
  * behind well formed C++ objects, unfortunately the user could
  * mutate these CURL objects at certain points during execution
- * and cause 'bad things to happen'.  By splitting the Request and
- * Response objects out from any underlying CURL objects the lifetimes
+ * and cause 'bad things to happen'.  By splitting the request and
+ * response objects out from any underlying CURL objects the lifetimes
  * can be appropriately managed.
  *
  * This class should never be used directly by the user of liblifthttp,
@@ -31,7 +31,7 @@ class executor
     /// Allowed to create executor and Timesup!
     friend event_loop;
     /// Allowed to create executors.
-    friend Request;
+    friend request;
 
 public:
     executor(const executor&) = delete;
@@ -53,22 +53,22 @@ private:
     CURLSH* m_curl_share_handle{nullptr};
 
     /// If sync request the pointer to the request.
-    Request* m_request_sync{nullptr};
+    request* m_request_sync{nullptr};
 
     /// If async request the event loop executing this request.
     event_loop* m_event_loop{nullptr};
     /// If async request the pointer to the request.
-    RequestPtr m_request_async{nullptr};
+    request_ptr m_request_async{nullptr};
     /// If the async request has a timeout set then this is the position to delete when completed.
     std::optional<std::multimap<uint64_t, executor*>::iterator> m_timeout_iterator{};
     // Has the on complete callback been called already?
     bool m_on_complete_callback_called{false};
 
     /// Used internally to point at one of the sync or async requests.
-    Request* m_request{nullptr};
+    request* m_request{nullptr};
 
     /// The HTTP response data.
-    Response m_response{};
+    response m_response{};
 
     static auto make_unique(event_loop* event_loop) -> std::unique_ptr<executor>
     {
@@ -80,7 +80,7 @@ private:
      * @param request The synchronous request pointer.
      * @param share Curl share handle to use for this request.
      */
-    executor(Request* request, Share* share);
+    executor(request* request, share* share);
 
     /**
      * This constructor is used for executing an asynchronous requests.
@@ -89,25 +89,25 @@ private:
     executor(event_loop* event_loop);
 
     /**
-     * @param request_ptr The asynchronous request to execute.
+     * @param req_ptr The asynchronous request to execute.
      * @param share Curl share handle to use for this request.
      */
-    auto start_async(RequestPtr request_ptr, Share* share) -> void;
+    auto start_async(request_ptr req_ptr, share* share) -> void;
 
     /**
-     * Synchronously performs the request and returns the Response.
+     * Synchronously performs the request and returns the response.
      * @return The HTTP response.
      */
-    auto perform() -> Response;
+    auto perform() -> response;
 
     /**
      * Prepares the request to be executed.  This will setup all required
-     * curl_easy_setopt() calls based on what has been set on the lift::Request.
+     * curl_easy_setopt() calls based on what has been set on the lift::request.
      */
     auto prepare() -> void;
 
     /**
-     * Copies all available HTTP response fields into the lift::Response from
+     * Copies all available HTTP response fields into the lift::response from
      * the curl handle.
      */
     auto copy_curl_to_response() -> void;
@@ -121,10 +121,10 @@ private:
     auto reset() -> void;
 
     /**
-     * Converts a CURLcode into a LiftStatus.
+     * Converts a CURLcode into a lift_status.
      * @param curl_code The CURLcode to convert.
      */
-    static auto convert(CURLcode curl_code) -> LiftStatus;
+    static auto convert(CURLcode curl_code) -> lift_status;
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;

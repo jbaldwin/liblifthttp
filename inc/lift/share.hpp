@@ -10,42 +10,42 @@ namespace lift
 {
 class executor;
 
-enum class ShareOptions : uint64_t
-{
-    /// Share nothing across requests.
-    NOTHING = 0,
-    /// Share DNS information across requests.
-    DNS = 1 << 1,
-    /// Share SSL information across requests.
-    SSL = 1 << 2,
-    /// Share Data pipeline'ing across requests.
-    DATA = 1 << 3,
-
-    /// Share DNS with SSL.
-    DNS_SSL = (DNS + SSL),
-    /// Share DNS with Data.
-    DNS_DATA = (DNS + DATA),
-    /// Share SSL with Data.
-    SSL_DATA = (SSL + DATA),
-    /// Share all available types.
-    ALL = (DNS + SSL + DATA)
-};
-
-class Share
+class share
 {
     friend executor;
 
 public:
-    /**
-     * @param share_options The specific items to share between requests.
-     */
-    Share(ShareOptions share_options);
-    ~Share();
+    enum class options : uint64_t
+    {
+        /// Share nothing across requests.
+        nothing = 0,
+        /// Share DNS information across requests.
+        dns = 1 << 1,
+        /// Share SSL information across requests.
+        ssl = 1 << 2,
+        /// Share Data pipeline'ing across requests.
+        data = 1 << 3,
 
-    Share(const Share&) = delete;
-    Share(Share&&)      = delete;
-    auto operator=(const Share&) noexcept -> Share& = delete;
-    auto operator=(Share&&) noexcept -> Share& = delete;
+        /// Share DNS with SSL.
+        dns_ssl = (dns + ssl),
+        /// Share DNS with Data.
+        dns_data = (dns + data),
+        /// Share SSL with Data.
+        ssl_data = (ssl + data),
+        /// Share all available types.
+        all = (dns + ssl + data)
+    };
+
+    /**
+     * @param opts The specific items to share between requests.
+     */
+    share(options opts);
+    ~share();
+
+    share(const share&) = delete;
+    share(share&&)      = delete;
+    auto operator=(const share&) noexcept -> share& = delete;
+    auto operator=(share&&) noexcept -> share& = delete;
 
 private:
     CURLSH* m_curl_share_ptr{curl_share_init()};
@@ -57,6 +57,6 @@ private:
     friend auto curl_share_unlock(CURL* curl_ptr, curl_lock_data data, void* user_ptr) -> void;
 };
 
-using SharePtr = std::shared_ptr<Share>;
+using share_ptr = std::shared_ptr<share>;
 
 } // namespace lift

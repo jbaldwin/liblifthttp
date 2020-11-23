@@ -2,42 +2,42 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("MimeField field_value")
+TEST_CASE("mime_field field_value")
 {
-    lift::MimeField mime{"name", std::string{"value"}};
+    lift::mime_field mime{"name", std::string{"value"}};
 
-    REQUIRE(mime.Name() == "name");
-    REQUIRE(std::holds_alternative<std::string>(mime.Value()));
-    auto value = std::get<std::string>(mime.Value());
+    REQUIRE(mime.name() == "name");
+    REQUIRE(std::holds_alternative<std::string>(mime.value()));
+    auto value = std::get<std::string>(mime.value());
     REQUIRE(value == "value");
 }
 
-TEST_CASE("MimeField field_filepath")
+TEST_CASE("mime_field field_filepath")
 {
-    lift::MimeField mime{"name2", std::filesystem::path{"/var/log/lift.log"}};
+    lift::mime_field mime{"name2", std::filesystem::path{"/var/log/lift.log"}};
 
-    REQUIRE(mime.Name() == "name2");
-    REQUIRE(std::holds_alternative<std::filesystem::path>(mime.Value()));
-    auto path = std::get<std::filesystem::path>(mime.Value());
+    REQUIRE(mime.name() == "name2");
+    REQUIRE(std::holds_alternative<std::filesystem::path>(mime.value()));
+    auto path = std::get<std::filesystem::path>(mime.value());
     REQUIRE(path.string() == "/var/log/lift.log");
 }
 
-TEST_CASE("MimeField added to Request")
+TEST_CASE("mime_field added to request")
 {
-    lift::MimeField mime1{"name1", std::string{"value"}};
-    lift::MimeField mime2{"name2", std::filesystem::path{"/var/log/lift.log"}};
+    lift::mime_field mime1{"name1", std::string{"value"}};
+    lift::mime_field mime2{"name2", std::filesystem::path{"/var/log/lift.log"}};
 
-    lift::Request request{"http://derp.com"};
+    lift::request request{"http://derp.com"};
 
-    request.MimeField(std::move(mime1));
-    request.MimeField(std::move(mime2));
+    request.mime_field(std::move(mime1));
+    request.mime_field(std::move(mime2));
 
-    const auto& mime_fields = request.MimeFields();
+    const auto& mime_fields = request.mime_fields();
     REQUIRE(mime_fields.size() == 2);
-    REQUIRE(mime_fields[0].Name() == "name1");
-    REQUIRE(std::holds_alternative<std::string>(mime_fields[0].Value()));
-    REQUIRE(std::get<std::string>(mime_fields[0].Value()) == "value");
-    REQUIRE(mime_fields[1].Name() == "name2");
-    REQUIRE(std::holds_alternative<std::filesystem::path>(mime_fields[1].Value()));
-    REQUIRE(std::get<std::filesystem::path>(mime_fields[1].Value()) == "/var/log/lift.log");
+    REQUIRE(mime_fields[0].name() == "name1");
+    REQUIRE(std::holds_alternative<std::string>(mime_fields[0].value()));
+    REQUIRE(std::get<std::string>(mime_fields[0].value()) == "value");
+    REQUIRE(mime_fields[1].name() == "name2");
+    REQUIRE(std::holds_alternative<std::filesystem::path>(mime_fields[1].value()));
+    REQUIRE(std::get<std::filesystem::path>(mime_fields[1].value()) == "/var/log/lift.log");
 }

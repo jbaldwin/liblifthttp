@@ -2,41 +2,41 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("ResolveHost synchronous perform")
+TEST_CASE("resolve_host synchronous perform")
 {
-    lift::ResolveHost rhost{"testhostname", NGINX_PORT, SERVICE_IP_ADDRESS};
+    lift::resolve_host rhost{"testhostname", nginx_port, service_ip_address};
 
-    REQUIRE(rhost.Host() == "testhostname");
-    REQUIRE(rhost.Port() == NGINX_PORT);
-    REQUIRE(rhost.IpAddr() == SERVICE_IP_ADDRESS);
+    REQUIRE(rhost.host() == "testhostname");
+    REQUIRE(rhost.port() == nginx_port);
+    REQUIRE(rhost.ip_addr() == service_ip_address);
 
-    lift::Request request{"http://testhostname:" + NGINX_PORT_STR + "/"};
+    lift::request request{"http://testhostname:" + nginx_port_str + "/"};
 
-    request.ResolveHost(std::move(rhost));
+    request.resolve_host(std::move(rhost));
 
-    auto response = request.Perform();
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    auto response = request.perform();
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 }
 
-TEST_CASE("ResolveHost event_loop")
+TEST_CASE("resolve_host event_loop")
 {
-    std::vector<lift::ResolveHost> rhosts{
-        lift::ResolveHost{"testhostname", NGINX_PORT, SERVICE_IP_ADDRESS},
-        lift::ResolveHost{"herpderp.com", NGINX_PORT, SERVICE_IP_ADDRESS}};
+    std::vector<lift::resolve_host> rhosts{
+        lift::resolve_host{"testhostname", nginx_port, service_ip_address},
+        lift::resolve_host{"herpderp.com", nginx_port, service_ip_address}};
 
     lift::event_loop ev{lift::event_loop::options{.resolve_hosts = std::move(rhosts)}};
 
-    auto on_complete = [&](lift::RequestPtr, lift::Response response) -> void {
-        REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-        REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    auto on_complete = [&](lift::request_ptr, lift::response response) -> void {
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
     };
 
-    std::vector<lift::RequestPtr> requests;
+    std::vector<lift::request_ptr> requests;
     requests.emplace_back(
-        lift::Request::make_unique("testhostname:" + NGINX_PORT_STR, std::chrono::seconds{60}, on_complete));
+        lift::request::make_unique("testhostname:" + nginx_port_str, std::chrono::seconds{60}, on_complete));
     requests.emplace_back(
-        lift::Request::make_unique("herpderp.com:" + NGINX_PORT_STR, std::chrono::seconds{60}, on_complete));
+        lift::request::make_unique("herpderp.com:" + nginx_port_str, std::chrono::seconds{60}, on_complete));
 
     REQUIRE(ev.start_requests(std::move(requests)));
 }

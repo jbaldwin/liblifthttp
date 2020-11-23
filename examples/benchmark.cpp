@@ -108,9 +108,9 @@ int main(int argc, char* argv[])
             {
                 auto& event_loop = *event_loop_ptr;
 
-                auto request_ptr = lift::Request::make_unique(
-                    url, 30s, [&event_loop, &success, &error](lift::RequestPtr req_ptr, lift::Response response) {
-                        if (response.LiftStatus() == lift::LiftStatus::SUCCESS)
+                auto request_ptr = lift::request::make_unique(
+                    url, 30s, [&event_loop, &success, &error](lift::request_ptr req_ptr, lift::response response) {
+                        if (response.lift_status() == lift::lift_status::success)
                         {
                             success.fetch_add(1, std::memory_order_relaxed);
                         }
@@ -123,8 +123,8 @@ int main(int argc, char* argv[])
                         event_loop.start_request(std::move(req_ptr));
                     });
 
-                request_ptr->FollowRedirects(false);
-                request_ptr->Header("Connection", "Keep-Alive");
+                request_ptr->follow_redirects(false);
+                request_ptr->header("Connection", "Keep-Alive");
                 event_loop_ptr->start_request(std::move(request_ptr));
             }
 

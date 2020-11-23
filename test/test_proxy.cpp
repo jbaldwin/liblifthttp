@@ -4,17 +4,17 @@
 
 #include <iostream>
 
-TEST_CASE("Proxy")
+TEST_CASE("proxy")
 {
     // Need to do research but cannot add a port for the proxied request, leaving off for now.
-    lift::Request request{"http://" + NGINX_HOSTNAME + "/"};
-    request.Proxy(lift::ProxyType::HTTP, HAPROXY_HOSTNAME, HAPROXY_PORT);
+    lift::request request{"http://" + nginx_hostname + "/"};
+    request.proxy(lift::proxy_type::http, haproxy_hostname, haproxy_port);
 
-    const auto& response = request.Perform();
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
-    for (const auto& header : response.Headers())
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    for (const auto& header : response.headers())
     {
         if (header.name() == "server")
         {
@@ -32,22 +32,22 @@ TEST_CASE("Proxy")
     }
 }
 
-TEST_CASE("Proxy Basic Auth")
+TEST_CASE("proxy Basic Auth")
 {
-    lift::Request request{"http://" + NGINX_HOSTNAME + "/"};
-    request.Proxy(
-        lift::ProxyType::HTTP,
-        HAPROXY_HOSTNAME,
-        HAPROXY_PORT,
+    lift::request request{"http://" + nginx_hostname + "/"};
+    request.proxy(
+        lift::proxy_type::http,
+        haproxy_hostname,
+        haproxy_port,
         "guest",
         "guestpassword",
-        std::vector{lift::HttpAuthType::BASIC});
+        std::vector{lift::http_auth_type::basic});
 
-    const auto& response = request.Perform();
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
-    for (const auto& header : response.Headers())
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    for (const auto& header : response.headers())
     {
         if (header.name() == "server")
         {
@@ -65,22 +65,22 @@ TEST_CASE("Proxy Basic Auth")
     }
 }
 
-TEST_CASE("Proxy Any Auth")
+TEST_CASE("proxy Any Auth")
 {
-    lift::Request request{"http://" + NGINX_HOSTNAME + "/"};
-    request.Proxy(
-        lift::ProxyType::HTTP,
-        HAPROXY_HOSTNAME,
-        HAPROXY_PORT,
+    lift::request request{"http://" + nginx_hostname + "/"};
+    request.proxy(
+        lift::proxy_type::http,
+        haproxy_hostname,
+        haproxy_port,
         "guest",
         "guestpassword",
-        std::vector{lift::HttpAuthType::ANY});
+        std::vector{lift::http_auth_type::any_safe});
 
-    const auto& response = request.Perform();
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
-    for (const auto& header : response.Headers())
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    for (const auto& header : response.headers())
     {
         if (header.name() == "server")
         {

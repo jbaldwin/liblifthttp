@@ -52,9 +52,9 @@ public:
         /// the keep-alive connection is established.
         std::optional<std::chrono::milliseconds> connect_timeout{std::nullopt};
         /// A set of host:port combinations to bypass DNS resolving.
-        std::optional<std::vector<ResolveHost>> resolve_hosts{std::nullopt};
+        std::optional<std::vector<resolve_host>> resolve_hosts{std::nullopt};
         /// Should separate event loops share connection information?
-        SharePtr share_ptr{nullptr};
+        share_ptr share{nullptr};
         /// If this functor is provided it is called on the background
         /// thread starting and thread stopping.  This can be used to set the
         /// thread's priority/niceness or possibly changes its thread name.
@@ -117,7 +117,7 @@ public:
      *                    will have its OnComplete() handler called
      *                    when its completed/error'ed/etc.
      */
-    auto start_request(RequestPtr request_ptr) -> bool;
+    auto start_request(request_ptr request_ptr) -> bool;
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
@@ -165,9 +165,9 @@ private:
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
-    std::vector<RequestPtr> m_pending_requests{};
+    std::vector<request_ptr> m_pending_requests{};
     /// Only accessible from within the event_loop thread.
-    std::vector<RequestPtr> m_grabbed_requests{};
+    std::vector<request_ptr> m_grabbed_requests{};
 
     /// The background thread spawned to drive the event loop.
     std::thread m_background_thread{};
@@ -180,15 +180,15 @@ private:
     std::deque<std::unique_ptr<executor>> m_executors{};
 
     /// The set of resolve hosts to apply to all requests in this event loop.
-    std::vector<lift::ResolveHost> m_resolve_hosts{};
+    std::vector<lift::resolve_host> m_resolve_hosts{};
 
     /// When connection time is enabled on an event loop the curl timeout is the longer
     /// timeout value and these timeouts are the shorter value.
     std::multimap<time_point, executor*> m_timeouts{};
 
-    /// If the event loop is provided a Share object then connection information like
+    /// If the event loop is provided a share object then connection information like
     /// DNS/SSL/Data pipelining can be shared across event loops.
-    SharePtr m_share_ptr{nullptr};
+    share_ptr m_share_ptr{nullptr};
 
     /// Functor to call on background thread start/stop.
     on_thread_callback_type m_on_thread_callback{nullptr};
@@ -211,11 +211,11 @@ private:
     /**
      * Completes a request to pass ownership back to the user land.
      * Manages internal state accordingly, always call this function rather
-     * than the Request->OnComplete() function directly.
+     * than the request->OnComplete() function directly.
      * @param exe The request handle to complete.
      * @param status The status of the request when completing.
      */
-    auto complete_request_normal(executor& exe, LiftStatus status) -> void;
+    auto complete_request_normal(executor& exe, lift_status status) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.

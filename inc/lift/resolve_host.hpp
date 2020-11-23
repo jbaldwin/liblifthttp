@@ -6,9 +6,9 @@ namespace lift
 {
 class executor;
 
-class ResolveHost
+class resolve_host
 {
-    /// For getCurlFormattedResolveHost().
+    /// For curl_formatted_resolve_host().
     friend executor;
 
 public:
@@ -18,28 +18,28 @@ public:
      * @param resolve_port The port to resolve.
      * @param resolved_ip_addr The IP Address that the host + port combination should resolve to.
      */
-    ResolveHost(std::string resolve_host, uint16_t resolve_port, std::string resolved_ip_addr);
-    ~ResolveHost() = default;
+    resolve_host(std::string resolve_host, uint16_t resolve_port, std::string resolved_ip_addr);
+    ~resolve_host() = default;
 
-    ResolveHost(const ResolveHost&)     = default;
-    ResolveHost(ResolveHost&&) noexcept = default;
-    auto operator=(const ResolveHost&) -> ResolveHost& = default;
-    auto operator=(ResolveHost&&) noexcept -> ResolveHost& = default;
+    resolve_host(const resolve_host&)     = default;
+    resolve_host(resolve_host&&) noexcept = default;
+    auto operator=(const resolve_host&) -> resolve_host& = default;
+    auto operator=(resolve_host&&) noexcept -> resolve_host& = default;
 
     /**
      * @return Gets the given host that should be resolved.
      */
-    [[nodiscard]] auto Host() const noexcept -> const std::string& { return m_resolve_host; }
+    [[nodiscard]] auto host() const noexcept -> const std::string& { return m_resolve_host; }
 
     /**
      * @return Gets the given port that should be resolved.
      */
-    [[nodiscard]] auto Port() const noexcept -> uint16_t { return m_resolve_port; }
+    [[nodiscard]] auto port() const noexcept -> uint16_t { return m_resolve_port; }
 
     /**
      * @return Gets the given IP Address that is being resolved to.
      */
-    [[nodiscard]] auto IpAddr() const noexcept -> const std::string& { return m_resolved_ip_addr; }
+    [[nodiscard]] auto ip_addr() const noexcept -> const std::string& { return m_resolved_ip_addr; }
 
 private:
     /// The given input resolve host.
@@ -55,7 +55,7 @@ private:
     /**
      * @return Gets the "host:port:ipaddress" curl formatted resolve host.
      */
-    [[nodiscard]] auto getCurlFormattedResolveHost() const noexcept -> const std::string& { return m_curl_formatted; }
+    [[nodiscard]] auto curl_formatted_resolve_host() const noexcept -> const std::string& { return m_curl_formatted; }
 };
 
 } // namespace lift

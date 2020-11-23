@@ -7,12 +7,12 @@ struct TestSetupInfo
 {
     TestSetupInfo()
     {
-        std::cout << "SERVICE_IP_ADDRESS = " << SERVICE_IP_ADDRESS << "\n";
-        std::cout << "NGINX_HOSTNAME = "
-                  << "http://" << NGINX_HOSTNAME << ":" << NGINX_PORT_STR << "/"
+        std::cout << "service_ip_address = " << service_ip_address << "\n";
+        std::cout << "nginx_hostname = "
+                  << "http://" << nginx_hostname << ":" << nginx_port_str << "/"
                   << "\n";
-        std::cout << "HAPROXY_HOSTNAME = "
-                  << "http://" << HAPROXY_HOSTNAME << ":" << HAPROXY_PORT_STR << "/"
+        std::cout << "haproxy_hostname = "
+                  << "http://" << haproxy_hostname << ":" << haproxy_port_str << "/"
                   << "\n";
     }
 } test_setup_info_instance;

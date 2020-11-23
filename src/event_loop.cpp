@@ -84,8 +84,8 @@ auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 event_loop::event_loop(options opts)
     : m_connect_timeout(std::move(opts.connect_timeout)),
       m_curl_context_ready(),
-      m_resolve_hosts(std::move(opts.resolve_hosts.value_or(std::vector<ResolveHost>{}))),
-      m_share_ptr(std::move(opts.share_ptr)),
+      m_resolve_hosts(std::move(opts.resolve_hosts.value_or(std::vector<resolve_host>{}))),
+      m_share_ptr(std::move(opts.share)),
       m_on_thread_callback(std::move(opts.on_thread_callback))
 {
     global_init();
@@ -156,7 +156,7 @@ event_loop::~event_loop()
     global_cleanup();
 }
 
-auto event_loop::start_request(RequestPtr request_ptr) -> bool
+auto event_loop::start_request(request_ptr request_ptr) -> bool
 {
     if (request_ptr == nullptr)
     {
@@ -234,7 +234,7 @@ auto event_loop::check_actions(curl_socket_t socket, int event_bitmask) -> void
     }
 }
 
-auto event_loop::complete_request_normal(executor& exe, LiftStatus status) -> void
+auto event_loop::complete_request_normal(executor& exe, lift_status status) -> void
 {
     if (exe.m_on_complete_callback_called == false)
     {
@@ -262,8 +262,8 @@ auto event_loop::complete_request_timeout(executor& exe) -> void
     if (exe.m_on_complete_callback_called == false && on_complete_handler != nullptr)
     {
         exe.m_on_complete_callback_called = true;
-        exe.m_response.m_lift_status      = lift::LiftStatus::TIMEOUT;
-        exe.set_timesup_response(exe.m_request->Timeout().value());
+        exe.m_response.m_lift_status      = lift::lift_status::timeout;
+        exe.set_timesup_response(exe.m_request->timeout().value());
 
         // Removing the timesup is done in the uv timesup callback so it can prune
         // every single item that has timesup'ed.  Doing it here will cause 1 item
@@ -276,7 +276,7 @@ auto event_loop::complete_request_timeout(executor& exe) -> void
         // own timeout.  Shared ownership would most likely require locks as well since any curl
         // handle still in the curl multi handle could be mutated by curl at any moment, copying
         // seems far safer.
-        auto copy_ptr = std::make_unique<Request>(*exe.m_request_async);
+        auto copy_ptr = std::make_unique<request>(*exe.m_request_async);
 
         on_complete_handler(std::move(copy_ptr), std::move(exe.m_response));
     }
@@ -287,15 +287,15 @@ auto event_loop::complete_request_timeout(executor& exe) -> void
 auto event_loop::add_timeout(executor& exe) -> void
 {
     auto* request = exe.m_request;
-    if (request->Timeout().has_value())
+    if (request->timeout().has_value())
     {
-        auto timeout = exe.m_request->Timeout().value();
+        auto timeout = exe.m_request->timeout().value();
 
         std::optional<std::chrono::milliseconds> connect_timeout{std::nullopt};
-        if (request->ConnectTimeout().has_value())
+        if (request->connect_timeout().has_value())
         {
             // Prefer the individual connect timeout over the event loop default.
-            connect_timeout = request->ConnectTimeout().value();
+            connect_timeout = request->connect_timeout().value();
         }
         else if (m_connect_timeout.has_value())
         {
@@ -529,7 +529,7 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
      * while it is held, curl has its own internal locks and
      * it can cause a deadlock.  This means we intentionally swap
      * vectors before working on them so we have exclusive access
-     * to the Request objects on the event_loop thread.
+     * to the request objects on the event_loop thread.
      */
     {
         std::lock_guard<std::mutex> guard{el->m_pending_requests_lock};
@@ -561,9 +561,9 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
         else
         {
             /**
-             * Drop the unique_ptr safety around the RequestHandle while it is being
+             * Drop the unique_ptr safety around the request_ptr while it is being
              * processed by curl.  When curl is finished completing the request
-             * it will be put back into a Request object for the client to use.
+             * it will be put back into a request object for the client to use.
              */
             (void)executor_ptr.release();
 

@@ -4,10 +4,10 @@
 int main()
 {
     // Synchronous requests can be created on the stack.
-    lift::Request request{"http://www.example.com"};
+    lift::request request{"http://www.example.com"};
     // This is the blocking synchronous HTTP call.
-    auto response = request.Perform();
-    std::cout << "Lift status: " << lift::to_string(response.LiftStatus()) << "\n";
+    auto response = request.perform();
+    std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
     std::cout << response << "\n"; // Will print the raw http response.
 
     // Creating the event loop starts it immediately, it spawns a background thread for executing requests.
@@ -18,12 +18,12 @@ int main()
     // on completion processing on this main thread you need to std::move() it back via a queue or inter-thread
     // communication.  This is imporant if any resources are shared between the threads.
     // NOTE: The request is created on the heap so ownership can be passed easily via an std::unique_ptr
-    // to the lift::event_loop!  lift::Request::make_unique() is a handy function to easily do so.
-    auto request_ptr = lift::Request::make_unique(
+    // to the lift::event_loop!  lift::request::make_unique() is a handy function to easily do so.
+    auto request_ptr = lift::request::make_unique(
         "http://www.example.com",
         std::chrono::seconds{10}, // Give the request 10 seconds to complete or timeout.
-        [](lift::RequestPtr req_ptr, lift::Response response) {
-            std::cout << "Lift status: " << lift::to_string(response.LiftStatus()) << "\n";
+        [](lift::request_ptr req_ptr, lift::response response) {
+            std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
             std::cout << response << "\n";
         });
 

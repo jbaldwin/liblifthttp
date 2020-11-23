@@ -3,43 +3,43 @@
 
 namespace lift
 {
-auto QueryBuilder::Scheme(std::string_view scheme) -> QueryBuilder&
+auto query_builder::scheme(std::string_view scheme) -> query_builder&
 {
     m_scheme = scheme;
     return *this;
 }
 
-auto QueryBuilder::Hostname(std::string_view hostname) -> QueryBuilder&
+auto query_builder::hostname(std::string_view hostname) -> query_builder&
 {
     m_hostname = hostname;
     return *this;
 }
 
-auto QueryBuilder::Port(uint16_t port) -> QueryBuilder&
+auto query_builder::port(uint16_t port) -> query_builder&
 {
     m_port = port;
     return *this;
 }
 
-auto QueryBuilder::AppendPathPart(std::string_view path_part) -> QueryBuilder&
+auto query_builder::append_path_part(std::string_view path_part) -> query_builder&
 {
     m_path_parts.emplace_back(path_part);
     return *this;
 }
 
-auto QueryBuilder::AppendQueryParameter(std::string_view name, std::string_view value) -> QueryBuilder&
+auto query_builder::append_query_parameter(std::string_view name, std::string_view value) -> query_builder&
 {
     m_query_parameters.emplace_back(name, value);
     return *this;
 }
 
-auto QueryBuilder::Fragment(std::string_view fragment) -> QueryBuilder&
+auto query_builder::fragment(std::string_view fragment) -> query_builder&
 {
     m_fragment = fragment;
     return *this;
 }
 
-auto QueryBuilder::Build() -> std::string
+auto query_builder::build() -> std::string
 {
     if (!m_scheme.empty())
     {
@@ -90,7 +90,7 @@ auto QueryBuilder::Build() -> std::string
     return copy;
 }
 
-auto QueryBuilder::reset() -> void
+auto query_builder::reset() -> void
 {
     m_query.clear();
     m_query.str("");

@@ -2,7 +2,7 @@
 
 namespace lift
 {
-ResolveHost::ResolveHost(std::string resolve_host, uint16_t resolve_port, std::string resolved_ip_addr)
+resolve_host::resolve_host(std::string resolve_host, uint16_t resolve_port, std::string resolved_ip_addr)
     : m_resolve_host(std::move(resolve_host)),
       m_resolve_port(resolve_port),
       m_resolved_ip_addr(std::move(resolved_ip_addr)),

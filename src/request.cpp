@@ -5,43 +5,43 @@
 namespace lift
 {
 using namespace std::string_literals;
-static const std::string SSL_CERT_TYPE_UNKNOWN = "UNKNOWN"s;
-static const std::string SSL_CERT_TYPE_PEM     = "PEM"s;
-static const std::string SSL_CERT_TYPE_DER     = "DER"s;
+static const std::string ssl_cert_type_unknown = "unknown"s;
+static const std::string ssl_cert_type_pem     = "PEM"s;
+static const std::string ssl_cert_type_der     = "DER"s;
 
-auto to_string(SslCertificateType type) -> const std::string&
+auto to_string(ssl_certificate_type type) -> const std::string&
 {
     switch (type)
     {
-        case SslCertificateType::PEM:
-            return SSL_CERT_TYPE_PEM;
-        case SslCertificateType::DER:
-            return SSL_CERT_TYPE_DER;
+        case ssl_certificate_type::pem:
+            return ssl_cert_type_pem;
+        case ssl_certificate_type::der:
+            return ssl_cert_type_der;
         default:
-            return SSL_CERT_TYPE_UNKNOWN;
+            return ssl_cert_type_unknown;
     }
 }
 
-Request::Request(
-    std::string url, std::optional<std::chrono::milliseconds> timeout, OnCompleteHandlerType on_complete_handler)
+request::request(
+    std::string url, std::optional<std::chrono::milliseconds> timeout, on_complete_handler_type on_complete_handler)
     : m_on_complete_handler(std::move(on_complete_handler)),
       m_timeout(std::move(timeout)),
       m_url(std::move(url))
 {
 }
 
-auto Request::Perform(SharePtr share_ptr) -> Response
+auto request::perform(share_ptr share_ptr) -> response
 {
     executor exe{this, share_ptr.get()};
     return exe.perform();
 }
 
-auto Request::OnCompleteHandler(OnCompleteHandlerType on_complete_handler) -> void
+auto request::on_complete_handler(on_complete_handler_type on_complete_handler) -> void
 {
     m_on_complete_handler = std::move(on_complete_handler);
 }
 
-auto Request::TransferProgressHandler(std::optional<TransferProgressHandlerType> transfer_progress_handler) -> void
+auto request::transfer_progress_handler(std::optional<transfer_progress_handler_type> transfer_progress_handler) -> void
 {
     if (transfer_progress_handler.has_value() && transfer_progress_handler.value())
     {
@@ -53,7 +53,7 @@ auto Request::TransferProgressHandler(std::optional<TransferProgressHandlerType>
     }
 }
 
-auto Request::FollowRedirects(bool follow_redirects, std::optional<uint64_t> max_redirects) -> void
+auto request::follow_redirects(bool follow_redirects, std::optional<uint64_t> max_redirects) -> void
 {
     if (follow_redirects)
     {
@@ -76,16 +76,16 @@ auto Request::FollowRedirects(bool follow_redirects, std::optional<uint64_t> max
     }
 }
 
-auto Request::Header(std::string_view name, std::string_view value) -> void
+auto request::header(std::string_view name, std::string_view value) -> void
 {
     m_request_headers.emplace_back(name, value);
 }
 
-auto Request::Data(std::string data) -> void
+auto request::data(std::string data) -> void
 {
     if (m_mime_fields_set)
     {
-        throw std::logic_error("Cannot set POST request data on Request after using adding Mime Fields.");
+        throw std::logic_error("Cannot set POST request data on request after using adding Mime Fields.");
     }
 
     m_request_data_set = true;
@@ -93,15 +93,15 @@ auto Request::Data(std::string data) -> void
     m_method           = http::method::post;
 }
 
-auto Request::MimeField(lift::MimeField mime_field) -> void
+auto request::mime_field(lift::mime_field mf) -> void
 {
     if (m_request_data_set)
     {
-        throw std::logic_error("Cannot add Mime Fields on Request after using POST request data.");
+        throw std::logic_error("Cannot add Mime Fields on request after using POST request data.");
     }
 
     m_mime_fields_set = true;
-    m_mime_fields.emplace_back(std::move(mime_field));
+    m_mime_fields.emplace_back(std::move(mf));
 }
 
 } // namespace lift

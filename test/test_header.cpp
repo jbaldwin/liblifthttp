@@ -22,17 +22,17 @@ TEST_CASE("header request that re-allocates the underlying vector a lot")
 {
     constexpr size_t N_HEADERS = 65'000; // lets make a lot of headers to re-allocate a few times
 
-    lift::Request request{"http://herpderp.com"};
+    lift::request request{"http://herpderp.com"};
 
     for (size_t i = 0; i < N_HEADERS; ++i)
     {
         auto name  = "name" + std::to_string(i);
         auto value = "value" + std::to_string(i);
-        request.Header(name, value);
+        request.header(name, value);
     }
 
     size_t idx = 0;
-    for (const auto& header : request.Headers())
+    for (const auto& header : request.headers())
     {
         auto idx_str     = std::to_string(idx);
         auto name        = "name" + idx_str;
@@ -56,7 +56,7 @@ TEST_CASE("header from full")
     REQUIRE(h.value() == "value");
 }
 
-TEST_CASE("header lots of allocations in a vector (simulate Response)")
+TEST_CASE("header lots of allocations in a vector (simulate response)")
 {
     constexpr size_t N_HEADERS = 65'000; // lets make a lot of headers to re-allocate a few times
 

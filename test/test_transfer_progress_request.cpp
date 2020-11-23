@@ -6,31 +6,31 @@
 
 TEST_CASE("Transfer Progress synchronous")
 {
-    auto        request = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
+    auto        request = std::make_unique<lift::request>("http://" + nginx_hostname + ":" + nginx_port_str + "/");
     std::size_t handler_called = 0;
 
-    request->TransferProgressHandler(
-        [&](const lift::Request& r, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) -> bool {
+    request->transfer_progress_handler(
+        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) -> bool {
             handler_called++;
             return true; // continue the request
         });
 
-    const auto& response = request->Perform();
+    const auto& response = request->perform();
 
     REQUIRE(handler_called > 0);
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("Download <N> bytes test synchronous")
 {
-    auto request       = std::make_unique<lift::Request>("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
+    auto request       = std::make_unique<lift::request>("http://" + nginx_hostname + ":" + nginx_port_str + "/");
     bool should_failed = true;
 
     static constexpr std::size_t BYTES_TO_DOWNLOAD = 5;
 
-    request->TransferProgressHandler(
-        [&](const lift::Request& r, int64_t dltotal, int64_t dlnow, int64_t, int64_t) -> bool {
+    request->transfer_progress_handler(
+        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t, int64_t) -> bool {
             if (dlnow >= BYTES_TO_DOWNLOAD)
             {
                 should_failed = true;
@@ -46,9 +46,9 @@ TEST_CASE("Download <N> bytes test synchronous")
             }
         });
 
-    const auto& response = request->Perform();
+    const auto& response = request->perform();
 
     // Its possible the test downloads the entire file before finishing, take the appropriate action.
-    REQUIRE(response.LiftStatus() == ((should_failed) ? lift::LiftStatus::ERROR : lift::LiftStatus::SUCCESS));
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.lift_status() == ((should_failed) ? lift::lift_status::error : lift::lift_status::success));
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 }

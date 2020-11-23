@@ -20,10 +20,10 @@ namespace lift
  * Note that the user is responsible for the lifetime of all string_view's
  * passed into the query builder.  They must be 'alive' until Build() is called.
  */
-class QueryBuilder
+class query_builder
 {
 public:
-    QueryBuilder() = default;
+    query_builder() = default;
 
     /**
      * Sets the scheme for the url.
@@ -31,25 +31,25 @@ public:
      * Do not include the :// as the builder will include it for you.
      *
      * @param scheme Examples are "http" or "https".
-     * @return QueryBuilder
+     * @return query_builder
      */
-    auto Scheme(std::string_view scheme) -> QueryBuilder&;
+    auto scheme(std::string_view scheme) -> query_builder&;
 
     /**
      * Sets the hostname for the url.
      * @param hostname Examples are www.example.com or google.com.  Note that the builder
      *                 currently will not inject a www. prefix so if you want it then make
      *                 sure it is already there.
-     * @return QueryBuilder
+     * @return query_builder
      */
-    auto Hostname(std::string_view hostname) -> QueryBuilder&;
+    auto hostname(std::string_view hostname) -> query_builder&;
 
     /**
      * Sets the port.
      * @param port The url port.
-     * @return QueryBuidler
+     * @return query_builder
      */
-    auto Port(uint16_t port) -> QueryBuilder&;
+    auto port(uint16_t port) -> query_builder&;
 
     /**
      * Adds a path part to the url.  Path parts shouldn't include '/' as the builder
@@ -61,9 +61,9 @@ public:
      * This function will append the path parts in the same order they are provided in.
      *
      * @param path_part The path part to add to the query.
-     * @return QueryBuilder
+     * @return query_builder
      */
-    auto AppendPathPart(std::string_view path_part) -> QueryBuilder&;
+    auto append_path_part(std::string_view path_part) -> query_builder&;
 
     /**
      * Adds a query parameter to the url.
@@ -74,16 +74,16 @@ public:
      *
      * @param name The name of the parameter.
      * @param value The unescaped value of the parameter.
-     * @return QueryBuilder
+     * @return query_builder
      */
-    auto AppendQueryParameter(std::string_view name, std::string_view value) -> QueryBuilder&;
+    auto append_query_parameter(std::string_view name, std::string_view value) -> query_builder&;
 
     /**
      * Sets the fragment for the url.
      * @param fragment #imafragment
-     * @return QueryBuilder
+     * @return query_builder
      */
-    auto Fragment(std::string_view fragment) -> QueryBuilder&;
+    auto fragment(std::string_view fragment) -> query_builder&;
 
     /**
      * This function will build the HTTP query string based on the provided
@@ -92,7 +92,7 @@ public:
      * next query.
      * @return Builds the query into a well formed string.
      */
-    auto Build() -> std::string;
+    auto build() -> std::string;
 
 private:
     /// A buffer for generating the url from its parts.

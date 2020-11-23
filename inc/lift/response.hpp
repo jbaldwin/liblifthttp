@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,19 +18,19 @@ namespace lift
 class event_loop;
 class executor;
 
-class Response
+class response
 {
     friend event_loop;
     friend executor;
 
 public:
-    Response();
-    ~Response() = default;
+    response();
+    ~response() = default;
 
-    Response(const Response&) = default;
-    Response(Response&&)      = default;
-    auto operator=(const Response&) noexcept -> Response& = default;
-    auto operator=(Response&&) noexcept -> Response& = default;
+    response(const response&) = default;
+    response(response&&)      = default;
+    auto operator=(const response&) noexcept -> response& = default;
+    auto operator=(response&&) noexcept -> response& = default;
 
     /**
      * The Lift status is how the request ended up in the event loop.
@@ -39,32 +40,37 @@ public:
      *
      * @return Gets the request completion status.
      */
-    [[nodiscard]] auto LiftStatus() const -> lift::LiftStatus { return m_lift_status; }
+    [[nodiscard]] auto lift_status() const -> lift::lift_status { return m_lift_status; }
 
     /**
      * @return The HTTP version of the response.
      */
-    auto Version() const -> http::version { return m_version; }
+    auto version() const -> http::version { return m_version; }
 
     /**
      * @return The HTTP response status code.
      */
-    [[nodiscard]] auto StatusCode() const -> http::status_code { return m_status_code; }
+    [[nodiscard]] auto status_code() const -> http::status_code { return m_status_code; }
 
     /**
      * @return The HTTP response headers.
      */
-    [[nodiscard]] auto Headers() const -> const std::vector<header>& { return m_headers; }
+    [[nodiscard]] auto headers() const -> const std::vector<header>& { return m_headers; }
+
+    /**
+     * @return The header if it exists on this response, otherwise std::nullopt.
+     */
+    [[nodiscard]] auto header(std::string_view name) const -> std::optional<std::reference_wrapper<const lift::header>>;
 
     /**
      * @return The HTTP download payload.
      */
-    [[nodiscard]] auto Data() const -> std::string_view { return std::string_view{m_data.data(), m_data.size()}; }
+    [[nodiscard]] auto data() const -> std::string_view { return std::string_view{m_data.data(), m_data.size()}; }
 
     /**
      * @return The total HTTP request time in milliseconds.
      */
-    [[nodiscard]] auto TotalTime() const -> std::chrono::milliseconds
+    [[nodiscard]] auto total_time() const -> std::chrono::milliseconds
     {
         return std::chrono::milliseconds{m_total_time};
     }
@@ -72,23 +78,23 @@ public:
     /**
      * @return The number of connections made to make this request
      */
-    [[nodiscard]] auto NumConnects() const -> uint8_t { return m_num_connects; }
+    [[nodiscard]] auto num_connects() const -> uint8_t { return m_num_connects; }
 
     /**
      * @return The number of redirects made during this request.
      */
-    [[nodiscard]] auto NumRedirects() const -> uint8_t { return m_num_redirects; }
+    [[nodiscard]] auto num_redirects() const -> uint8_t { return m_num_redirects; }
 
     /**
      * Formats the response in the raw HTTP format.
      */
-    friend auto operator<<(std::ostream& os, const Response& r) -> std::ostream&;
+    friend auto operator<<(std::ostream& os, const response& r) -> std::ostream&;
 
 private:
     /// Ordered by sizeof() since response gets std::moved()'ed back to the client.
 
     /// The response headers.
-    std::vector<header> m_headers{};
+    std::vector<lift::header> m_headers{};
     /// The response data if any.
     std::vector<char> m_data{};
     /// The total time in milliseconds to execute the request, stored as uint32_t since that is enough
@@ -97,7 +103,7 @@ private:
     /// The HTTP response status code.
     lift::http::status_code m_status_code{lift::http::status_code::http_unknown};
     /// The status of this HTTP request.
-    lift::LiftStatus m_lift_status{lift::LiftStatus::BUILDING};
+    lift::lift_status m_lift_status{lift::lift_status::building};
     /// The HTTP response version.
     http::version m_version{http::version::v1_1};
     /// The number of times attempted to connect to the remote server.

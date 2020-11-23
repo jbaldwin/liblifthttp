@@ -6,39 +6,39 @@
 
 TEST_CASE("Synchronous 200")
 {
-    lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    const auto&   response = request.Perform();
+    lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/");
+    const auto&   response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("Synchronous 404")
 {
-    lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/not/here");
-    const auto&   response = request.Perform();
+    lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/not/here");
+    const auto&   response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_404_not_found);
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_404_not_found);
 }
 
 TEST_CASE("Synchronous HEAD")
 {
-    lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    request.Method(lift::http::method::head);
-    const auto& response = request.Perform();
+    lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/");
+    request.method(lift::http::method::head);
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
-    REQUIRE(response.Data().empty());
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.data().empty());
 }
 
 TEST_CASE("Synchronous custom headers")
 {
-    lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    request.Header("x-custom-header-1", "custom-value-1");
+    lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/");
+    request.header("x-custom-header-1", "custom-value-1");
 
-    for (const auto& header : request.Headers())
+    for (const auto& header : request.headers())
     {
         if (header.name() == "x-custom-header-1")
         {
@@ -49,21 +49,21 @@ TEST_CASE("Synchronous custom headers")
 
 TEST_CASE("Multiple headers added")
 {
-    lift::Request request("http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/");
-    request.Header("Connection", "keep-alive");
-    request.Header("x-custom-header-1", "value1");
-    request.Header("x-custom-header-2", "value2");
-    request.Header("x-herp-derp", "merp");
-    request.Header("x-420", "blazeit");
+    lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/");
+    request.header("Connection", "keep-alive");
+    request.header("x-custom-header-1", "value1");
+    request.header("x-custom-header-2", "value2");
+    request.header("x-herp-derp", "merp");
+    request.header("x-420", "blazeit");
 
-    const auto& response = request.Perform();
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 
     std::size_t count_found = 0;
 
-    for (const auto& header : request.Headers())
+    for (const auto& header : request.headers())
     {
         if (header.name() == "Connection")
         {
@@ -98,13 +98,13 @@ TEST_CASE("Multiple headers added")
 TEST_CASE("Happy Eyeballs Test")
 {
     using namespace std::chrono_literals;
-    lift::Request request{"http://" + NGINX_HOSTNAME + ":" + NGINX_PORT_STR + "/"};
-    request.HappyEyeballsTimeout(0ms);
+    lift::request request{"http://" + nginx_hostname + ":" + nginx_port_str + "/"};
+    request.happy_eyeballs_timeout(0ms);
 
-    const auto& response = request.Perform();
+    const auto& response = request.perform();
 
-    REQUIRE(response.LiftStatus() == lift::LiftStatus::SUCCESS);
-    REQUIRE(response.StatusCode() == lift::http::status_code::http_200_ok);
+    REQUIRE(response.lift_status() == lift::lift_status::success);
+    REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
 }
 
 TEST_CASE("SSL functions")

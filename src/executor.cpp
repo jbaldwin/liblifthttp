@@ -1,5 +1,5 @@
 #include "lift/executor.hpp"
-#include "lift/event_loop.hpp"
+#include "lift/client.hpp"
 #include "lift/init.hpp"
 
 namespace lift
@@ -23,7 +23,7 @@ executor::executor(request* request, share* share) : m_request_sync(request), m_
     }
 }
 
-executor::executor(event_loop* event_loop) : m_event_loop(event_loop)
+executor::executor(client* c) : m_client(c)
 {
 }
 
@@ -303,7 +303,7 @@ auto executor::prepare() -> void
     }
 
     // DNS resolve hosts
-    if (!m_request->m_resolve_hosts.empty() || (m_event_loop != nullptr && !m_event_loop->m_resolve_hosts.empty()))
+    if (!m_request->m_resolve_hosts.empty() || (m_client != nullptr && !m_client->m_resolve_hosts.empty()))
     {
         if (m_curl_resolve_hosts != nullptr)
         {
@@ -317,9 +317,9 @@ auto executor::prepare() -> void
                 curl_slist_append(m_curl_resolve_hosts, resolve_host.curl_formatted_resolve_host().data());
         }
 
-        if (m_event_loop != nullptr)
+        if (m_client != nullptr)
         {
-            for (const auto& resolve_host : m_event_loop->m_resolve_hosts)
+            for (const auto& resolve_host : m_client->m_resolve_hosts)
             {
                 m_curl_resolve_hosts =
                     curl_slist_append(m_curl_resolve_hosts, resolve_host.curl_formatted_resolve_host().data());

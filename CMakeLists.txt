@@ -29,9 +29,9 @@ message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
 message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 
 set(LIBLIFT_SOURCE_FILES
+    inc/lift/client.hpp src/client.cpp
     inc/lift/const.hpp
     inc/lift/escape.hpp src/escape.cpp
-    inc/lift/event_loop.hpp src/event_loop.cpp
     inc/lift/executor.hpp src/executor.cpp
     inc/lift/header.hpp src/header.cpp
     inc/lift/http.hpp src/http.cpp

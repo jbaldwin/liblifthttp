@@ -24,7 +24,7 @@ int main()
 
     std::vector<std::string> urls = {"http://www.example.com", "http://www.google.com", "http://www.reddit.com"};
 
-    lift::event_loop el{};
+    lift::client client{};
 
     /**
      * Create asynchronous requests for each url and inject them into
@@ -36,13 +36,13 @@ int main()
     {
         std::cout << "Requesting " << url << std::endl;
         auto request_ptr = lift::request::make_unique(url, timeout, on_complete);
-        el.start_request(std::move(request_ptr));
+        client.start_request(std::move(request_ptr));
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);
     }
 
     // Now wait for all the requests to finish before cleaning up.
-    while (!el.empty())
+    while (!client.empty())
     {
         std::this_thread::sleep_for(100ms);
     }

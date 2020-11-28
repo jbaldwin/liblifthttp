@@ -1,4 +1,4 @@
-#include "lift/event_loop.hpp"
+#include "lift/client.hpp"
 #include "lift/init.hpp"
 
 #include <curl/curl.h>
@@ -23,7 +23,7 @@ static auto uv_type_cast(input_type* i) -> output_type*
 class curl_context
 {
 public:
-    explicit curl_context(event_loop& event_loop) : m_event_loop(event_loop) { m_poll_handle.data = this; }
+    explicit curl_context(client& c) : m_client(c) { m_poll_handle.data = this; }
 
     ~curl_context() = default;
 
@@ -47,7 +47,7 @@ public:
         uv_close(uv_type_cast<uv_handle_t>(&m_poll_handle), curl_context::on_close);
     }
 
-    inline auto lift_event_loop() -> event_loop& { return m_event_loop; }
+    inline auto lift_client() -> client& { return m_client; }
     inline auto uv_poll_handle() -> uv_poll_t& { return m_poll_handle; }
     inline auto curl_sock_fd() -> curl_socket_t { return m_sock_fd; }
 
@@ -58,11 +58,11 @@ public:
          * uv has signaled that it is finished with the m_poll_handle,
          * we can now safely tell the event loop to re-use this curl context.
          */
-        cc->lift_event_loop().m_curl_context_ready.emplace_back(cc);
+        cc->lift_client().m_curl_context_ready.emplace_back(cc);
     }
 
 private:
-    event_loop&   m_event_loop;
+    client&       m_client;
     uv_poll_t     m_poll_handle{};
     curl_socket_t m_sock_fd{CURL_SOCKET_BAD};
 };
@@ -81,7 +81,7 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
 auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 
-event_loop::event_loop(options opts)
+client::client(options opts)
     : m_connect_timeout(std::move(opts.connect_timeout)),
       m_curl_context_ready(),
       m_resolve_hosts(std::move(opts.resolve_hosts.value_or(std::vector<resolve_host>{}))),
@@ -126,7 +126,7 @@ event_loop::event_loop(options opts)
     while (!is_running()) {}
 }
 
-event_loop::~event_loop()
+client::~client()
 {
     m_is_stopping.exchange(true, std::memory_order_release);
 
@@ -156,7 +156,7 @@ event_loop::~event_loop()
     global_cleanup();
 }
 
-auto event_loop::start_request(request_ptr request_ptr) -> bool
+auto client::start_request(request_ptr request_ptr) -> bool
 {
     if (request_ptr == nullptr)
     {
@@ -180,7 +180,7 @@ auto event_loop::start_request(request_ptr request_ptr) -> bool
     return true;
 }
 
-auto event_loop::run() -> void
+auto client::run() -> void
 {
     if (m_on_thread_callback != nullptr)
     {
@@ -197,12 +197,12 @@ auto event_loop::run() -> void
     }
 }
 
-auto event_loop::check_actions() -> void
+auto client::check_actions() -> void
 {
     check_actions(CURL_SOCKET_TIMEOUT, 0);
 }
 
-auto event_loop::check_actions(curl_socket_t socket, int event_bitmask) -> void
+auto client::check_actions(curl_socket_t socket, int event_bitmask) -> void
 {
     int       running_handles = 0;
     CURLMcode curl_code       = CURLM_OK;
@@ -234,7 +234,7 @@ auto event_loop::check_actions(curl_socket_t socket, int event_bitmask) -> void
     }
 }
 
-auto event_loop::complete_request_normal(executor& exe, lift_status status) -> void
+auto client::complete_request_normal(executor& exe, lift_status status) -> void
 {
     if (exe.m_on_complete_callback_called == false)
     {
@@ -254,7 +254,7 @@ auto event_loop::complete_request_normal(executor& exe, lift_status status) -> v
     m_active_request_count.fetch_sub(1, std::memory_order_relaxed);
 }
 
-auto event_loop::complete_request_timeout(executor& exe) -> void
+auto client::complete_request_timeout(executor& exe) -> void
 {
     auto& on_complete_handler = exe.m_request_async->m_on_complete_handler;
 
@@ -284,7 +284,7 @@ auto event_loop::complete_request_timeout(executor& exe) -> void
     // Lift timeouts do not trigger an active request count drop.
 }
 
-auto event_loop::add_timeout(executor& exe) -> void
+auto client::add_timeout(executor& exe) -> void
 {
     auto* request = exe.m_request;
     if (request->timeout().has_value())
@@ -328,7 +328,7 @@ auto event_loop::add_timeout(executor& exe) -> void
     }
 }
 
-auto event_loop::remove_timeout(executor& exe) -> std::multimap<uint64_t, executor*>::iterator
+auto client::remove_timeout(executor& exe) -> std::multimap<uint64_t, executor*>::iterator
 {
     if (exe.m_timeout_iterator.has_value())
     {
@@ -352,7 +352,7 @@ auto event_loop::remove_timeout(executor& exe) -> std::multimap<uint64_t, execut
     }
 }
 
-auto event_loop::update_timeouts() -> void
+auto client::update_timeouts() -> void
 {
     // TODO only change if it needs to change, this will probably require
     // an iterator to the item just added or removed to properly skip
@@ -382,7 +382,7 @@ auto event_loop::update_timeouts() -> void
     }
 }
 
-auto event_loop::acquire_executor() -> std::unique_ptr<executor>
+auto client::acquire_executor() -> std::unique_ptr<executor>
 {
     std::unique_ptr<executor> executor_ptr{nullptr};
 
@@ -400,7 +400,7 @@ auto event_loop::acquire_executor() -> std::unique_ptr<executor>
     return executor_ptr;
 }
 
-auto event_loop::return_executor(std::unique_ptr<executor> executor_ptr) -> void
+auto client::return_executor(std::unique_ptr<executor> executor_ptr) -> void
 {
     executor_ptr->reset();
     m_executors.push_back(std::move(executor_ptr));
@@ -408,24 +408,24 @@ auto event_loop::return_executor(std::unique_ptr<executor> executor_ptr) -> void
 
 auto curl_start_timeout(CURLM* /*cmh*/, long timeout_ms, void* user_data) -> void
 {
-    auto* el = static_cast<event_loop*>(user_data);
+    auto* c = static_cast<client*>(user_data);
 
     // Stop the current timer regardless.
-    uv_timer_stop(&el->m_uv_timer_curl);
+    uv_timer_stop(&c->m_uv_timer_curl);
 
     if (timeout_ms > 0)
     {
-        uv_timer_start(&el->m_uv_timer_curl, on_uv_timeout_callback, static_cast<uint64_t>(timeout_ms), 0);
+        uv_timer_start(&c->m_uv_timer_curl, on_uv_timeout_callback, static_cast<uint64_t>(timeout_ms), 0);
     }
     else if (timeout_ms == 0)
     {
-        el->check_actions();
+        c->check_actions();
     }
 }
 
 auto curl_handle_socket_actions(CURL* /*curl*/, curl_socket_t socket, int action, void* user_data, void* socketp) -> int
 {
-    auto* el = static_cast<event_loop*>(user_data);
+    auto* c = static_cast<client*>(user_data);
 
     curl_context* cc = nullptr;
     if (action == CURL_POLL_IN || action == CURL_POLL_OUT || action == CURL_POLL_INOUT)
@@ -438,19 +438,19 @@ auto curl_handle_socket_actions(CURL* /*curl*/, curl_socket_t socket, int action
         else
         {
             // new request, and no curl context's available? make one
-            if (el->m_curl_context_ready.empty())
+            if (c->m_curl_context_ready.empty())
             {
-                auto curl_context_ptr = std::make_unique<curl_context>(*el);
+                auto curl_context_ptr = std::make_unique<curl_context>(*c);
                 cc                    = curl_context_ptr.release();
             }
             else
             {
-                cc = el->m_curl_context_ready.front().release();
-                el->m_curl_context_ready.pop_front();
+                cc = c->m_curl_context_ready.front().release();
+                c->m_curl_context_ready.pop_front();
             }
 
-            cc->init(&el->m_uv_loop, socket);
-            curl_multi_assign(el->m_cmh, socket, static_cast<void*>(cc));
+            cc->init(&c->m_uv_loop, socket);
+            curl_multi_assign(c->m_cmh, socket, static_cast<void*>(cc));
         }
     }
 
@@ -470,7 +470,7 @@ auto curl_handle_socket_actions(CURL* /*curl*/, curl_socket_t socket, int action
             {
                 cc = static_cast<curl_context*>(socketp);
                 cc->close(); // signal this handle is done
-                curl_multi_assign(el->m_cmh, socket, nullptr);
+                curl_multi_assign(c->m_cmh, socket, nullptr);
             }
             break;
         default:
@@ -480,25 +480,25 @@ auto curl_handle_socket_actions(CURL* /*curl*/, curl_socket_t socket, int action
     return 0;
 }
 
-auto uv_close_callback(uv_handle_t * /*handle*/) -> void
+auto uv_close_callback(uv_handle_t* /*handle*/) -> void
 {
-    // auto* el = static_cast<event_loop*>(handle->data);
-    // (void)el;
+    // auto* c = static_cast<client*>(handle->data);
+    // (void)c;
 
     // Currently nothing needs to be done since all handles the event loop uses
-    // are allocated within the lift::event_loop object and not separate on the heap.
+    // are allocated within the lift::client object and not separate on the heap.
 }
 
 auto on_uv_timeout_callback(uv_timer_t* handle) -> void
 {
-    auto* el = static_cast<event_loop*>(handle->data);
-    el->check_actions();
+    auto* c = static_cast<client*>(handle->data);
+    c->check_actions();
 }
 
 auto on_uv_curl_perform_callback(uv_poll_t* req, int status, int events) -> void
 {
     auto* cc = static_cast<curl_context*>(req->data);
-    auto& el = cc->lift_event_loop();
+    auto& c  = cc->lift_client();
 
     int32_t action = 0;
     if (status < 0)
@@ -517,38 +517,38 @@ auto on_uv_curl_perform_callback(uv_poll_t* req, int status, int events) -> void
         }
     }
 
-    el.check_actions(cc->curl_sock_fd(), action);
+    c.check_actions(cc->curl_sock_fd(), action);
 }
 
 auto on_uv_requests_accept_async(uv_async_t* handle) -> void
 {
-    auto* el = static_cast<event_loop*>(handle->data);
+    auto* c = static_cast<client*>(handle->data);
 
     /**
      * This lock must not have any "curl_*" functions called
      * while it is held, curl has its own internal locks and
      * it can cause a deadlock.  This means we intentionally swap
      * vectors before working on them so we have exclusive access
-     * to the request objects on the event_loop thread.
+     * to the request objects on the client thread.
      */
     {
-        std::lock_guard<std::mutex> guard{el->m_pending_requests_lock};
+        std::lock_guard<std::mutex> guard{c->m_pending_requests_lock};
         // swap so we can release the lock as quickly as possible
-        el->m_grabbed_requests.swap(el->m_pending_requests);
+        c->m_grabbed_requests.swap(c->m_pending_requests);
     }
 
-    for (auto& request_ptr : el->m_grabbed_requests)
+    for (auto& request_ptr : c->m_grabbed_requests)
     {
-        auto executor_ptr = el->acquire_executor();
-        executor_ptr->start_async(std::move(request_ptr), el->m_share_ptr.get());
+        auto executor_ptr = c->acquire_executor();
+        executor_ptr->start_async(std::move(request_ptr), c->m_share_ptr.get());
         executor_ptr->prepare();
 
         // This must be done before adding to the CURLM* object,
         // if not its possible a very fast request could complete
         // before this gets into the multi-map!
-        el->add_timeout(*executor_ptr);
+        c->add_timeout(*executor_ptr);
 
-        auto curl_code = curl_multi_add_handle(el->m_cmh, executor_ptr->m_curl_handle);
+        auto curl_code = curl_multi_add_handle(c->m_cmh, executor_ptr->m_curl_handle);
 
         if (curl_code != CURLM_OK && curl_code != CURLM_CALL_MULTI_PERFORM)
         {
@@ -556,7 +556,7 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.
              */
-            el->complete_request_normal(*executor_ptr.get(), executor::convert(CURLcode::CURLE_SEND_ERROR));
+            c->complete_request_normal(*executor_ptr.get(), executor::convert(CURLcode::CURLE_SEND_ERROR));
         }
         else
         {
@@ -572,24 +572,24 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
              * Curl appears to have an internal queue and if it gets too long it might
              * drop requests.
              */
-            el->check_actions();
+            c->check_actions();
         }
     }
 
-    el->m_grabbed_requests.clear();
+    c->m_grabbed_requests.clear();
 }
 
 auto on_uv_timesup_callback(uv_timer_t* handle) -> void
 {
-    auto* el      = static_cast<event_loop*>(handle->data);
-    auto& timesup = el->m_timeouts;
+    auto* c       = static_cast<client*>(handle->data);
+    auto& timesup = c->m_timeouts;
 
     if (timesup.empty())
     {
         return;
     }
 
-    auto now = uv_now(&el->m_uv_loop);
+    auto now = uv_now(&c->m_uv_loop);
 
     // While the items in the timesup map are <= now "timesup" them to the client.
     auto iter = timesup.begin();
@@ -602,8 +602,8 @@ auto on_uv_timesup_callback(uv_timer_t* handle) -> void
             break;
         }
 
-        el->complete_request_timeout(*exe);
-        iter = el->remove_timeout(*exe);
+        c->complete_request_timeout(*exe);
+        iter = c->remove_timeout(*exe);
     }
 }
 

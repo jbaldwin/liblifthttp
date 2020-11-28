@@ -22,7 +22,7 @@ namespace lift
 class curl_context;
 using curl_context_ptr = std::unique_ptr<curl_context>;
 
-class event_loop
+class client
 {
     friend curl_context;
     friend executor;
@@ -63,9 +63,9 @@ public:
 
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
-     * @param options See event_loop::options for various options.
+     * @param options See client::options for various options.
      */
-    explicit event_loop(
+    explicit client(
         options opts = options{
             std::nullopt, // reserve connections
             std::nullopt, // max connections
@@ -75,12 +75,12 @@ public:
             nullptr       // on thread callback
         });
 
-    ~event_loop();
+    ~client();
 
-    event_loop(const event_loop&) = delete;
-    event_loop(event_loop&&)      = delete;
-    auto operator=(const event_loop&) noexcept -> event_loop& = delete;
-    auto operator=(event_loop&&) noexcept -> event_loop& = delete;
+    client(const client&) = delete;
+    client(client&&)      = delete;
+    auto operator=(const client&) noexcept -> client& = delete;
+    auto operator=(client&&) noexcept -> client& = delete;
 
     /**
      * @return True if the event loop is currently running.
@@ -89,7 +89,7 @@ public:
 
     /**
      * Stops the event loop from accepting new requests.  It will continue to process
-     * existing requests until they are completed.  Note that the ~event_loop() will
+     * existing requests until they are completed.  Note that the ~client() will
      * 'block' until all requests flush as the background even loop process thread
      * won't exit until they are all completed/timed-out/error'ed/etc.
      */
@@ -121,7 +121,7 @@ public:
 
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
-     * out of the container and into the event_loop, ownership of the requests is transferred
+     * out of the container and into the client, ownership of the requests is transferred
      * into th event loop during execution.
      *
      * This function is thread safe.
@@ -133,9 +133,9 @@ public:
     auto start_requests(container_type requests) -> bool;
 
 private:
-    /// Set to true if the event_loop is currently running.
+    /// Set to true if the client is currently running.
     std::atomic<bool> m_is_running{false};
-    /// Set to true if the event_loop is currently shutting down.
+    /// Set to true if the client is currently shutting down.
     std::atomic<bool> m_is_stopping{false};
     /// The active number of requests running.
     std::atomic<uint64_t> m_active_request_count{0};
@@ -161,12 +161,12 @@ private:
      * uv loop iteration.  Any memory accesses to this object should first acquire the
      * m_pending_requests_lock to guarantee thread safety.
      *
-     * Before the event_loop begins working on the pending requests, it swaps
+     * Before the client begins working on the pending requests, it swaps
      * the pending requests vector into the grabbed requests vector -- this is done
      * because the pending requests lock could deadlock with internal curl locks!
      */
     std::vector<request_ptr> m_pending_requests{};
-    /// Only accessible from within the event_loop thread.
+    /// Only accessible from within the client thread.
     std::vector<request_ptr> m_grabbed_requests{};
 
     /// The background thread spawned to drive the event loop.
@@ -227,16 +227,16 @@ private:
      * Adds the request with the appropriate timeout.
      * If only a timeout exists, the timeout is set directly on CURLM.
      * If timeout + connection time exists AND connectoin time > timeout
-     *      timeout is set on the event_loop
+     *      timeout is set on the client
      *      connection time is set on Curl
      * If timeout > connection time
-     *      timeout is set on the event_loop
+     *      timeout is set on the client
      * If no timeout exists nothing is set (infinite -- and could hang).
      */
     auto add_timeout(executor& exe) -> void;
 
     /**
-     * Removes the timeout from the event_loop timer information.
+     * Removes the timeout from the client timer information.
      * Connection time can still fire from curl but the request's
      * on complete handler won't be called.
      */
@@ -253,26 +253,26 @@ private:
     /**
      * This function is called by libcurl to start a timeout with duration timeout_ms.
      *
-     * This function is a friend so it can access the event_loop's m_timeout_timer object and
+     * This function is a friend so it can access the client's m_timeout_timer object and
      * call check_actions().
      *
      * @param cmh The curl multi handle to apply the new timeout for.
      * @param timeout_ms The timeout duration in milliseconds.
-     * @param user_data This is a pointer to this event_loop object.
+     * @param user_data This is a pointer to this client object.
      */
     friend auto curl_start_timeout(CURLM* cmh, long timeout_ms, void* user_data) -> void;
 
     /**
      * This function is called by libcurl to handle socket actions and update each sockets
-     * state within the event_loop.
+     * state within the client.
      *
-     * This function is a friend so it can access various event_loop members to drive libcurl
+     * This function is a friend so it can access various client members to drive libcurl
      * and libuv.
      *
      * @param curl The curl handle to handle its socket actions.
      * @param socket The raw socket being handled.
      * @param action The action to apply to the socket (e.g. POLL IN|OUT)
-     * @param user_data This is a pointer to this event_loop object.
+     * @param user_data This is a pointer to this client object.
      * @param socketp A pointer to the curl_context if this is an existing request.  This will
      *                be a nullptr if this is a new request and will then be created.
      * @return Always returns zero.
@@ -285,8 +285,8 @@ private:
      * This is used to make sure the m_timeout_timer and m_async handles are stopped and
      * the event loop can be closed.
      *
-     * This function is a friend so it can access the event_loop flags to assist shutdown.
-     * Each handle.data pointer is set to this event_loop object.
+     * This function is a friend so it can access the client flags to assist shutdown.
+     * Each handle.data pointer is set to this client object.
      *
      * @param handle The handle that is being closed.
      */
@@ -317,7 +317,7 @@ private:
      * This function is called by libuv when the m_async is triggered with a new request.
      *
      * This function is a friend so it can pull pending requests and inject them into
-     * the event_loop.
+     * the client.
      *
      * @param handle The async object trigger, this will always be m_async.
      */
@@ -327,7 +327,7 @@ private:
 };
 
 template<typename container_type>
-auto event_loop::start_requests(container_type requests) -> bool
+auto client::start_requests(container_type requests) -> bool
 {
     if (m_is_stopping.load(std::memory_order_acquire))
     {
@@ -349,7 +349,7 @@ auto event_loop::start_requests(container_type requests) -> bool
         }
     }
 
-    // Notify the even loop thread that there are requests waiting to be picked up.
+    // Notify the event loop thread that there are requests waiting to be picked up.
     uv_async_send(&m_uv_async);
 
     return true;

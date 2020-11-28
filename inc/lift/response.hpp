@@ -15,12 +15,12 @@
 
 namespace lift
 {
-class event_loop;
+class client;
 class executor;
 
 class response
 {
-    friend event_loop;
+    friend client;
     friend executor;
 
 public:

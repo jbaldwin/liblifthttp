@@ -10,7 +10,7 @@
 namespace lift
 {
 class request;
-class event_loop;
+class client;
 
 /**
  * This class's design is to encapsulate executing either a synchronous
@@ -29,7 +29,7 @@ class event_loop;
 class executor
 {
     /// Allowed to create executor and Timesup!
-    friend event_loop;
+    friend client;
     /// Allowed to create executors.
     friend request;
 
@@ -37,7 +37,7 @@ public:
     executor(const executor&) = delete;
     executor(executor&&)      = delete;
     auto operator=(const executor&) -> executor& = delete;
-    auto operator=(executor &&) -> executor& = delete;
+    auto operator=(executor&&) -> executor& = delete;
     ~executor();
 
 private:
@@ -55,8 +55,8 @@ private:
     /// If sync request the pointer to the request.
     request* m_request_sync{nullptr};
 
-    /// If async request the event loop executing this request.
-    event_loop* m_event_loop{nullptr};
+    /// If async request the client executing this request.
+    client* m_client{nullptr};
     /// If async request the pointer to the request.
     request_ptr m_request_async{nullptr};
     /// If the async request has a timeout set then this is the position to delete when completed.
@@ -70,9 +70,9 @@ private:
     /// The HTTP response data.
     response m_response{};
 
-    static auto make_unique(event_loop* event_loop) -> std::unique_ptr<executor>
+    static auto make_unique(client* c) -> std::unique_ptr<executor>
     {
-        return std::unique_ptr<executor>(new executor{event_loop});
+        return std::unique_ptr<executor>(new executor{c});
     }
 
     /**
@@ -84,9 +84,9 @@ private:
 
     /**
      * This constructor is used for executing an asynchronous requests.
-     * @param event_loop The event loop that will execute this request.
+     * @param c The client that will execute this request.
      */
-    executor(event_loop* event_loop);
+    executor(client* c);
 
     /**
      * @param req_ptr The asynchronous request to execute.

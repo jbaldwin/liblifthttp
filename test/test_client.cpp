@@ -2,9 +2,9 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("event_loop Start event loop, then stop and add a request.")
+TEST_CASE("client Start event loop, then stop and add a request.")
 {
-    lift::event_loop ev{};
+    lift::client client{};
 
     auto request = lift::request::make_unique(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/",
@@ -14,7 +14,7 @@ TEST_CASE("event_loop Start event loop, then stop and add a request.")
             REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
         });
 
-    REQUIRE(ev.start_request(std::move(request)));
+    REQUIRE(client.start_request(std::move(request)));
 
     request = lift::request::make_unique(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/",
@@ -25,14 +25,14 @@ TEST_CASE("event_loop Start event loop, then stop and add a request.")
         });
 
     // Adding requests after stopping should return false that they cannot be started.
-    ev.stop();
+    client.stop();
 
-    REQUIRE_FALSE(ev.start_request(std::move(request)));
+    REQUIRE_FALSE(client.start_request(std::move(request)));
 }
 
-TEST_CASE("event_loop Start event loop, then stop and add multiple requests.")
+TEST_CASE("client Start event loop, then stop and add multiple requests.")
 {
-    lift::event_loop ev{};
+    lift::client client{};
 
     std::vector<lift::request_ptr> requests1;
     requests1.emplace_back(lift::request::make_unique(
@@ -52,14 +52,14 @@ TEST_CASE("event_loop Start event loop, then stop and add multiple requests.")
             REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
         }));
 
-    REQUIRE(ev.start_requests(std::move(requests1)));
-    ev.stop();
-    REQUIRE_FALSE(ev.start_requests(std::move(requests2)));
+    REQUIRE(client.start_requests(std::move(requests1)));
+    client.stop();
+    REQUIRE_FALSE(client.start_requests(std::move(requests2)));
 }
 
-TEST_CASE("event_loop Provide nullptr request")
+TEST_CASE("client Provide nullptr request")
 {
-    lift::event_loop ev{};
+    lift::client client{};
 
-    REQUIRE_FALSE(ev.start_request(nullptr));
+    REQUIRE_FALSE(client.start_request(nullptr));
 }

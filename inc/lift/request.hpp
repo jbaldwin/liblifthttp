@@ -16,7 +16,7 @@
 
 namespace lift
 {
-class event_loop;
+class client;
 class executor;
 
 enum class ssl_certificate_type
@@ -62,7 +62,7 @@ auto to_string(ssl_certificate_type type) -> const std::string&;
 
 class request
 {
-    friend event_loop;
+    friend client;
     friend executor;
 
 public:

@@ -7,7 +7,7 @@
 
 TEST_CASE("Timesup single request")
 {
-    lift::event_loop ev{lift::event_loop::options{.connect_timeout = std::chrono::seconds{1}}};
+    lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
 
     auto r = lift::request::make_unique(
         "http://www.reddit.com", // should be slow enough /shrug
@@ -20,9 +20,9 @@ TEST_CASE("Timesup single request")
             REQUIRE(response.num_redirects() == 0);
         });
 
-    ev.start_request(std::move(r));
+    client.start_request(std::move(r));
 
-    while (!ev.empty())
+    while (!client.empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }
@@ -30,7 +30,7 @@ TEST_CASE("Timesup single request")
 
 TEST_CASE("Timesup two requests")
 {
-    lift::event_loop ev{lift::event_loop::options{.connect_timeout = std::chrono::seconds{1}}};
+    lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
 
     std::vector<lift::request_ptr> requests{};
 
@@ -52,9 +52,9 @@ TEST_CASE("Timesup two requests")
             REQUIRE(response.total_time() == std::chrono::milliseconds{50});
         }));
 
-    ev.start_requests(std::move(requests));
+    client.start_requests(std::move(requests));
 
-    while (!ev.empty())
+    while (!client.empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds{10});
     }

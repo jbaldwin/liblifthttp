@@ -6,8 +6,8 @@ option(LIFT_LOCALHOST_TESTS "Define ON if running tests locally." OFF)
 set(LIBLIFT_TEST_SOURCE_FILES
     setup.hpp
     test_async_request.cpp
+    test_client.cpp
     test_escape.cpp
-    test_event_loop.cpp
     test_header.cpp
     test_http.cpp
     test_mime_field.cpp

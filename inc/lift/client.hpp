@@ -63,7 +63,7 @@ public:
 
     /**
      * Creates a new lift event loop to execute many asynchronous HTTP requests simultaneously.
-     * @param options See client::options for various options.
+     * @param opts See client::options for various options.
      */
     explicit client(
         options opts = options{

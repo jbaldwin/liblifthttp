@@ -423,7 +423,7 @@ public:
     auto mime_fields() const -> const std::vector<lift::mime_field>& { return m_mime_fields; }
 
     /**
-     * @param mime_field Adds this mime field to this mime HTTP request.
+     * @param mf Adds this mime field to this mime HTTP request.
      */
     auto mime_field(lift::mime_field mf) -> void;
 

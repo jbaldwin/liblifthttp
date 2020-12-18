@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(lifthttp CXX)
 
 # Set the githooks directory to auto format and update the readme.
-message("git config core.hooksPath .githooks")
+message("${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR} -> git config --local core.hooksPath .githooks")
 execute_process(
-    COMMAND git config core.hooksPath .githooks
+    COMMAND git config --local core.hooksPath .githooks
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

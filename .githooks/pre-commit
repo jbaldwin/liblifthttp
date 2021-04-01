@@ -33,7 +33,7 @@ done
 # Update the README.md example code with the given macros.
 template_contents=$(cat '.githooks/readme-template.md')
 # All code examples in markdown should be indeded '    '
-readme_cpp_contents=$(cat 'examples/readme.cpp' | sed -e 's/^/    /')
+readme_cpp_contents=$(cat 'examples/readme.cpp')
 
-echo "${template_contents/\    $\{EXAMPLE_README_CPP\}/$readme_cpp_contents}" > README.md
+echo "${template_contents/\$\{EXAMPLE_README_CPP\}/$readme_cpp_contents}" > README.md
 git add README.md

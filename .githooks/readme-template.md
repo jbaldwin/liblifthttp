@@ -23,12 +23,12 @@ You're using curl? Do you even lift?
 
 ### Examples
 
-See all of the examples under the examples/ directory.  Below are some simple examples
+See all of the examples under the `examples/` directory.  Below are some simple examples
 to get your started on using liblifthttp with both the synchronous and asynchronous APIs.
 
 #### Synchronous and Asynchronous Requests
 ```C++
-    ${EXAMPLE_README_CPP}
+${EXAMPLE_README_CPP}
 ```
 
 ### Requirements
@@ -86,21 +86,21 @@ CMake can also include the project directly via a `FetchContent` declaration.  I
 include the following code to download the git repository and make it available to link to.
 
 ```cmake
-    cmake_minimum_required(VERSION 3.11)
-    
-    # ... cmake project stuff ...
-    
-    include(FetchContent)
-    FetchContent_Declare(
-        lifthttp
-        GIT_REPOSITORY https://github.com/jbaldwin/liblifthttp.git
-        GIT_TAG        <TAG_OR_GIT_HASH>
-    )
-    FetchContent_MakeAvailable(lifthttp)
-    
-    # ... cmake project more stuff ...
-    
-    target_link_libraries(${PROJECT_NAME} PUBLIC lifthttp)
+cmake_minimum_required(VERSION 3.11)
+
+# ... cmake project stuff ...
+
+include(FetchContent)
+FetchContent_Declare(
+    lifthttp
+    GIT_REPOSITORY https://github.com/jbaldwin/liblifthttp.git
+    GIT_TAG        <TAG_OR_GIT_HASH>
+)
+FetchContent_MakeAvailable(lifthttp)
+
+# ... cmake project more stuff ...
+
+target_link_libraries(${PROJECT_NAME} PUBLIC lifthttp)
 ```
 
 #### Running Tests
@@ -124,21 +124,21 @@ Using the example benchmark code and a local `nginx` instance serving its defaul
 Here is the CPU the benchmarks were run on:
 
 ```bash
-    cat /proc/cpuinfo
-    ...
-    Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz
+cat /proc/cpuinfo
+...
+Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz
 ```
 
 Here is how the benchmark application is called:
 
 ```bash
-    $ ./examples/lift_benchmark --help
-    Usage: ./examples/lift_benchmark<options> <url>
-        -c --connections  HTTP Connections to use.
-        -t --threads      Number of threads to use, connections are split
-                        evenly between each worker thread.
-        -d --duration     Duration of the test in seconds
-        -h --help         Print this help usage.
+$ ./examples/lift_benchmark --help
+Usage: ./examples/lift_benchmark<options> <url>
+    -c --connections  HTTP Connections to use.
+    -t --threads      Number of threads to use, connections are split
+                    evenly between each worker thread.
+    -d --duration     Duration of the test in seconds
+    -h --help         Print this help usage.
 ```
 
 Using `nginx` as the webserver with the default `fedora` configuration.

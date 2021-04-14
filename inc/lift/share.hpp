@@ -52,7 +52,7 @@ public:
 private:
     CURLSH* m_curl_share_ptr{curl_share_init()};
 
-    std::array<std::mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};
+    std::array<std::recursive_mutex, static_cast<uint64_t>(CURL_LOCK_DATA_LAST)> m_curl_locks{};
 
     friend auto curl_share_lock(CURL* curl_ptr, curl_lock_data data, curl_lock_access access, void* user_ptr) -> void;
 

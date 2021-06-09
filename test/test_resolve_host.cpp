@@ -32,11 +32,11 @@ TEST_CASE("resolve_host client")
         REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
     };
 
-    std::vector<lift::request_ptr> requests;
-    requests.emplace_back(
-        lift::request::make_unique("testhostname:" + nginx_port_str, std::chrono::seconds{60}, on_complete));
-    requests.emplace_back(
-        lift::request::make_unique("herpderp.com:" + nginx_port_str, std::chrono::seconds{60}, on_complete));
+    std::vector<std::pair<lift::request_ptr, lift::request::async_callback_type>> requests;
+    requests.emplace_back(std::make_pair(
+        lift::request::make_unique("testhostname:" + nginx_port_str, std::chrono::seconds{60}), on_complete));
+    requests.emplace_back(std::make_pair(
+        lift::request::make_unique("herpderp.com:" + nginx_port_str, std::chrono::seconds{60}), on_complete));
 
     REQUIRE(client.start_requests(std::move(requests)));
 }

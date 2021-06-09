@@ -159,7 +159,31 @@ client::~client()
     global_cleanup();
 }
 
-auto client::start_request(request_ptr request_ptr) -> bool
+auto client::start_request(request_ptr request_ptr, request::async_callback_type callback) -> bool
+{
+    if (request_ptr == nullptr)
+    {
+        return false;
+    }
+    if (callback != nullptr)
+    {
+        request_ptr->async_callback(std::move(callback));
+    }
+    return start_request_common(std::move(request_ptr));
+}
+
+auto client::start_request(request_ptr request_ptr) -> request::async_future_type
+{
+    auto future = request_ptr->async_future();
+    if (!start_request_common(std::move(request_ptr)))
+    {
+        // Lol this is bad, TODO fix this up.
+        throw std::runtime_error{"Failed to start the request, is the client shutting down?"};
+    }
+    return future;
+}
+
+auto client::start_request_common(request_ptr request_ptr) -> bool
 {
     if (request_ptr == nullptr)
     {
@@ -251,18 +275,18 @@ auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -
 
         auto& on_complete_handler = exe.m_request_async->m_on_complete_handler.m_object.value();
 
-        if (std::holds_alternative<request::on_complete_callback_type>(on_complete_handler))
+        if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
             complete_request_normal_common(exe, status);
 
-            auto& callback = std::get<request::on_complete_callback_type>(on_complete_handler);
+            auto& callback = std::get<request::async_callback_type>(on_complete_handler);
             callback(std::move(exe.m_request_async), std::move(exe.m_response));
         }
-        else if (std::holds_alternative<request::on_complete_promise_type>(on_complete_handler))
+        else if (std::holds_alternative<request::async_promise_type>(on_complete_handler))
         {
             complete_request_normal_common(exe, status);
 
-            auto& promise = std::get<request::on_complete_promise_type>(on_complete_handler);
+            auto& promise = std::get<request::async_promise_type>(on_complete_handler);
             promise.set_value(std::make_pair(std::move(exe.m_request_async), std::move(exe.m_response)));
         }
         // else do nothing for std::monostate, the user doesn't want to be notified.
@@ -303,18 +327,20 @@ auto client::complete_request_timeout(executor& exe) -> void
         // per loop iteration to be removed if there are multiple items with the same timesup value.
         // remove_timeout(exe);
 
-        if (std::holds_alternative<request::on_complete_callback_type>(on_complete_handler))
+        if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
+            // After copying the on complete handler has MOVED due to copy_but_actually_move.
+            // The type will be the same but the correct memory location must be used.
             auto copy = complete_request_timeout_common(exe);
 
-            auto& callback = std::get<request::on_complete_callback_type>(on_complete_handler);
+            auto& callback = std::get<request::async_callback_type>(copy->m_on_complete_handler.m_object.value());
             callback(std::move(copy), std::move(exe.m_response));
         }
-        else if (std::holds_alternative<request::on_complete_promise_type>(on_complete_handler))
+        else if (std::holds_alternative<request::async_promise_type>(on_complete_handler))
         {
             auto copy = complete_request_timeout_common(exe);
 
-            auto& promise = std::get<request::on_complete_promise_type>(on_complete_handler);
+            auto& promise = std::get<request::async_promise_type>(copy->m_on_complete_handler.m_object.value());
             promise.set_value(std::make_pair(std::move(copy), std::move(exe.m_response)));
         }
         // else do nothing for std::monostate, the user doesn't want to be notified.

@@ -109,16 +109,21 @@ public:
     /**
      * Adds a request to process.  The ownership of the request is transferred into the client's
      * event loop during execution and returned to the user in the request's
-     * `on_thread_callback_type` callback.
+     * `async_callback_type` callback.
      *
      * This function is thread safe.
      *
-     * @param request_ptr The request to process.  This request
-     *                    will have its OnComplete() handler called
-     *                    when its completed/error'ed/etc.
+     * @param request_ptr The request to process.  This request will have its OnComplete() handler
+     *                    called when its completed/error'ed/etc.
      */
-    auto start_request(request_ptr request_ptr) -> bool;
+    auto start_request(request_ptr request_ptr, request::async_callback_type callback) -> bool;
 
+    auto start_request(request_ptr request_ptr) -> request::async_future_type;
+
+private:
+    auto start_request_common(request_ptr request_ptr) -> bool;
+
+public:
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
      * out of the container and into the client, ownership of the requests is transferred
@@ -339,10 +344,15 @@ auto client::start_requests(container_type requests) -> bool
 
     m_active_request_count.fetch_add(std::size(requests), std::memory_order_relaxed);
 
+    for (auto& [request_ptr, callback] : requests)
+    {
+        request_ptr->async_callback(std::move(callback));
+    }
+
     // Lock scope
     {
         std::lock_guard<std::mutex> guard(m_pending_requests_lock);
-        for (auto& request_ptr : requests)
+        for (auto& [request_ptr, moved_already] : requests)
         {
             if (request_ptr == nullptr)
             {

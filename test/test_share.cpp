@@ -40,30 +40,26 @@ TEST_CASE("share client synchronous")
 
     lift::client client2{lift::client::options{.share = lift_share_ptr}};
 
-    auto request1 = lift::request::make_unique(
-        "http://" + nginx_hostname + ":" + nginx_port_str + "/",
-        std::chrono::seconds{60},
-        [&](std::unique_ptr<lift::request>, lift::response response) {
-            REQUIRE(response.lift_status() == lift::lift_status::success);
-            REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
-        });
+    auto request1 =
+        lift::request::make_unique("http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
 
-    auto request2 = lift::request::make_unique(
-        "http://" + nginx_hostname + ":" + nginx_port_str + "/",
-        std::chrono::seconds{60},
-        [&](std::unique_ptr<lift::request>, lift::response response) {
-            REQUIRE(response.lift_status() == lift::lift_status::success);
-            REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
-        });
+    auto request2 =
+        lift::request::make_unique("http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
 
-    client1.start_request(std::move(request1));
+    client1.start_request(std::move(request1), [&](std::unique_ptr<lift::request>, lift::response response) {
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    });
 
     while (!client1.empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    client2.start_request(std::move(request2));
+    client2.start_request(std::move(request2), [&](std::unique_ptr<lift::request>, lift::response response) {
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    });
 
     client1.stop();
     client2.stop();
@@ -90,13 +86,11 @@ TEST_CASE("share client overlapping requests")
         for (size_t i = 0; i < N_REQUESTS; ++i)
         {
             auto request_ptr = lift::request::make_unique(
-                "http://" + nginx_hostname + ":" + nginx_port_str + "/",
-                std::chrono::seconds{5},
-                [&](std::unique_ptr<lift::request>, lift::response response) {
-                    count.fetch_add(1, std::memory_order_relaxed);
-                });
+                "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{5});
 
-            client.start_request(std::move(request_ptr));
+            client.start_request(std::move(request_ptr), [&](std::unique_ptr<lift::request>, lift::response response) {
+                count.fetch_add(1, std::memory_order_relaxed);
+            });
         }
 
         while (!client.empty())

@@ -108,8 +108,13 @@ int main(int argc, char* argv[])
             {
                 auto& client = *client_ptr;
 
-                auto request_ptr = lift::request::make_unique(
-                    url, 30s, [&client, &success, &error](lift::request_ptr req_ptr, lift::response response) {
+                auto request_ptr = lift::request::make_unique(url, 30s);
+
+                request_ptr->follow_redirects(false);
+                request_ptr->header("Connection", "Keep-Alive");
+                client_ptr->start_request(
+                    std::move(request_ptr),
+                    [&client, &success, &error](lift::request_ptr req_ptr, lift::response response) {
                         if (response.lift_status() == lift::lift_status::success)
                         {
                             success.fetch_add(1, std::memory_order_relaxed);
@@ -122,10 +127,6 @@ int main(int argc, char* argv[])
                         // And request again until we are shutting down.
                         client.start_request(std::move(req_ptr));
                     });
-
-                request_ptr->follow_redirects(false);
-                request_ptr->header("Connection", "Keep-Alive");
-                client_ptr->start_request(std::move(request_ptr));
             }
 
             clients.emplace_back(std::move(client_ptr));

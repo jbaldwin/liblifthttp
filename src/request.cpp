@@ -22,10 +22,8 @@ auto to_string(ssl_certificate_type type) -> const std::string&
     }
 }
 
-request::request(
-    std::string url, std::optional<std::chrono::milliseconds> timeout, on_complete_handler_type on_complete_handler)
-    : m_on_complete_handler(std::move(on_complete_handler)),
-      m_timeout(std::move(timeout)),
+request::request(std::string url, std::optional<std::chrono::milliseconds> timeout)
+    : m_timeout(std::move(timeout)),
       m_url(std::move(url))
 {
 }

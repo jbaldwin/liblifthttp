@@ -18,22 +18,19 @@ int main()
     //       Use the std::promise + std::future async below if you want to pass ownership back to
     //       this thread.
     auto request_ptr = lift::request::make_unique(
-        "http://www.example.com",
-        std::chrono::seconds{10}, // Give the request 10 seconds to complete or timeout.
-        [](lift::request_ptr req_ptr, lift::response response) {
-            std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
-            std::cout << response << "\n\n";
-        });
+        "http://www.example.com", std::chrono::seconds{10}); // Give the request 10 seconds to complete or timeout
 
     // Create a second async request that works via a promise+future instead of a functor callback.
-    auto request_with_promise_ptr = lift::request::make_unique("http://www.example.com", std::chrono::seconds{10});
-    // Grab the requests future before submitting it into the lift client.
-    auto future = request_with_promise_ptr->async_future();
+    auto request_with_future_ptr = lift::request::make_unique("http://www.example.com", std::chrono::seconds{10});
 
     // Now inject the two async requests into the client to be executed.  Moving into the client is required,
     // this passes ownership of the request to the client's background worker thread.
-    client.start_request(std::move(request_ptr));
-    client.start_request(std::move(request_with_promise_ptr));
+    client.start_request(std::move(request_ptr), [](lift::request_ptr req_ptr, lift::response response) {
+        std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
+        std::cout << response << "\n\n";
+    });
+
+    auto future = client.start_request(std::move(request_with_future_ptr));
 
     // Block until the async request completes, this returns the original request and the response.
     auto [req_ptr, resp] = future.get();

@@ -329,7 +329,7 @@ auto client::complete_request_timeout(executor& exe) -> void
 
         if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
-            // After copying the on complete handler has MOVED due to copy_but_actually_move.
+            // After copying the on complete handler has MOVED due to impl::copy_but_actually_move.
             // The type will be the same but the correct memory location must be used.
             auto copy = complete_request_timeout_common(exe);
 

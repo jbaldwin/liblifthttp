@@ -2,6 +2,7 @@
 
 #include "lift/header.hpp"
 #include "lift/http.hpp"
+#include "lift/impl/copy_util.hpp"
 #include "lift/mime_field.hpp"
 #include "lift/resolve_host.hpp"
 #include "lift/response.hpp"
@@ -20,36 +21,6 @@ namespace lift
 {
 class client;
 class executor;
-
-template<typename T>
-struct copy_but_actually_move
-{
-    copy_but_actually_move(T t) : m_object(std::move(t)) {}
-    ~copy_but_actually_move() = default;
-
-    copy_but_actually_move(const copy_but_actually_move<T>& other) { m_object = std::move(other.m_object); }
-    copy_but_actually_move(copy_but_actually_move<T>&& other) { m_object = std::move(other.m_object); }
-
-    auto operator=(const copy_but_actually_move<T>& other) -> copy_but_actually_move<T>&
-    {
-        if (std::addressof(other) != this)
-        {
-            m_object = std::move(other.m_object);
-        }
-        return *this;
-    }
-
-    auto operator=(copy_but_actually_move<T>&& other) -> copy_but_actually_move<T>&
-    {
-        if (std::addressof(other) != this)
-        {
-            m_object = std::move(other.m_object);
-        }
-        return *this;
-    }
-
-    mutable std::optional<T> m_object{std::nullopt};
-};
 
 enum class ssl_certificate_type
 {
@@ -464,7 +435,7 @@ public:
 
 private:
     /// The on complete handler callback or promise to fulfill, this is only used for async requests.
-    copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
+    impl::copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
     /// The transfer progress handler callback.
     transfer_progress_handler_type m_on_transfer_progress_handler{nullptr};
     /// The timeout to connect, or none.

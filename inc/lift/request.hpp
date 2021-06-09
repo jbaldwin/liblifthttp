@@ -9,15 +9,47 @@
 
 #include <chrono>
 #include <functional>
+#include <future>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace lift
 {
 class client;
 class executor;
+
+template<typename T>
+struct copy_but_actually_move
+{
+    copy_but_actually_move(T t) : m_object(std::move(t)) {}
+    ~copy_but_actually_move() = default;
+
+    copy_but_actually_move(const copy_but_actually_move<T>& other) { m_object = std::move(other.m_object); }
+    copy_but_actually_move(copy_but_actually_move<T>&& other) { m_object = std::move(other.m_object); }
+
+    auto operator=(const copy_but_actually_move<T>& other) -> copy_but_actually_move<T>&
+    {
+        if (std::addressof(other) != this)
+        {
+            m_object = std::move(other.m_object);
+        }
+        return *this;
+    }
+
+    auto operator=(copy_but_actually_move<T>&& other) -> copy_but_actually_move<T>&
+    {
+        if (std::addressof(other) != this)
+        {
+            m_object = std::move(other.m_object);
+        }
+        return *this;
+    }
+
+    mutable std::optional<T> m_object{std::nullopt};
+};
 
 enum class ssl_certificate_type
 {
@@ -71,7 +103,13 @@ public:
      * @param request_ptr Passes ownership of the request back to the user of liblifthttp.
      * @param response Response of the request_ptr.
      */
-    using on_complete_handler_type = std::function<void(std::unique_ptr<request> request_ptr, response response)>;
+    using on_complete_callback_type = std::function<void(std::unique_ptr<request> request_ptr, response response)>;
+
+    using on_complete_promise_type = std::promise<std::pair<std::unique_ptr<request>, response>>;
+
+    using on_complete_handler_type = std::variant<std::monostate, on_complete_callback_type, on_complete_promise_type>;
+
+    using async_future_type = std::future<std::pair<std::unique_ptr<request>, response>>;
 
     /**
      * Transfer progress handler callback signature.
@@ -102,7 +140,7 @@ public:
     explicit request(
         std::string                              url,
         std::optional<std::chrono::milliseconds> timeout             = std::nullopt,
-        on_complete_handler_type                 on_complete_handler = nullptr);
+        on_complete_handler_type                 on_complete_handler = std::monostate{});
 
     /**
      * Creates a new request on the heap, this is a useful utility for asynchronous requests.
@@ -113,12 +151,14 @@ public:
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
      * @param on_complete_handler For asynchronous requests provide this if you want to
-     *                            know when the request completes with the response information.
+     *                            know when the request completes with the response information via
+     *                            a callback (runs on the client background thread) or via a
+     *                            promise/future.
      */
     static auto make_unique(
         std::string                              url,
         std::optional<std::chrono::milliseconds> timeout             = std::nullopt,
-        on_complete_handler_type                 on_complete_handler = nullptr) -> std::unique_ptr<request>
+        on_complete_handler_type                 on_complete_handler = std::monostate{}) -> std::unique_ptr<request>
     {
         return std::make_unique<request>(std::move(url), std::move(timeout), std::move(on_complete_handler));
     }
@@ -140,16 +180,36 @@ public:
     auto perform(share_ptr share_ptr = nullptr) -> response;
 
     /**
-     * This on complete handler event is called when a request is executed
-     * asynchronously.  This is not used for synchronous requests.
+     * This on complete handler event is called when a request is executed asynchronously.  Provide
+     * either a functor to call or a promise that will be fulfilled.
+     *
+     * This is not used for synchronous requests, can only be used for asynchronous requests.
+     *
      * @param on_complete_handler When this request completes this handle is called.
      */
-    auto on_complete_handler(on_complete_handler_type on_complete_handler) -> void;
+    auto on_complete_handler(on_complete_handler_type on_complete_handler) -> void
+    {
+        m_on_complete_handler = copy_but_actually_move<on_complete_handler_type>(std::move(on_complete_handler));
+    }
 
     /**
-     * @return The current on complete handler callback.
+     * @return The current on complete handler callback if set, otherwise nullptr.
      */
-    auto on_complete_handler() const -> const on_complete_handler_type& { return m_on_complete_handler; }
+    auto on_complete_handler() const -> const on_complete_handler_type&
+    {
+        return m_on_complete_handler.m_object.value();
+    }
+
+    auto async_callback(on_complete_callback_type callback) -> void
+    {
+        m_on_complete_handler.m_object = {std::move(callback)};
+    }
+
+    auto async_future() -> async_future_type
+    {
+        m_on_complete_handler.m_object = {on_complete_promise_type{}};
+        return std::get<on_complete_promise_type>(m_on_complete_handler.m_object.value()).get_future();
+    }
 
     /**
      * Sets or unsets a transfer progress handler callback.  Called periodically to update the
@@ -442,8 +502,8 @@ public:
     }
 
 private:
-    /// The on complete handler callback.
-    on_complete_handler_type m_on_complete_handler{nullptr};
+    /// The on complete handler callback or promise to fulfill.
+    copy_but_actually_move<on_complete_handler_type> m_on_complete_handler{std::monostate{}};
     /// The transfer progress handler callback.
     transfer_progress_handler_type m_on_transfer_progress_handler{nullptr};
     /// The timeout to connect, or none.

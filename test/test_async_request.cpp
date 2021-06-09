@@ -97,3 +97,47 @@ TEST_CASE("Async POST request")
 
     client.start_request(std::move(request));
 }
+
+TEST_CASE("Async POST request promise+future")
+{
+    lift::client client{};
+
+    std::string data = "DATA DATA DATA!";
+
+    auto request = std::make_unique<lift::request>(
+        "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
+    request->data(data);
+    request->method(lift::http::method::post);
+    request->follow_redirects(true);
+    request->version(lift::http::version::v1_1);
+    //        request->header("Expect", "");
+
+    auto f1 = request->async_future();
+
+    client.start_request(std::move(request));
+
+    {
+        auto [request_ptr, response] = f1.get();
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
+    }
+
+    request = std::make_unique<lift::request>(
+        "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
+    request->data(data);
+    request->method(lift::http::method::post);
+    request->follow_redirects(true);
+    request->version(lift::http::version::v1_1);
+    // There was a bug where no expect header caused liblift to fail, test it explicitly
+    request->header("Expect", "");
+
+    auto f2 = request->async_future();
+
+    client.start_request(std::move(request));
+
+    {
+        auto [request_ptr, response] = f2.get();
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
+    }
+}

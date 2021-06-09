@@ -36,11 +36,6 @@ auto request::perform(share_ptr share_ptr) -> response
     return exe.perform();
 }
 
-auto request::on_complete_handler(on_complete_handler_type on_complete_handler) -> void
-{
-    m_on_complete_handler = std::move(on_complete_handler);
-}
-
 auto request::transfer_progress_handler(std::optional<transfer_progress_handler_type> transfer_progress_handler) -> void
 {
     if (transfer_progress_handler.has_value() && transfer_progress_handler.value())

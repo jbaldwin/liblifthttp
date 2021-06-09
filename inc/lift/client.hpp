@@ -107,9 +107,9 @@ public:
     [[nodiscard]] auto empty() const -> bool { return size() == 0; }
 
     /**
-     * Adds a request to process.  The ownership of the request is trasferred into
-     * the event loop during execution and returned to the client in the
-     * OnCompletHandlerType callback.
+     * Adds a request to process.  The ownership of the request is transferred into the client's
+     * event loop during execution and returned to the user in the request's
+     * `on_thread_callback_type` callback.
      *
      * This function is thread safe.
      *
@@ -122,12 +122,13 @@ public:
     /**
      * Adds a batch of requests to process.  The requests in the container will be moved
      * out of the container and into the client, ownership of the requests is transferred
-     * into th event loop during execution.
+     * into th eevent loop during execution.
      *
      * This function is thread safe.
      *
-     * @tparam container_type A container of class lift::request_ptr.
+     * @tparam container_type A container with a set of class lift::request_ptr.
      * @param requests The batch of requests to process.
+     * @return True if the requests were started.
      */
     template<typename container_type>
     auto start_requests(container_type requests) -> bool;
@@ -215,13 +216,15 @@ private:
      * @param exe The request handle to complete.
      * @param status The status of the request when completing.
      */
-    auto complete_request_normal(executor& exe, lift_status status) -> void;
+    auto complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void;
+    auto complete_request_normal_common(executor& exe, lift_status status) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.
      * @param exe The request to timeout.
      */
     auto complete_request_timeout(executor& exe) -> void;
+    auto complete_request_timeout_common(executor& exe) -> request_ptr;
 
     /**
      * Adds the request with the appropriate timeout.

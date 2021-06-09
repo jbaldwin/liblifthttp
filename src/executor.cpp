@@ -445,8 +445,8 @@ auto executor::reset() -> void
     m_request       = nullptr;
 
     m_timeout_iterator.reset();
-    m_on_complete_callback_called = false;
-    m_response                    = response{};
+    m_on_complete_handler_processed = false;
+    m_response                      = response{};
 
     curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
     m_curl_share_handle = nullptr;

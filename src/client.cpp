@@ -119,11 +119,14 @@ client::client(options opts)
     m_background_thread = std::thread{[this] { run(); }};
 
     /**
-     * Spin wait for the thread to spin-up and run the event loop,
+     * 'Spin' wait for the thread to spin-up and run the event loop,
      * this means when the constructor returns the user can start adding requests
      * immediately without waiting.
      */
-    while (!is_running()) {}
+    while (!is_running())
+    {
+        std::this_thread::yield();
+    }
 }
 
 client::~client()
@@ -225,63 +228,112 @@ auto client::check_actions(curl_socket_t socket, int event_bitmask) -> void
             curl_easy_getinfo(easy_handle, CURLINFO_PRIVATE, &exe);
             executor_ptr executor_ptr{exe};
 
+            // Remove the handle from curl multi since it is done processing.
             curl_multi_remove_handle(m_cmh, easy_handle);
 
-            complete_request_normal(*executor_ptr.get(), executor::convert(easy_result));
-
-            return_executor(std::move(executor_ptr));
+            // Notify the user (if it hasn't already timed out) that the request is completed.
+            // This will also return the executor to the pool for reuse.
+            complete_request_normal(std::move(executor_ptr), executor::convert(easy_result));
         }
     }
 }
 
-auto client::complete_request_normal(executor& exe, lift_status status) -> void
+auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void
 {
-    if (exe.m_on_complete_callback_called == false)
+    auto& exe = *exe_ptr.get();
+
+    if (exe.m_on_complete_handler_processed == false)
     {
-        auto& on_complete_handler = exe.m_request_async->m_on_complete_handler;
+        // Don't run this logic twice ever.
+        exe.m_on_complete_handler_processed = true;
+        // Since the request completed remove it from the timeout set if it is there.
+        remove_timeout(exe);
 
-        if (on_complete_handler != nullptr)
+        auto& on_complete_handler = exe.m_request_async->m_on_complete_handler.m_object.value();
+
+        if (std::holds_alternative<request::on_complete_callback_type>(on_complete_handler))
         {
-            exe.m_on_complete_callback_called = true;
-            exe.m_response.m_lift_status      = status;
-            exe.copy_curl_to_response();
-            remove_timeout(exe);
+            complete_request_normal_common(exe, status);
 
-            on_complete_handler(std::move(exe.m_request_async), std::move(exe.m_response));
+            auto& callback = std::get<request::on_complete_callback_type>(on_complete_handler);
+            callback(std::move(exe.m_request_async), std::move(exe.m_response));
         }
+        else if (std::holds_alternative<request::on_complete_promise_type>(on_complete_handler))
+        {
+            complete_request_normal_common(exe, status);
+
+            auto& promise = std::get<request::on_complete_promise_type>(on_complete_handler);
+            promise.set_value(std::make_pair(std::move(exe.m_request_async), std::move(exe.m_response)));
+        }
+        // else do nothing for std::monostate, the user doesn't want to be notified.
     }
 
+    return_executor(std::move(exe_ptr));
     m_active_request_count.fetch_sub(1, std::memory_order_relaxed);
+}
+
+auto client::complete_request_normal_common(executor& exe, lift_status status) -> void
+{
+    exe.m_response.m_lift_status = status;
+    exe.copy_curl_to_response();
 }
 
 auto client::complete_request_timeout(executor& exe) -> void
 {
-    auto& on_complete_handler = exe.m_request_async->m_on_complete_handler;
+    /**
+     * NOTE: This function doesn't remove the request from the curl multi handle nor does it
+     *       return the executor to the pool.  That is because this function is still allowing
+     *       for curl to complete to establish http connections for extremely *low* timeout values.
+     *
+     *       This function expects that complete_request_normal will eventually be called by curl
+     *       to properly cleanup and finish the request and allow for the http connection to fully
+     *       establish.
+     */
 
     // Call on complete if it exists and hasn't been called before.
-    if (exe.m_on_complete_callback_called == false && on_complete_handler != nullptr)
+    if (exe.m_on_complete_handler_processed == false)
     {
-        exe.m_on_complete_callback_called = true;
-        exe.m_response.m_lift_status      = lift::lift_status::timeout;
-        exe.set_timesup_response(exe.m_request->timeout().value());
+        // Don't run this logic twice ever.
+        exe.m_on_complete_handler_processed = true;
+
+        auto& on_complete_handler = exe.m_request_async->m_on_complete_handler.m_object.value();
 
         // Removing the timesup is done in the uv timesup callback so it can prune
         // every single item that has timesup'ed.  Doing it here will cause 1 item
         // per loop iteration to be removed if there are multiple items with the same timesup value.
         // remove_timeout(exe);
 
-        // IMPORTANT! Copying here is required _OR_ shared ownership must be added as libcurl
-        // maintains char* type pointers into the request data structure.  There is no guarantee
-        // after moving into user land that it will stay alive long enough until curl finishes its
-        // own timeout.  Shared ownership would most likely require locks as well since any curl
-        // handle still in the curl multi handle could be mutated by curl at any moment, copying
-        // seems far safer.
-        auto copy_ptr = std::make_unique<request>(*exe.m_request_async);
+        if (std::holds_alternative<request::on_complete_callback_type>(on_complete_handler))
+        {
+            auto copy = complete_request_timeout_common(exe);
 
-        on_complete_handler(std::move(copy_ptr), std::move(exe.m_response));
+            auto& callback = std::get<request::on_complete_callback_type>(on_complete_handler);
+            callback(std::move(copy), std::move(exe.m_response));
+        }
+        else if (std::holds_alternative<request::on_complete_promise_type>(on_complete_handler))
+        {
+            auto copy = complete_request_timeout_common(exe);
+
+            auto& promise = std::get<request::on_complete_promise_type>(on_complete_handler);
+            promise.set_value(std::make_pair(std::move(copy), std::move(exe.m_response)));
+        }
+        // else do nothing for std::monostate, the user doesn't want to be notified.
     }
+}
 
-    // Lift timeouts do not trigger an active request count drop.
+auto client::complete_request_timeout_common(executor& exe) -> request_ptr
+{
+    exe.m_response.m_lift_status = lift::lift_status::timeout;
+    exe.set_timesup_response(exe.m_request->timeout().value());
+
+    // IMPORTANT! Copying here is required _OR_ shared ownership must be added as libcurl
+    // maintains char* type pointers into the request data structure.  There is no guarantee
+    // after moving into user land that it will stay alive long enough until curl finishes its
+    // own timeout.  Shared ownership would most likely require locks as well since any curl
+    // handle still in the curl multi handle could be mutated by curl at any moment, copying
+    // seems far safer.
+    auto copy_ptr = std::make_unique<request>(*exe.m_request_async);
+    return copy_ptr;
 }
 
 auto client::add_timeout(executor& exe) -> void
@@ -554,9 +606,9 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
         {
             /**
              * If curl_multi_add_handle fails then notify the user that the request failed to start
-             * immediately.
+             * immediately.  This will return the just acquired executor back into the pool.
              */
-            c->complete_request_normal(*executor_ptr.get(), executor::convert(CURLcode::CURLE_SEND_ERROR));
+            c->complete_request_normal(std::move(executor_ptr), executor::convert(CURLcode::CURLE_SEND_ERROR));
         }
         else
         {

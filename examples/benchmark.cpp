@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 
             for (uint64_t j = 0; j < connections; ++j)
             {
-                auto request_ptr = lift::request::make_unique(url, 30s);
+                auto request_ptr = std::make_unique<lift::request>(url, 30s);
 
                 request_ptr->follow_redirects(false);
                 request_ptr->header("Connection", "Keep-Alive");

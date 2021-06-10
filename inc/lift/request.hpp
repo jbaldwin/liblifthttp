@@ -116,9 +116,11 @@ public:
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
+     * @deprecated Use std::make_unique<lift::request>()
      */
-    static auto make_unique(std::string url, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
-        -> std::unique_ptr<request>
+    [[deprecated("Use std::make_unique<lift::request>() instead.")]] static auto
+        make_unique(std::string url, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
+            -> std::unique_ptr<request>
     {
         return std::make_unique<request>(std::move(url), std::move(timeout));
     }

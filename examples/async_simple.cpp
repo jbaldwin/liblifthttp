@@ -35,7 +35,7 @@ int main()
     for (auto& url : urls)
     {
         std::cout << "Requesting " << url << std::endl;
-        auto request_ptr = lift::request::make_unique(url, timeout);
+        auto request_ptr = std::make_unique<lift::request>(url, timeout);
         client.start_request(std::move(request_ptr), on_complete);
         timeout += 250ms;
         std::this_thread::sleep_for(50ms);

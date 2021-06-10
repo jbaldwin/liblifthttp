@@ -9,7 +9,7 @@ TEST_CASE("Timesup single request")
 {
     lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
 
-    auto r = lift::request::make_unique(
+    auto r = std::make_unique<lift::request>(
         "http://www.reddit.com", // should be slow enough /shrug
         std::chrono::milliseconds{25});
 
@@ -37,8 +37,8 @@ TEST_CASE("Timesup two requests")
     };
 
     // should be slow enough /shrug
-    requests.push_back(lift::request::make_unique("http://www.reddit.com", std::chrono::milliseconds{25}));
-    requests.push_back(lift::request::make_unique("http://www.reddit.com", std::chrono::milliseconds{50}));
+    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{25}));
+    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{50}));
 
     client.start_requests(std::move(requests));
 }

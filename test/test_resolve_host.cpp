@@ -33,8 +33,8 @@ TEST_CASE("resolve_host client")
     };
 
     std::vector<lift::request_ptr> requests;
-    requests.emplace_back(lift::request::make_unique("testhostname:" + nginx_port_str, std::chrono::seconds{60}));
-    requests.emplace_back(lift::request::make_unique("herpderp.com:" + nginx_port_str, std::chrono::seconds{60}));
+    requests.emplace_back(std::make_unique<lift::request>("testhostname:" + nginx_port_str, std::chrono::seconds{60}));
+    requests.emplace_back(std::make_unique<lift::request>("herpderp.com:" + nginx_port_str, std::chrono::seconds{60}));
 
     client.start_requests(std::move(requests), on_complete);
 }

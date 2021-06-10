@@ -20,14 +20,14 @@ int main()
     // Asynchronous requests need to be created on the heap, this request will be fulfilled by
     // a std::future once.  Its ownership is first transferred into the lift::client while processing
     // and is transferred back upon completion or timeout.
-    auto async_future_request = lift::request::make_unique("http://www.example.com", timeout);
+    auto async_future_request = std::make_unique<lift::request>("http://www.example.com", timeout);
 
     // If you need a little more control or don't want to block on a std::future then the API allows
     // for the lift::client to invoke a lambda function upon completing or timing out a request.
     // It is important to note that the lambda will execute on the lift::client's background
     // event loop thread, avoid any heavy CPU usage in the lambda otherwise it will block other
     // outstanding requests from completing.
-    auto async_callback_request = lift::request::make_unique("http://www.example.com", timeout);
+    auto async_callback_request = std::make_unique<lift::request>("http://www.example.com", timeout);
 
     // Now inject the two async requests into the client to be executed.  Moving into the client is
     // required as this passes ownership of the request to the client's background worker thread

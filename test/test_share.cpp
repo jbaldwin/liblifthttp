@@ -40,11 +40,11 @@ TEST_CASE("share client synchronous")
 
     lift::client client2{lift::client::options{.share = lift_share_ptr}};
 
-    auto request1 =
-        lift::request::make_unique("http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
+    auto request1 = std::make_unique<lift::request>(
+        "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
 
-    auto request2 =
-        lift::request::make_unique("http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
+    auto request2 = std::make_unique<lift::request>(
+        "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
 
     client1.start_request(std::move(request1), [&](std::unique_ptr<lift::request>, lift::response response) {
         REQUIRE(response.lift_status() == lift::lift_status::success);
@@ -85,7 +85,7 @@ TEST_CASE("share client overlapping requests")
 
         for (size_t i = 0; i < N_REQUESTS; ++i)
         {
-            auto request_ptr = lift::request::make_unique(
+            auto request_ptr = std::make_unique<lift::request>(
                 "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{5});
 
             client.start_request(std::move(request_ptr), [&](std::unique_ptr<lift::request>, lift::response response) {

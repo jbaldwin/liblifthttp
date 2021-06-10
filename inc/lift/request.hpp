@@ -116,10 +116,6 @@ public:
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to
-     *                            know when the request completes with the response information via
-     *                            a callback (runs on the client background thread) or via a
-     *                            promise/future.
      */
     static auto make_unique(std::string url, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
         -> std::unique_ptr<request>

@@ -363,10 +363,11 @@ private:
      * Completes a request to pass ownership back to the user land.
      * Manages internal state accordingly, always call this function rather
      * than the request->OnComplete() function directly.
-     * @param exe The request handle to complete.
+     * @param exe_ptr The request handle to complete.
      * @param status The status of the request when completing.
      */
     auto complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void;
+
     auto complete_request_normal_common(executor& exe, lift_status status) -> void;
 
     /**

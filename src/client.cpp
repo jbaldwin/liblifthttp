@@ -84,7 +84,7 @@ auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 client::client(options opts)
     : m_connect_timeout(std::move(opts.connect_timeout)),
       m_curl_context_ready(),
-      m_resolve_hosts(std::move(opts.resolve_hosts.value_or(std::vector<resolve_host>{}))),
+      m_resolve_hosts(std::move(opts.resolve_hosts).value_or(std::vector<resolve_host>{})),
       m_share_ptr(std::move(opts.share)),
       m_on_thread_callback(std::move(opts.on_thread_callback))
 {

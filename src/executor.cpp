@@ -386,7 +386,7 @@ auto executor::copy_curl_to_response() -> void
 {
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
-    m_response.m_status_code = http::to_enum(static_cast<int32_t>(http_response_code));
+    m_response.m_status_code = http::to_enum(static_cast<uint16_t>(http_response_code));
 
     long http_version = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_HTTP_VERSION, &http_version);

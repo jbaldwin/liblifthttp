@@ -297,7 +297,7 @@ private:
         m_active_request_count.fetch_add(amount, std::memory_order_release);
 
         {
-            std::scoped_lock lk{m_pending_requests_lock};
+            std::scoped_lock<std::mutex> lk{m_pending_requests_lock};
             m_pending_requests.reserve(m_pending_requests.size() + amount);
             for (auto& request_ptr : requests)
             {

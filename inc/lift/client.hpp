@@ -88,10 +88,12 @@ public:
     [[nodiscard]] auto is_running() -> bool { return m_is_running.load(std::memory_order_acquire); }
 
     /**
-     * Stops the event loop from accepting new requests.  It will continue to process
-     * existing requests until they are completed.  Note that the ~client() will
+     * Stops the client's background event loop from accepting new requests.  It will continue to
+     * process existing requests until they are completed.  Note that the ~client() will
      * 'block' until all requests flush as the background even loop process thread
      * won't exit until they are all completed/timed-out/error'ed/etc.
+     *
+     * This function does not block, it only signals the client to stop accepting requests.
      */
     auto stop() -> void { m_is_stopping.exchange(true, std::memory_order_release); }
 
@@ -99,7 +101,7 @@ public:
      * @return Gets the number of active HTTP requests currently running.  This includes
      *         the number of pending requests that haven't been started yet (if any).
      */
-    [[nodiscard]] auto size() const -> uint64_t { return m_active_request_count.load(std::memory_order_relaxed); }
+    [[nodiscard]] auto size() const -> uint64_t { return m_active_request_count.load(std::memory_order_acquire); }
 
     /**
      * @return True if there are no requests pending or executing.
@@ -107,30 +109,108 @@ public:
     [[nodiscard]] auto empty() const -> bool { return size() == 0; }
 
     /**
-     * Adds a request to process.  The ownership of the request is trasferred into
-     * the event loop during execution and returned to the client in the
-     * OnCompletHandlerType callback.
+     * Starts processing the given request.  The ownership of the request is transferred into the
+     * client's background event loop thread during execution and is returned to the user when
+     * the future is fulfilled.
      *
-     * This function is thread safe.
+     * This function is thread safe and can be called from any thread to start processing a request.
      *
-     * @param request_ptr The request to process.  This request
-     *                    will have its OnComplete() handler called
-     *                    when its completed/error'ed/etc.
+     * @throw std::runtime_error If the request_ptr is nullptr.
+     * @param request_ptr The request to process.
+     * @return A future that will be fulfilled upon the request completing processing.
      */
-    auto start_request(request_ptr request_ptr) -> bool;
+    [[nodiscard]] auto start_request(request_ptr&& request_ptr) -> request::async_future_type;
 
     /**
-     * Adds a batch of requests to process.  The requests in the container will be moved
-     * out of the container and into the client, ownership of the requests is transferred
-     * into th event loop during execution.
+     * Starts processing the given request.  The ownership of the request is transferred into the
+     * client's background event loop thread during execution and is returned to the user when the
+     * on complete callback handler is invoked.
      *
-     * This function is thread safe.
+     * This function is thread safe and can be called from any thread to start processing a request.
      *
-     * @tparam container_type A container of class lift::request_ptr.
+     * @throw std::runtime_error If the request_ptr or callback are nullptr.
+     * @param request_ptr The request to process.  This request will have its OnComplete() handler
+     *                    called when its completed/error'ed/etc.
+     */
+    auto start_request(request_ptr&& request_ptr, request::async_callback_type callback) -> void;
+
+    /**
+     * Starts processing the set of given requests.  The ownership of the requests are transferred
+     * into the client's background event loop thread during execution and they are each individually
+     * returned to the user when each future is fulfilled.
+     *
+     * This function is thread safe and can be called from any thread to start processing requests.
+     *
+     * Any requests that are given as nullptr will be ignored.
+     *
+     * @tparam container_type A container with a set of class lift::request_ptr.
+     * @param requests The batch of requests to process.
+     * @return The set of futures for each request that was started.
+     */
+    template<typename container_type>
+    auto start_requests(container_type&& requests) -> std::vector<request::async_future_type>
+    {
+        std::vector<request::async_future_type> futures{};
+        futures.reserve(std::size(requests));
+
+        size_t amount{std::size(requests)};
+
+        // Prep each request's future prior to acquiring the lock.
+        for (auto& request_ptr : requests)
+        {
+            if (request_ptr != nullptr)
+            {
+                futures.emplace_back(request_ptr->async_future());
+            }
+            else
+            {
+                --amount;
+            }
+        }
+
+        start_requests_common(std::move(requests), amount);
+        return futures;
+    }
+
+    /**
+     * Starts processing the set of given requests.  The ownership of the requests are transferred
+     * into the client's background event loop thread during execution and they are each individually
+     * returned to the user when their on complete callback is invoked.  Each request submitted via
+     * this function has the same callback used for each request.
+     *
+     * This function is thread safe and can be called from any thread to start processing requests.
+     *
+     * Any requests that are given as nullptr will be ignored.
+     *
+     * @throw std::runtime_error If the callback is nullptr.
+     * @tparam container_type A container with a set of class lift::request_ptr.
      * @param requests The batch of requests to process.
      */
     template<typename container_type>
-    auto start_requests(container_type requests) -> bool;
+    auto start_requests(container_type&& requests, request::async_callback_type callback) -> void
+    {
+        if (callback == nullptr)
+        {
+            throw std::runtime_error{"lift::client::start_requests (callback) The callback cannot be nullptr."};
+        }
+
+        size_t amount{std::size(requests)};
+
+        // Prep each request's callback prior to acquiring the lock.
+        for (auto& request_ptr : requests)
+        {
+            if (request_ptr != nullptr)
+            {
+                request_ptr->async_callback(callback);
+            }
+            else
+            {
+                --amount;
+            }
+        }
+
+        start_requests_common(std::move(requests), amount);
+    }
 
 private:
     /// Set to true if the client is currently running.
@@ -193,7 +273,78 @@ private:
     /// Functor to call on background thread start/stop.
     on_thread_callback_type m_on_thread_callback{nullptr};
 
-    /// The background thread runs from this function.
+    /**
+     * Common code between future and callback start request functions.
+     */
+    auto start_request_common(request_ptr&& request_ptr) -> void;
+
+    /**
+     * Common code between future and callback start requests functions.
+     */
+    template<typename container_type>
+    auto start_requests_common(container_type&& requests, size_t amount) -> void
+    {
+        // Whoops, this client is actually shutting down.
+        if (m_is_stopping.load(std::memory_order_acquire))
+        {
+            for (auto& request_ptr : requests)
+            {
+                start_request_notify_failed_start(std::move(request_ptr));
+            }
+            return;
+        }
+
+        m_active_request_count.fetch_add(amount, std::memory_order_release);
+
+        {
+            std::scoped_lock<std::mutex> lk{m_pending_requests_lock};
+            m_pending_requests.reserve(m_pending_requests.size() + amount);
+            for (auto& request_ptr : requests)
+            {
+                if (request_ptr != nullptr)
+                {
+                    m_pending_requests.emplace_back(std::move(request_ptr));
+                }
+            }
+        }
+
+        // Notify the event loop thread that there are requests waiting to be picked up.
+        uv_async_send(&m_uv_async);
+    }
+
+    /**
+     * Utility function to notify the user correctly when a request fails to start.
+     */
+    static auto start_request_notify_failed_start(request_ptr&& request_ptr) -> void
+    {
+        response r{};
+
+        r.m_lift_status = lift_status::error_failed_to_start;
+
+        // This http status code isn't perfect, but its better than nothing I think?
+        r.m_status_code   = lift::http::status_code::http_500_internal_server_error;
+        r.m_total_time    = 0;
+        r.m_num_connects  = 0;
+        r.m_num_redirects = 0;
+
+        auto& on_complete_handler = request_ptr->m_on_complete_handler.m_object.value();
+
+        if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
+        {
+            auto& callback = std::get<request::async_callback_type>(on_complete_handler);
+            callback(std::move(request_ptr), std::move(r));
+        }
+        else if (std::holds_alternative<request::async_promise_type>(on_complete_handler))
+        {
+            auto& promise = std::get<request::async_promise_type>(on_complete_handler);
+            promise.set_value(std::make_pair(std::move(request_ptr), std::move(r)));
+        }
+        // else do nothing for std::monostate, no way to actually report the client is shutting down.
+    }
+
+    /*
+     * The background event loop thread runs from this function.
+     */
     auto run() -> void;
 
     /**
@@ -212,16 +363,19 @@ private:
      * Completes a request to pass ownership back to the user land.
      * Manages internal state accordingly, always call this function rather
      * than the request->OnComplete() function directly.
-     * @param exe The request handle to complete.
+     * @param exe_ptr The request handle to complete.
      * @param status The status of the request when completing.
      */
-    auto complete_request_normal(executor& exe, lift_status status) -> void;
+    auto complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void;
+
+    auto complete_request_normal_common(executor& exe, lift_status status) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.
      * @param exe The request to timeout.
      */
     auto complete_request_timeout(executor& exe) -> void;
+    auto complete_request_timeout_common(executor& exe) -> request_ptr;
 
     /**
      * Adds the request with the appropriate timeout.
@@ -325,34 +479,5 @@ private:
 
     friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };
-
-template<typename container_type>
-auto client::start_requests(container_type requests) -> bool
-{
-    if (m_is_stopping.load(std::memory_order_acquire))
-    {
-        return false;
-    }
-
-    m_active_request_count.fetch_add(std::size(requests), std::memory_order_relaxed);
-
-    // Lock scope
-    {
-        std::lock_guard<std::mutex> guard(m_pending_requests_lock);
-        for (auto& request_ptr : requests)
-        {
-            if (request_ptr == nullptr)
-            {
-                continue;
-            }
-            m_pending_requests.emplace_back(std::move(request_ptr));
-        }
-    }
-
-    // Notify the event loop thread that there are requests waiting to be picked up.
-    uv_async_send(&m_uv_async);
-
-    return true;
-}
 
 } // namespace lift

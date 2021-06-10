@@ -2,6 +2,7 @@
 
 #include "lift/header.hpp"
 #include "lift/http.hpp"
+#include "lift/impl/copy_util.hpp"
 #include "lift/mime_field.hpp"
 #include "lift/resolve_host.hpp"
 #include "lift/response.hpp"
@@ -9,9 +10,11 @@
 
 #include <chrono>
 #include <functional>
+#include <future>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace lift
@@ -71,8 +74,14 @@ public:
      * @param request_ptr Passes ownership of the request back to the user of liblifthttp.
      * @param response Response of the request_ptr.
      */
-    using on_complete_handler_type = std::function<void(std::unique_ptr<request> request_ptr, response response)>;
+    using async_callback_type = std::function<void(std::unique_ptr<request> request_ptr, response response)>;
+    using async_future_type   = std::future<std::pair<std::unique_ptr<request>, response>>;
 
+private:
+    using async_promise_type  = std::promise<std::pair<std::unique_ptr<request>, response>>;
+    using async_handlers_type = std::variant<std::monostate, async_callback_type, async_promise_type>;
+
+public:
     /**
      * Transfer progress handler callback signature.
      * @param download_total_bytes Total number of bytes the application should expect to download.
@@ -96,13 +105,8 @@ public:
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to
-     *                            know when the request completes with the response information.
      */
-    explicit request(
-        std::string                              url,
-        std::optional<std::chrono::milliseconds> timeout             = std::nullopt,
-        on_complete_handler_type                 on_complete_handler = nullptr);
+    explicit request(std::string url, std::optional<std::chrono::milliseconds> timeout = std::nullopt);
 
     /**
      * Creates a new request on the heap, this is a useful utility for asynchronous requests.
@@ -112,15 +116,13 @@ public:
      * @param url The url to request.
      * @param timeout An optional timeout for this request.  If not provided the request
      *                could hang/block forever if it is never responded to.
-     * @param on_complete_handler For asynchronous requests provide this if you want to
-     *                            know when the request completes with the response information.
+     * @deprecated Use std::make_unique<lift::request>()
      */
-    static auto make_unique(
-        std::string                              url,
-        std::optional<std::chrono::milliseconds> timeout             = std::nullopt,
-        on_complete_handler_type                 on_complete_handler = nullptr) -> std::unique_ptr<request>
+    [[deprecated("Use std::make_unique<lift::request>() instead.")]] static auto
+        make_unique(std::string url, std::optional<std::chrono::milliseconds> timeout = std::nullopt)
+            -> std::unique_ptr<request>
     {
-        return std::make_unique<request>(std::move(url), std::move(timeout), std::move(on_complete_handler));
+        return std::make_unique<request>(std::move(url), std::move(timeout));
     }
 
     request(const request&) = default;
@@ -138,18 +140,6 @@ public:
      * @return The HTTP response.
      */
     auto perform(share_ptr share_ptr = nullptr) -> response;
-
-    /**
-     * This on complete handler event is called when a request is executed
-     * asynchronously.  This is not used for synchronous requests.
-     * @param on_complete_handler When this request completes this handle is called.
-     */
-    auto on_complete_handler(on_complete_handler_type on_complete_handler) -> void;
-
-    /**
-     * @return The current on complete handler callback.
-     */
-    auto on_complete_handler() const -> const on_complete_handler_type& { return m_on_complete_handler; }
 
     /**
      * Sets or unsets a transfer progress handler callback.  Called periodically to update the
@@ -442,8 +432,8 @@ public:
     }
 
 private:
-    /// The on complete handler callback.
-    on_complete_handler_type m_on_complete_handler{nullptr};
+    /// The on complete handler callback or promise to fulfill, this is only used for async requests.
+    impl::copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
     /// The transfer progress handler callback.
     transfer_progress_handler_type m_on_transfer_progress_handler{nullptr};
     /// The timeout to connect, or none.
@@ -492,6 +482,23 @@ private:
     std::vector<lift::mime_field> m_mime_fields{};
     /// Happy eyeballs algorithm timeout https://curl.haxx.se/libcurl/c/CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS.html
     std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout{};
+
+    /**
+     * Used by the client to set an async callback for on completion notification to the user.
+     */
+    auto async_callback(async_callback_type callback) -> void
+    {
+        m_on_complete_handler.m_object = {std::move(callback)};
+    }
+
+    /**
+     * Used by the client to set an async future for on completion notification to the user.
+     */
+    auto async_future() -> async_future_type
+    {
+        m_on_complete_handler.m_object = {async_promise_type{}};
+        return std::get<async_promise_type>(m_on_complete_handler.m_object.value()).get_future();
+    }
 
     // libcurl will call this function if the user has requested transfer progress information.
     friend auto curl_xfer_info(

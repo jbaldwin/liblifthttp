@@ -61,8 +61,8 @@ private:
     request_ptr m_request_async{nullptr};
     /// If the async request has a timeout set then this is the position to delete when completed.
     std::optional<std::multimap<uint64_t, executor*>::iterator> m_timeout_iterator{};
-    // Has the on complete callback been called already?
-    bool m_on_complete_callback_called{false};
+    // Has the on complete handler already been processed?
+    bool m_on_complete_handler_processed{false};
 
     /// Used internally to point at one of the sync or async requests.
     request* m_request{nullptr};

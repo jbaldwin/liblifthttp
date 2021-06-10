@@ -34,27 +34,23 @@ TEST_CASE("Async batch 100 requests")
 
     lift::client client{};
 
-    std::vector<std::pair<std::unique_ptr<lift::request>, lift::request::async_callback_type>> handles{};
+    std::vector<lift::request_ptr> handles;
     handles.reserve(COUNT);
+
+    auto callback = [](std::unique_ptr<lift::request>, lift::response response) -> void {
+        REQUIRE(response.lift_status() == lift::lift_status::success);
+        REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+    };
 
     for (std::size_t i = 0; i < COUNT; ++i)
     {
         auto r = std::make_unique<lift::request>(
             "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{1});
 
-        handles.emplace_back(
-            std::make_pair(std::move(r), [](std::unique_ptr<lift::request>, lift::response response) -> void {
-                REQUIRE(response.lift_status() == lift::lift_status::success);
-                REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
-            }));
+        handles.emplace_back(std::move(r));
     }
 
-    client.start_requests(std::move(handles));
-
-    while (!client.empty())
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
-    }
+    client.start_requests(std::move(handles), callback);
 }
 
 TEST_CASE("Async POST request")

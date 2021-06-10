@@ -33,49 +33,57 @@ to get your started on using liblifthttp with both the synchronous and asynchron
 
 int main()
 {
-    // Synchronous requests can be created on the stack.
-    lift::request request{"http://www.example.com"};
-    // This is the blocking synchronous HTTP call.
-    auto response = request.perform();
-    std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
-    std::cout << response << "\n\n"; // Will print the raw http response.
+    std::chrono::seconds timeout{10};
 
-    // Creating the client starts it immediately, it spawns a background thread for executing requests.
+    // Synchronous requests can be created on the stack with a 10 second timeout.
+    lift::request sync_request{"http://www.example.com", timeout};
+
+    // This is the blocking synchronous HTTP call, this thread will wait until completed or timeout.
+    auto sync_response = sync_request.perform();
+    std::cout << "Lift status: " << lift::to_string(sync_response.lift_status()) << "\n";
+    std::cout << sync_response << "\n\n"; // Will print the raw http response.
+
+    // Creating the client starts it immediately, it spawns a background thread for executing
+    // requests asynchronously and also allows for re-using http connections if possible.
     lift::client client{};
 
-    // Create the request just like we did in the sync version, but now provide a lambda for on completion.
-    // The lambda is provided when the request is started on the client.
-    // NOTE: The Lambda is executed ON the Lift client background thread, not this main thread!
-    //       Use the std::promise + std::future async below if you want to pass ownership back to
-    //       this thread.
-    // This request is given 10 seconds to complete or timeout
-    auto request_with_callback_ptr = lift::request::make_unique("http://www.example.com", std::chrono::seconds{10});
+    // Asynchronous requests need to be created on the heap, this request will be fulfilled by
+    // a std::future once.  Its ownership is first transferred into the lift::client while processing
+    // and is transferred back upon completion or timeout.
+    auto async_future_request = lift::request::make_unique("http://www.example.com", timeout);
 
-    // Create a second async request that works via a promise+future instead of a functor callback.
-    auto request_with_future_ptr = lift::request::make_unique("http://www.example.com", std::chrono::seconds{10});
+    // If you need a little more control or don't want to block on a std::future then the API allows
+    // for the lift::client to invoke a lambda function upon completing or timing out a request.
+    // It is important to note that the lambda will execute on the lift::client's background
+    // event loop thread, avoid any heavy CPU usage in the lambda otherwise it will block other
+    // outstanding requests from completing.
+    auto async_callback_request = lift::request::make_unique("http://www.example.com", timeout);
 
-    // Now inject the two async requests into the client to be executed.  Moving into the client is required,
-    // this passes ownership of the request to the client's background worker thread.
-    client.start_request(std::move(request_with_callback_ptr), [](lift::request_ptr req_ptr, lift::response response) {
-        std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
-        std::cout << response << "\n\n";
-    });
+    // Now inject the two async requests into the client to be executed.  Moving into the client is
+    // required as this passes ownership of the request to the client's background worker thread
+    // while its being processed.  If you hold on to any raw pointers or references to the request
+    // after transferring ownership be sure to *not* use them until the request is completed, modifying
+    // a requests state during execution is prohibited.
 
-    // Inject the future request
-    auto future = client.start_request(std::move(request_with_future_ptr));
+    // Start the request that will be completed by future.
+    auto future = client.start_request(std::move(async_future_request));
 
-    // Block until the future async request completes, this returns the original request and the response.
-    // Note that the callback request could complete and print to stdout before or after since it is
-    // running on the lift client thread and not here.
-    auto [req_ptr, resp] = future.get();
-    std::cout << "Lift status: " << lift::to_string(response.lift_status()) << "\n";
-    std::cout << response << "\n\n"; // Will print the raw http response.
+    // Start the request that will be completed by callback lambda.
+    client.start_request(
+        std::move(async_callback_request),
+        [](lift::request_ptr async_callback_request_returned, lift::response async_callback_response) {
+            std::cout << "Lift status: " << lift::to_string(async_callback_response.lift_status()) << "\n";
+            std::cout << async_callback_response << "\n\n";
+        });
 
-    // Block on this main thread until the lift client has completed all requests, or timed out.
-    while (!client.empty())
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
-    }
+    // Block until the async future request completes, this returns the original request and the response.
+    // Note that the other callback request could complete and print to stdout before or after the future
+    // request since it's lambda callback will be invoked on the lift::client's thread.
+    auto [async_future_request_returned, async_future_response] = future.get();
+    std::cout << "Lift status: " << lift::to_string(async_future_response.lift_status()) << "\n";
+    std::cout << async_future_response << "\n\n"; // Will print the raw http response.
+
+    // The lift::client destructor will block until all outstanding requests complete.
 
     return 0;
 }
@@ -184,9 +192,9 @@ Here is how the benchmark application is called:
 ```bash
 $ ./examples/lift_benchmark --help
 Usage: ./examples/lift_benchmark<options> <url>
-    -c --connections  HTTP Connections to use.
-    -t --threads      Number of threads to use, connections are split
-                    evenly between each worker thread.
+    -c --connections  HTTP Connections to use per thread.
+    -t --threads      Number of threads to use.
+                      evenly between each worker thread.
     -d --duration     Duration of the test in seconds
     -h --help         Print this help usage.
 ```
@@ -206,7 +214,7 @@ Using `nginx` as the webserver with the default `fedora` configuration.
 
 File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
 
-Copyright © 2017-2020, Josh Baldwin
+Copyright © 2017-2021, Josh Baldwin
 
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue

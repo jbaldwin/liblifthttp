@@ -134,9 +134,9 @@ Here is how the benchmark application is called:
 ```bash
 $ ./examples/lift_benchmark --help
 Usage: ./examples/lift_benchmark<options> <url>
-    -c --connections  HTTP Connections to use.
-    -t --threads      Number of threads to use, connections are split
-                    evenly between each worker thread.
+    -c --connections  HTTP Connections to use per thread.
+    -t --threads      Number of threads to use.
+                      evenly between each worker thread.
     -d --duration     Duration of the test in seconds
     -h --help         Print this help usage.
 ```
@@ -156,7 +156,7 @@ Using `nginx` as the webserver with the default `fedora` configuration.
 
 File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
 
-Copyright © 2017-2020, Josh Baldwin
+Copyright © 2017-2021, Josh Baldwin
 
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue

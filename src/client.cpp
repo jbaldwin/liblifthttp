@@ -159,52 +159,49 @@ client::~client()
     global_cleanup();
 }
 
-auto client::start_request(request_ptr request_ptr, request::async_callback_type callback) -> bool
+auto client::start_request(request_ptr&& request_ptr) -> request::async_future_type
 {
     if (request_ptr == nullptr)
     {
-        return false;
+        throw std::runtime_error{"lift::client::start_request (future) The request_ptr cannot be nullptr."};
     }
-    if (callback != nullptr)
-    {
-        request_ptr->async_callback(std::move(callback));
-    }
-    return start_request_common(std::move(request_ptr));
-}
 
-auto client::start_request(request_ptr request_ptr) -> request::async_future_type
-{
     auto future = request_ptr->async_future();
-    if (!start_request_common(std::move(request_ptr)))
-    {
-        // Lol this is bad, TODO fix this up.
-        throw std::runtime_error{"Failed to start the request, is the client shutting down?"};
-    }
+    start_request_common(std::move(request_ptr));
     return future;
 }
 
-auto client::start_request_common(request_ptr request_ptr) -> bool
+auto client::start_request(request_ptr&& request_ptr, request::async_callback_type callback) -> void
 {
     if (request_ptr == nullptr)
     {
-        return false;
+        throw std::runtime_error{"lift::client::start_request (callback) The request_ptr cannot be nullptr."};
+    }
+    if (callback == nullptr)
+    {
+        throw std::runtime_error{"lift::client::start_request (callback) The callback cannot be nullptr."};
     }
 
+    request_ptr->async_callback(std::move(callback));
+    start_request_common(std::move(request_ptr));
+}
+
+auto client::start_request_common(request_ptr&& request_ptr) -> void
+{
     if (m_is_stopping.load(std::memory_order_acquire))
     {
-        return false;
+        start_request_notify_failed_start(std::move(request_ptr));
+        return;
     }
 
     // Do this now so that the event loop takes into account 'pending' requests as well.
-    m_active_request_count.fetch_add(1, std::memory_order_relaxed);
+    m_active_request_count.fetch_add(1, std::memory_order_release);
 
     {
         std::lock_guard<std::mutex> guard{m_pending_requests_lock};
         m_pending_requests.emplace_back(std::move(request_ptr));
     }
     uv_async_send(&m_uv_async);
-
-    return true;
 }
 
 auto client::run() -> void
@@ -273,7 +270,10 @@ auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -
         // Since the request completed remove it from the timeout set if it is there.
         remove_timeout(exe);
 
-        auto& on_complete_handler = exe.m_request_async->m_on_complete_handler.m_object.value();
+        // Ownership over the async_handlers_type must be 'owned' here, otherwise when the request
+        // is moved below it will move out from under us and cause a segfault due to the custom
+        // 'copy_but_actually_move' object wrapper.
+        auto on_complete_handler = std::move(exe.m_request_async->m_on_complete_handler.m_object).value();
 
         if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
@@ -289,11 +289,12 @@ auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -
             auto& promise = std::get<request::async_promise_type>(on_complete_handler);
             promise.set_value(std::make_pair(std::move(exe.m_request_async), std::move(exe.m_response)));
         }
-        // else do nothing for std::monostate, the user doesn't want to be notified.
+        // else do nothing for std::monostate, the user doesn't want to be notified or this request
+        // has timedout but was allowed to finish establishing a connection.
     }
 
     return_executor(std::move(exe_ptr));
-    m_active_request_count.fetch_sub(1, std::memory_order_relaxed);
+    m_active_request_count.fetch_sub(1, std::memory_order_release);
 }
 
 auto client::complete_request_normal_common(executor& exe, lift_status status) -> void
@@ -320,7 +321,10 @@ auto client::complete_request_timeout(executor& exe) -> void
         // Don't run this logic twice ever.
         exe.m_on_complete_handler_processed = true;
 
-        auto& on_complete_handler = exe.m_request_async->m_on_complete_handler.m_object.value();
+        // Ownership over the async_handlers_type must be 'owned' here, otherwise when the request
+        // is moved below it will move out from under us and cause a segfault due to the custom
+        // 'copy_but_actually_move' object wrapper.
+        auto on_complete_handler = std::move(exe.m_request_async->m_on_complete_handler.m_object).value();
 
         // Removing the timesup is done in the uv timesup callback so it can prune
         // every single item that has timesup'ed.  Doing it here will cause 1 item
@@ -329,18 +333,16 @@ auto client::complete_request_timeout(executor& exe) -> void
 
         if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
-            // After copying the on complete handler has MOVED due to impl::copy_but_actually_move.
-            // The type will be the same but the correct memory location must be used.
             auto copy = complete_request_timeout_common(exe);
 
-            auto& callback = std::get<request::async_callback_type>(copy->m_on_complete_handler.m_object.value());
+            auto& callback = std::get<request::async_callback_type>(on_complete_handler);
             callback(std::move(copy), std::move(exe.m_response));
         }
         else if (std::holds_alternative<request::async_promise_type>(on_complete_handler))
         {
             auto copy = complete_request_timeout_common(exe);
 
-            auto& promise = std::get<request::async_promise_type>(copy->m_on_complete_handler.m_object.value());
+            auto& promise = std::get<request::async_promise_type>(on_complete_handler);
             promise.set_value(std::make_pair(std::move(copy), std::move(exe.m_response)));
         }
         // else do nothing for std::monostate, the user doesn't want to be notified.
@@ -358,6 +360,10 @@ auto client::complete_request_timeout_common(executor& exe) -> request_ptr
     // own timeout.  Shared ownership would most likely require locks as well since any curl
     // handle still in the curl multi handle could be mutated by curl at any moment, copying
     // seems far safer.
+
+    // IMPORTANT! The request's async completion handler object is _MOVED_ from the original
+    // object into the copied object.  After making this copy the original object must not invoke
+    // any async handlers (future or callback).
     auto copy_ptr = std::make_unique<request>(*exe.m_request_async);
     return copy_ptr;
 }

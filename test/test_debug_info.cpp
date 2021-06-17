@@ -2,7 +2,7 @@
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
-TEST_CASE("client Start event loop, then stop and add a request.")
+TEST_CASE("request with debug info, verify callback is called at least once")
 {
     lift::request request("http://" + nginx_hostname + ":" + nginx_port_str + "/");
 

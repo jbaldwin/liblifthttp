@@ -7,6 +7,7 @@ set(LIBLIFT_TEST_SOURCE_FILES
     setup.hpp
     test_async_request.cpp
     test_client.cpp
+    test_debug_info.cpp
     test_escape.cpp
     test_header.cpp
     test_http.cpp

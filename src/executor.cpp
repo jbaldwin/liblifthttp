@@ -15,6 +15,8 @@ auto curl_xfer_info(
     curl_off_t upload_total_bytes,
     curl_off_t upload_now_bytes) -> int;
 
+auto curl_debug_info_callback(CURL* handle, curl_infotype type, char* data, size_t size, void* userptr) -> int;
+
 executor::executor(request* request, share* share) : m_request_sync(request), m_request(m_request_sync), m_response()
 {
     if (share != nullptr)
@@ -380,6 +382,12 @@ auto executor::prepare() -> void
     {
         curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, m_curl_share_handle);
     }
+
+    // Set debug info if the user added a debug info functor callback
+    if (m_request->m_debug_info_callback_functor != nullptr)
+    {
+        curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGFUNCTION, curl_debug_info_callback);
+    }
 }
 
 auto executor::copy_curl_to_response() -> void
@@ -450,6 +458,8 @@ auto executor::reset() -> void
 
     curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
     m_curl_share_handle = nullptr;
+
+    curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGFUNCTION, nullptr);
 
     curl_easy_reset(m_curl_handle);
 }
@@ -562,6 +572,20 @@ auto curl_xfer_info(
     {
         return 0; // continue the request.
     }
+}
+
+auto curl_debug_info_callback(CURL* /*handle*/, curl_infotype type, char* data, size_t size, void* userptr) -> int
+{
+    const auto* executor_ptr = static_cast<const executor*>(userptr);
+
+    if (executor_ptr != nullptr && executor_ptr->m_request->m_debug_info_callback_functor != nullptr)
+    {
+        executor_ptr->m_request->m_debug_info_callback_functor(
+            *executor_ptr->m_request, static_cast<debug_info_type>(type), std::string_view{data, size});
+    }
+
+    // "this function must return 0" according to libcurl docs.
+    return 0;
 }
 
 } // namespace lift

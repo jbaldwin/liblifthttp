@@ -384,9 +384,12 @@ auto executor::prepare() -> void
     }
 
     // Set debug info if the user added a debug info functor callback
-    if (m_request->m_debug_info_callback_functor != nullptr)
+    // https://curl.se/libcurl/c/CURLOPT_DEBUGFUNCTION.html
+    if (m_request->m_debug_info_handler != nullptr)
     {
+        curl_easy_setopt(m_curl_handle, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGFUNCTION, curl_debug_info_callback);
+        curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGDATA, this);
     }
 }
 
@@ -458,8 +461,6 @@ auto executor::reset() -> void
 
     curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
     m_curl_share_handle = nullptr;
-
-    curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGFUNCTION, nullptr);
 
     curl_easy_reset(m_curl_handle);
 }
@@ -578,9 +579,9 @@ auto curl_debug_info_callback(CURL* /*handle*/, curl_infotype type, char* data, 
 {
     const auto* executor_ptr = static_cast<const executor*>(userptr);
 
-    if (executor_ptr != nullptr && executor_ptr->m_request->m_debug_info_callback_functor != nullptr)
+    if (executor_ptr != nullptr && executor_ptr->m_request->m_debug_info_handler != nullptr)
     {
-        executor_ptr->m_request->m_debug_info_callback_functor(
+        executor_ptr->m_request->m_debug_info_handler(
             *executor_ptr->m_request, static_cast<debug_info_type>(type), std::string_view{data, size});
     }
 

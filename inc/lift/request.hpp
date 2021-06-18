@@ -82,6 +82,8 @@ enum class debug_info_type
     ssl_data_in = CURLINFO_SSL_DATA_IN
 };
 
+auto to_string(debug_info_type type) -> const std::string&;
+
 /**
  * Debug information callback signature type, the first argument is the type of debug information
  * and the second argument is the raw byte data.
@@ -466,7 +468,7 @@ public:
      */
     auto debug_info_handler(debug_info_callback_type callback_functor) -> void
     {
-        m_debug_info_callback_functor = std::move(callback_functor);
+        m_debug_info_handler = std::move(callback_functor);
     }
 
 private:
@@ -521,7 +523,7 @@ private:
     /// Happy eyeballs algorithm timeout https://curl.haxx.se/libcurl/c/CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS.html
     std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout{};
     /// The debug callback functor for `debug_info_type` information.  If nullptr will not be set.
-    debug_info_callback_type m_debug_info_callback_functor{nullptr};
+    debug_info_callback_type m_debug_info_handler{nullptr};
 
     /**
      * Used by the client to set an async callback for on completion notification to the user.

@@ -9,6 +9,13 @@ int main()
     // Synchronous requests can be created on the stack.
     lift::request sync_request{"http://www.example.com", timeout};
 
+    // Debug information about any request can be added by including a callback handler for debug
+    // information.  Just pass in a lambda to capture the verbose debug information.
+    sync_request.debug_info_handler(
+        [](const lift::request& /*unused*/, lift::debug_info_type type, std::string_view data) {
+            std::cout << "sync_request (" << lift::to_string(type) << "): " << data;
+        });
+
     // This is the blocking synchronous HTTP call, this thread will wait until the http request
     // completes or times out.
     auto sync_response = sync_request.perform();

@@ -115,7 +115,11 @@ auto request::data(std::string data) -> void
 
     m_request_data_set = true;
     m_request_data     = std::move(data);
-    m_method           = http::method::post;
+    // Attempt to switch to a smarter verb if it isn't already set.
+    if (m_method != http::method::post || m_method != http::method::put)
+    {
+        m_method = http::method::post;
+    }
 }
 
 auto request::mime_field(lift::mime_field mf) -> void

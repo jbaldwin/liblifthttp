@@ -16,6 +16,17 @@ int main()
             std::cout << "sync_request (" << lift::to_string(type) << "): " << data;
         });
 
+    // Set the http method for this synchronous request.
+    sync_request.method(lift::http::method::post);
+
+    // Add headers to this request, they are given as a name + value pair.  Note that if the same
+    // header name is specified more than once then it will appear that many times in the request.
+    sync_request.header("x-lift", "lift-custom-header-data");
+
+    // Add some data to the request body, note that if the request http verb is not post or put then
+    // this data call will set the http verb to post since the request now includes a body.
+    sync_request.data("lift-hello-world-data");
+
     // This is the blocking synchronous HTTP call, this thread will wait until the http request
     // completes or times out.
     auto sync_response = sync_request.perform();
@@ -40,7 +51,7 @@ int main()
     // Starting the asynchronous requests requires the request ownership to be moved to the
     // lift::client while it is being processed.  Regardless of the on complete method, future or
     // callback, the original request object and its response will have their ownership moved back
-    // to you upon completion.  If you hold on to any raw pointers or rerefences to the requests
+    // to you upon completion.  If you hold on to any raw pointers or references to the requests
     // while they are being processed be sure not to use them until the requests complete.  Modifying
     // a request's state during execution is prohibited.
 
@@ -51,6 +62,7 @@ int main()
     client.start_request(
         std::move(async_callback_request),
         [](lift::request_ptr async_callback_request_returned, lift::response async_callback_response) {
+            // This on complete callback will run on the lift::client background event loop thread.
             std::cout << "Lift status (async callback): ";
             std::cout << lift::to_string(async_callback_response.lift_status()) << "\n";
             std::cout << async_callback_response << "\n\n";
@@ -58,7 +70,7 @@ int main()
 
     // Block until the async future request completes, this returns the original request and the response.
     // Note that the other callback request could complete and print to stdout before or after the future
-    // request since its lambda callback will be invoked on the lift::client's thread.
+    // request completes since its lambda callback will be invoked on the lift::client's thread.
     auto [async_future_request_returned, async_future_response] = future.get();
     std::cout << "Lift status (async future): ";
     std::cout << lift::to_string(async_future_response.lift_status()) << "\n";

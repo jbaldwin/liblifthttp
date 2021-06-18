@@ -144,6 +144,10 @@ private:
 
     /// For Timesup.
     friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
+
+    /// libcurl will call this function when the request has debug function enabled.
+    friend auto curl_debug_info_callback(CURL* handle, curl_infotype type, char* data, size_t size, void* userptr)
+        -> int;
 };
 
 using executor_ptr = std::unique_ptr<executor>;

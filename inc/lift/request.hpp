@@ -20,6 +20,7 @@
 namespace lift
 {
 class client;
+class request;
 class executor;
 
 enum class ssl_certificate_type
@@ -27,6 +28,8 @@ enum class ssl_certificate_type
     pem,
     der
 };
+
+auto to_string(ssl_certificate_type type) -> const std::string&;
 
 enum class proxy_type
 {
@@ -61,7 +64,34 @@ struct proxy_data
     std::optional<std::vector<http_auth_type>> m_auth_types;
 };
 
-auto to_string(ssl_certificate_type type) -> const std::string&;
+enum class debug_info_type
+{
+    /// The data is information text.
+    text = CURLINFO_TEXT,
+    /// The data is header (or header-like) data received from the peer.
+    header_in = CURLINFO_HEADER_IN,
+    /// The data is header (or header-like) data sent to the peer.
+    header_out = CURLINFO_HEADER_OUT,
+    /// The data is protocol data receivd from the peer.
+    data_in = CURLINFO_DATA_IN,
+    /// The data is protocol data sent to the peer.
+    data_out = CURLINFO_DATA_OUT,
+    /// The data is SSL/TLS (binary) data sent to the peer.
+    ssl_data_out = CURLINFO_SSL_DATA_OUT,
+    /// The data is SSL/TLS (binary) data received from the peer.
+    ssl_data_in = CURLINFO_SSL_DATA_IN
+};
+
+auto to_string(debug_info_type type) -> const std::string&;
+
+/**
+ * Debug information callback signature type, the first argument is the type of debug information
+ * and the second argument is the raw byte data.
+ * @param req The request the debug information is for.
+ * @param type The `debug_info_type` that the `data` is.
+ * @param data THe raw byte data.
+ */
+using debug_info_callback_type = std::function<void(const request& req, debug_info_type type, std::string_view data)>;
 
 class request
 {
@@ -431,6 +461,16 @@ public:
         return m_happy_eyeballs_timeout;
     }
 
+    /**
+     * @param callback_functor The callback for `debug_info_type` set of information about this
+     *                         http request.  To un-set this for a request pass in nullptr for the
+     *                         functor.
+     */
+    auto debug_info_handler(debug_info_callback_type callback_functor) -> void
+    {
+        m_debug_info_handler = std::move(callback_functor);
+    }
+
 private:
     /// The on complete handler callback or promise to fulfill, this is only used for async requests.
     impl::copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
@@ -482,6 +522,8 @@ private:
     std::vector<lift::mime_field> m_mime_fields{};
     /// Happy eyeballs algorithm timeout https://curl.haxx.se/libcurl/c/CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS.html
     std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout{};
+    /// The debug callback functor for `debug_info_type` information.  If nullptr will not be set.
+    debug_info_callback_type m_debug_info_handler{nullptr};
 
     /**
      * Used by the client to set an async callback for on completion notification to the user.
@@ -507,6 +549,10 @@ private:
         curl_off_t download_now_bytes,
         curl_off_t upload_total_bytes,
         curl_off_t upload_now_bytes) -> int;
+
+    /// libcurl will call this function when the request has debug function enabled.
+    friend auto curl_debug_info_callback(CURL* handle, curl_infotype type, char* data, size_t size, void* userptr)
+        -> int;
 };
 
 using request_ptr = std::unique_ptr<request>;

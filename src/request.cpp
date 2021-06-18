@@ -22,6 +22,38 @@ auto to_string(ssl_certificate_type type) -> const std::string&
     }
 }
 
+static const std::string debug_info_type_unknown      = "unknown"s;
+static const std::string debug_info_type_text         = "text"s;
+static const std::string debug_info_type_header_in    = "header_in"s;
+static const std::string debug_info_type_header_out   = "header_out"s;
+static const std::string debug_info_type_data_in      = "data_in"s;
+static const std::string debug_info_type_data_out     = "data_out"s;
+static const std::string debug_info_type_ssl_data_out = "ssl_data_out"s;
+static const std::string debug_info_type_ssl_data_in  = "ssl_data_in"s;
+
+auto to_string(debug_info_type type) -> const std::string&
+{
+    switch (type)
+    {
+        case debug_info_type::text:
+            return debug_info_type_text;
+        case debug_info_type::header_in:
+            return debug_info_type_header_in;
+        case debug_info_type::header_out:
+            return debug_info_type_header_out;
+        case debug_info_type::data_in:
+            return debug_info_type_data_in;
+        case debug_info_type::data_out:
+            return debug_info_type_data_out;
+        case debug_info_type::ssl_data_out:
+            return debug_info_type_ssl_data_out;
+        case debug_info_type::ssl_data_in:
+            return debug_info_type_ssl_data_in;
+        default:
+            return debug_info_type_unknown;
+    }
+}
+
 request::request(std::string url, std::optional<std::chrono::milliseconds> timeout)
     : m_timeout(std::move(timeout)),
       m_url(std::move(url))
@@ -83,7 +115,11 @@ auto request::data(std::string data) -> void
 
     m_request_data_set = true;
     m_request_data     = std::move(data);
-    m_method           = http::method::post;
+    // Attempt to switch to a smarter verb if it isn't already set.
+    if (m_method != http::method::post || m_method != http::method::put)
+    {
+        m_method = http::method::post;
+    }
 }
 
 auto request::mime_field(lift::mime_field mf) -> void

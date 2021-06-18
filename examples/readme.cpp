@@ -3,11 +3,13 @@
 
 int main()
 {
+    const std::string url{"http://www.example.com"};
+
     // Every HTTP request in this example has a 10 second timeout to complete.
-    std::chrono::seconds timeout{10};
+    const std::chrono::seconds timeout{10};
 
     // Synchronous requests can be created on the stack.
-    lift::request sync_request{"http://www.example.com", timeout};
+    lift::request sync_request{url, timeout};
 
     // Debug information about any request can be added by including a callback handler for debug
     // information.  Just pass in a lambda to capture the verbose debug information.
@@ -40,13 +42,13 @@ int main()
     lift::client client{};
 
     // Create an asynchronous request that will be fulfilled by a std::future upon its completion.
-    auto async_future_request = std::make_unique<lift::request>("http://www.example.com", timeout);
+    auto async_future_request = std::make_unique<lift::request>(url, timeout);
 
     // Create an asynchronous request that will be fulfilled by a callback upon its completion.
     // It is important to note that the callback will be executed on the lift::client's background
     // event loop thread so it is wise to avoid any heavy CPU usage within this callback otherwise
     // other outstanding requests will be blocked from completing.
-    auto async_callback_request = std::make_unique<lift::request>("http://www.example.com", timeout);
+    auto async_callback_request = std::make_unique<lift::request>(url, timeout);
 
     // Starting the asynchronous requests requires the request ownership to be moved to the
     // lift::client while it is being processed.  Regardless of the on complete method, future or

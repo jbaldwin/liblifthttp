@@ -52,10 +52,10 @@ int main()
     std::cout << "Lift status (sync): " << lift::to_string(sync_response.lift_status()) << "\n";
     std::cout << sync_response << "\n\n"; // Will print the raw http response.
 
-    // Asynchronous requests must be created on the heap, but they also need to be executed through
+    // Asynchronous requests must be created on the heap and they also need to be executed through
     // a lift::client instance.  Creating a lift::client automatically spawns a background event
     // loop thread to exceute the http requests it is given.  A lift::client also maintains a set
-    // of http connections and will actively re-use connections when possible.
+    // of http connections and will actively re-use available http connections when possible.
     lift::client client{};
 
     // Create an asynchronous request that will be fulfilled by a std::future upon its completion.
@@ -68,11 +68,11 @@ int main()
     auto async_callback_request = std::make_unique<lift::request>("http://www.example.com", timeout);
 
     // Starting the asynchronous requests requires the request ownership to be moved to the
-    // lift::client while it is being processed.  Regardless of the on complet method, future or
+    // lift::client while it is being processed.  Regardless of the on complete method, future or
     // callback, the original request object and its response will have their ownership moved back
     // to you upon completion.  If you hold on to any raw pointers or rerefences to the requests
-    // while they are being processed be sure not to use them until the requests complete, modifying
-    // a requests state during execution is prohibited.
+    // while they are being processed be sure not to use them until the requests complete.  Modifying
+    // a request's state during execution is prohibited.
 
     // Start the request that will be completed by future.
     auto future = client.start_request(std::move(async_future_request));
@@ -88,7 +88,7 @@ int main()
 
     // Block until the async future request completes, this returns the original request and the response.
     // Note that the other callback request could complete and print to stdout before or after the future
-    // request since it's lambda callback will be invoked on the lift::client's thread.
+    // request since its lambda callback will be invoked on the lift::client's thread.
     auto [async_future_request_returned, async_future_response] = future.get();
     std::cout << "Lift status (async future): ";
     std::cout << lift::to_string(async_future_response.lift_status()) << "\n";

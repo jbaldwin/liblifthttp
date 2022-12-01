@@ -19,6 +19,13 @@ You're using curl? Do you even lift?
 * Background IO thread(s) for sending and receiving Async HTTP requests.
 * Request pooling for re-using HTTP requests and sharing of connection information.
 
+## Known Bugs/Issues
+
+* libcurl 7.81.0 is unsupported due to a known libcurl bug in the multi handle code.  Unfortunately ubuntu 22.04 comes with this version installed by default, you will need to manually install a different version of libcurl or build libcurl from source and link to it to avoid segfaults in asynchronous http requests via liblift.
+  * [See](https://github.com/jbaldwin/liblifthttp/issues/142) for more information
+
+* libcurl share does not work across multiple threads, expect segfaults if you try and use the `lift::share` objects across threads.  The bug is apparently very difficult to fix and is unlikely to be fixed anytime soon after talking with the libcurl maintainer.
+
 ## Usage
 
 ### Examples
@@ -115,13 +122,16 @@ int main()
 ```
 
 ### Requirements
-    C++17 compiler
+    C++17 compilers tested
         g++-9
+        g++-11
         clang-9
+        clang-14
     CMake
     make or ninja
     pthreads
     libcurl-devel >= 7.59
+        *UNSUPPORTED* 7.81.0 has a known libcurl mutli* bug that was fixed in 7.82.0.
     libuv-devel
     zlib-devel
     openssl-devel (or equivalent curl support ssl library)
@@ -129,6 +139,7 @@ int main()
 
     Tested on:
         ubuntu:20.04
+        ubuntu:22.04 (with custom libcurl built)
         fedora:31
 
 ### Instructions
@@ -153,7 +164,7 @@ CMake options:
 
 Note on `LIFT_USER_LINK_LIBRARIES`, if override the value then all of the default link libraries/targets must be
 accounted for in the override.  E.g. if you are building with a custom curl target but defaults for everything else
-then `-DLIFT_USER_LINK_LIBRARIES="custom_curl_target z uv pthread dl stdc++fs"` would be the correct setting.
+then `-DLIFT_USER_LINK_LIBRARIES="custom_curl_target;z;uv;pthread;dl;stdc++fs"` would be the correct setting.
 
 ##### add_subdirectory()
 To use within your cmake project you can clone the project or use git submodules and then `add_subdirectory` in the parent project's `CMakeList.txt`,

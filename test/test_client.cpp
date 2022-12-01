@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -9,8 +9,10 @@ TEST_CASE("client Start event loop, then stop and add a request.")
     auto request = std::make_unique<lift::request>(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
 
-    REQUIRE_NOTHROW(
-        client.start_request(std::move(request), [&](std::unique_ptr<lift::request>, lift::response response) {
+    REQUIRE_NOTHROW(client.start_request(
+        std::move(request),
+        [&](std::unique_ptr<lift::request>, lift::response response)
+        {
             REQUIRE(response.lift_status() == lift::lift_status::success);
             REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
         }));
@@ -21,8 +23,10 @@ TEST_CASE("client Start event loop, then stop and add a request.")
     // Adding requests after stopping should return false that they cannot be started.
     client.stop();
 
-    REQUIRE_NOTHROW(
-        client.start_request(std::move(request), [&](std::unique_ptr<lift::request>, lift::response response) {
+    REQUIRE_NOTHROW(client.start_request(
+        std::move(request),
+        [&](std::unique_ptr<lift::request>, lift::response response)
+        {
             REQUIRE(response.lift_status() == lift::lift_status::error_failed_to_start);
             REQUIRE(response.status_code() == lift::http::status_code::http_500_internal_server_error);
         }));
@@ -63,12 +67,14 @@ TEST_CASE("client Start event loop, then stop and add multiple requests callback
 {
     lift::client client{};
 
-    auto callback1 = [&](std::unique_ptr<lift::request>, lift::response response) {
+    auto callback1 = [&](std::unique_ptr<lift::request>, lift::response response)
+    {
         REQUIRE(response.lift_status() == lift::lift_status::success);
         REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
     };
 
-    auto callback2 = [&](std::unique_ptr<lift::request>, lift::response response) {
+    auto callback2 = [&](std::unique_ptr<lift::request>, lift::response response)
+    {
         REQUIRE(response.lift_status() == lift::lift_status::error_failed_to_start);
         REQUIRE(response.status_code() == lift::http::status_code::http_500_internal_server_error);
     };

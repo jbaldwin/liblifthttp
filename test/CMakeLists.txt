@@ -20,6 +20,8 @@ set(LIBLIFT_TEST_SOURCE_FILES
     test_timesup.cpp
     test_transfer_progress_request.cpp
     test_user_data_request.cpp
+
+    catch_amalgamated.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${LIBLIFT_TEST_SOURCE_FILES})

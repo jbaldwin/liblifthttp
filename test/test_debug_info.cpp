@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -9,9 +9,8 @@ TEST_CASE("request with debug info, verify callback is called at least once", "[
     std::atomic<uint64_t> debug_info_called{0};
 
     auto on_debug_handler =
-        [&debug_info_called](const lift::request& req, lift::debug_info_type type, std::string_view data) {
-            debug_info_called.fetch_add(1, std::memory_order_relaxed);
-        };
+        [&debug_info_called](const lift::request& req, lift::debug_info_type type, std::string_view data)
+    { debug_info_called.fetch_add(1, std::memory_order_relaxed); };
 
     request.debug_info_handler(on_debug_handler);
 
@@ -29,9 +28,8 @@ TEST_CASE("debug request, reset request, debug requst again", "[debug_info]")
     std::atomic<uint64_t> debug_info_called{0};
 
     auto on_debug_handler =
-        [&debug_info_called](const lift::request& req, lift::debug_info_type type, std::string_view data) {
-            debug_info_called.fetch_add(1, std::memory_order_relaxed);
-        };
+        [&debug_info_called](const lift::request& req, lift::debug_info_type type, std::string_view data)
+    { debug_info_called.fetch_add(1, std::memory_order_relaxed); };
 
     request.debug_info_handler(on_debug_handler);
 

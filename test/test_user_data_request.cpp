@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -30,17 +30,19 @@ TEST_CASE("User data")
 
     auto req1 = std::make_unique<lift::request>(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{1});
-    client.start_request(std::move(req1), [request_id](lift::request_ptr request, lift::response response) {
-        user_data_on_complete(std::move(request), std::move(response), request_id, 100.5);
-    });
+    client.start_request(
+        std::move(req1),
+        [request_id](lift::request_ptr request, lift::response response)
+        { user_data_on_complete(std::move(request), std::move(response), request_id, 100.5); });
 
     request_id = 2;
 
     auto req2 = std::make_unique<lift::request>(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{1});
-    client.start_request(std::move(req2), [request_id](lift::request_ptr request, lift::response response) {
-        user_data_on_complete(std::move(request), std::move(response), request_id, 1234.567);
-    });
+    client.start_request(
+        std::move(req2),
+        [request_id](lift::request_ptr request, lift::response response)
+        { user_data_on_complete(std::move(request), std::move(response), request_id, 1234.567); });
 
     while (!client.empty())
     {

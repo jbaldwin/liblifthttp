@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -10,7 +10,8 @@ TEST_CASE("Transfer Progress synchronous")
     std::size_t handler_called = 0;
 
     request->transfer_progress_handler(
-        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) -> bool {
+        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow) -> bool
+        {
             handler_called++;
             return true; // continue the request
         });
@@ -30,7 +31,8 @@ TEST_CASE("Download <N> bytes test synchronous")
     static constexpr std::size_t BYTES_TO_DOWNLOAD = 5;
 
     request->transfer_progress_handler(
-        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t, int64_t) -> bool {
+        [&](const lift::request& r, int64_t dltotal, int64_t dlnow, int64_t, int64_t) -> bool
+        {
             if (dlnow >= BYTES_TO_DOWNLOAD)
             {
                 should_failed = true;

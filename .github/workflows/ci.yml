@@ -89,7 +89,6 @@ jobs:
                     apt-get update
                     apt-get -y upgrade
                     apt install -y build-essential software-properties-common
-                    add-apt-repository ppa:ubuntu-toolchain-r/test
                     apt-get install -y \
                         cmake \
                         git \
@@ -101,6 +100,9 @@ jobs:
                         libuv1-dev \
                         curl \
                         wget
+            -   name: check-haproxy
+                run: |
+                    curl --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
             -   name: build-libcurl
                 run: |
                     # We have to custom build libcurl because ubuntu 22.02 default comes with a broken
@@ -113,10 +115,7 @@ jobs:
                     cd curl-7.86.0/
                     ./configure --with-openssl
                     make -j $(nproc)
-                    sudo make install
-            -   name: check-haproxy
-                run: |
-                    curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
+                    make install
             -   name: build-release-g++
                 run: |
                     mkdir build-release-g++

@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -16,10 +16,13 @@ TEST_CASE("Async 100 requests")
         auto r = std::make_unique<lift::request>(
             "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{1});
 
-        client.start_request(std::move(r), [](std::unique_ptr<lift::request> rh, lift::response response) -> void {
-            REQUIRE(response.lift_status() == lift::lift_status::success);
-            REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
-        });
+        client.start_request(
+            std::move(r),
+            [](std::unique_ptr<lift::request> rh, lift::response response) -> void
+            {
+                REQUIRE(response.lift_status() == lift::lift_status::success);
+                REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
+            });
     }
 
     while (!client.empty())
@@ -37,7 +40,8 @@ TEST_CASE("Async batch 100 requests")
     std::vector<lift::request_ptr> handles;
     handles.reserve(COUNT);
 
-    auto callback = [](std::unique_ptr<lift::request>, lift::response response) -> void {
+    auto callback = [](std::unique_ptr<lift::request>, lift::response response) -> void
+    {
         REQUIRE(response.lift_status() == lift::lift_status::success);
         REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
     };
@@ -67,10 +71,13 @@ TEST_CASE("Async POST request")
     request->version(lift::http::version::v1_1);
     //        request->header("Expect", "");
 
-    client.start_request(std::move(request), [&](std::unique_ptr<lift::request>, lift::response response) {
-        REQUIRE(response.lift_status() == lift::lift_status::success);
-        REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
-    });
+    client.start_request(
+        std::move(request),
+        [&](std::unique_ptr<lift::request>, lift::response response)
+        {
+            REQUIRE(response.lift_status() == lift::lift_status::success);
+            REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
+        });
 
     request = std::make_unique<lift::request>(
         "http://" + nginx_hostname + ":" + nginx_port_str + "/", std::chrono::seconds{60});
@@ -81,10 +88,13 @@ TEST_CASE("Async POST request")
     // There was a bug where no expect header caused liblift to fail, test it explicitly
     request->header("Expect", "");
 
-    client.start_request(std::move(request), [&](std::unique_ptr<lift::request>, lift::response response) {
-        REQUIRE(response.lift_status() == lift::lift_status::success);
-        REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
-    });
+    client.start_request(
+        std::move(request),
+        [&](std::unique_ptr<lift::request>, lift::response response)
+        {
+            REQUIRE(response.lift_status() == lift::lift_status::success);
+            REQUIRE(response.status_code() == lift::http::status_code::http_405_method_not_allowed);
+        });
 }
 
 TEST_CASE("Async POST request promise+future")

@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -13,13 +13,16 @@ TEST_CASE("Timesup single request")
         "http://www.reddit.com", // should be slow enough /shrug
         std::chrono::milliseconds{25});
 
-    client.start_request(std::move(r), [](std::unique_ptr<lift::request> rh, lift::response response) -> void {
-        REQUIRE(response.lift_status() == lift::lift_status::timeout);
-        REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
-        REQUIRE(response.total_time() == std::chrono::milliseconds{25});
-        REQUIRE(response.num_connects() == 0);
-        REQUIRE(response.num_redirects() == 0);
-    });
+    client.start_request(
+        std::move(r),
+        [](std::unique_ptr<lift::request> rh, lift::response response) -> void
+        {
+            REQUIRE(response.lift_status() == lift::lift_status::timeout);
+            REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
+            REQUIRE(response.total_time() == std::chrono::milliseconds{25});
+            REQUIRE(response.num_connects() == 0);
+            REQUIRE(response.num_redirects() == 0);
+        });
 }
 
 TEST_CASE("Timesup two requests")
@@ -28,7 +31,8 @@ TEST_CASE("Timesup two requests")
 
     std::vector<lift::request_ptr> requests{};
 
-    auto callback = [](std::unique_ptr<lift::request> rh, lift::response response) -> void {
+    auto callback = [](std::unique_ptr<lift::request> rh, lift::response response) -> void
+    {
         REQUIRE(response.lift_status() == lift::lift_status::timeout);
         REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
         REQUIRE(

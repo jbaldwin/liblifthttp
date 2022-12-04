@@ -19,6 +19,10 @@ You're using curl? Do you even lift?
 * Background IO thread(s) for sending and receiving Async HTTP requests.
 * Request pooling for re-using HTTP requests and sharing of connection information.
 
+## Known Bugs/Issues
+*   libcurl 7.81.0 is unsupported due to a known libcurl bug in the multi handle code.  Unfortunately ubuntu 22.04 comes with this version installed by default, you will need to manually install a different version of libcurl or build libcurl from source and link to it to avoid segfaults in asynchronous http requests via liblift.  See [here](https://github.com/jbaldwin/liblifthttp/issues/142) for more information
+*   libcurl share does not work across multiple threads, expect segfaults if you try and use the `lift::share` objects across threads.  The bug is apparently very difficult to fix and is unlikely to be fixed anytime soon after talking with the libcurl maintainer.
+
 ## Usage
 
 ### Examples
@@ -115,29 +119,37 @@ int main()
 ```
 
 ### Requirements
-    C++17 compiler
-        g++-9
-        clang-9
-    CMake
-    make or ninja
-    pthreads
-    libcurl-devel >= 7.59
-    libuv-devel
-    zlib-devel
-    openssl-devel (or equivalent curl support ssl library)
-    stdc++fs
+```bash
+C++17 compilers tested
+    g++-9
+    g++-11
+    clang-9
+    clang-14
+CMake
+make or ninja
+pthreads
+libcurl-devel >= 7.59
+    *UNSUPPORTED* 7.81.0 has a known libcurl mutli* bug that was fixed in 7.82.0.
+libuv-devel
+zlib-devel
+openssl-devel (or equivalent curl support ssl library)
+stdc++fs
 
-    Tested on:
-        ubuntu:20.04
-        fedora:31
+Tested on:
+    ubuntu:20.04
+    ubuntu:22.04 (with custom libcurl built)
+    fedora:31
+```
 
 ### Instructions
 
 #### Building
-    # This will produce a static library to link against your project.
-    mkdir Release && cd Release
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    cmake --build .
+```bash
+# This will produce a static library to link against your project.
+mkdir Release && cd Release
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build .
+```
 
 #### CMake Projects
 
@@ -150,10 +162,9 @@ CMake options:
 | LIFT_CODE_COVERAGE       | OFF                           | Should code coverage be enabled?       |
 | LIFT_USER_LINK_LIBRARIES | curl z uv pthread dl stdc++fs | Override lift's target link libraries. |
 
-
 Note on `LIFT_USER_LINK_LIBRARIES`, if override the value then all of the default link libraries/targets must be
 accounted for in the override.  E.g. if you are building with a custom curl target but defaults for everything else
-then `-DLIFT_USER_LINK_LIBRARIES="custom_curl_target z uv pthread dl stdc++fs"` would be the correct setting.
+then `-DLIFT_USER_LINK_LIBRARIES="custom_curl_target;z;uv;pthread;dl;stdc++fs"` would be the correct setting.
 
 ##### add_subdirectory()
 To use within your cmake project you can clone the project or use git submodules and then `add_subdirectory` in the parent project's `CMakeList.txt`,
@@ -191,11 +202,13 @@ The tests are automatically run by GitHub Actions on all Pull Requests.  They ca
 localhost instance of `nginx`.  To do so the CMake option `LIFT_LOCALHOST_TESTS=ON` must be set otherwise the tests
 will use the hostname `nginx` setup in the CI settings.  After building and starting `nginx` tests can be run by issuing:
 
-    # Invoke via cmake:
-    ctest -v
+```bash
+# Invoke via cmake:
+ctest -v
 
-    # Or invoke directly to see error messages if tests are failing:
-    ./test/liblifthttp_tests
+# Or invoke directly to see error messages if tests are failing:
+./test/liblifthttp_tests
+```
 
 Note there are now proxy http requests that utilize an `haproxy` instance.  To run these locally you will also need
 to start an instance of `haproxy`.
@@ -239,7 +252,7 @@ Using `nginx` as the webserver with the default `fedora` configuration.
 
 File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
 
-Copyright © 2017-2021, Josh Baldwin
+Copyright © 2017-2022, Josh Baldwin
 
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue

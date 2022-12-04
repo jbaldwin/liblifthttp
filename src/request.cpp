@@ -116,7 +116,7 @@ auto request::data(std::string data) -> void
     m_request_data_set = true;
     m_request_data     = std::move(data);
     // Attempt to switch to a smarter verb if it isn't already set.
-    if (m_method != http::method::post || m_method != http::method::put)
+    if (m_method != http::method::post && m_method != http::method::put)
     {
         m_method = http::method::post;
     }

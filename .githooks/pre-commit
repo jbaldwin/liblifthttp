@@ -1,17 +1,18 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 FILE_EXTS=".c .h .cpp .hpp .cc .hh .cxx .tcc"
 
 # Determins if a file has the right extension to be clang-format'ed.
 should_clang_format() {
-    local filename=$(basename "$1")
+    local filename
+    filename=$(basename "$1")
     local extension=".${filename##*.}"
     local ext
 
     local result=0
 
-    # Ignore the test/catch.hpp file
-    if [[ "$1" != *"catch"* ]]; then
+    # Ignore the test/catch_amalgamated.hpp|cpp files
+    if [[ "$1" != *"catch_amalgamated"* ]]; then
         for ext in $FILE_EXTS; do
             # Otherwise, if the extension is in the array of extensions to reformat, echo 1.
             [[ "$ext" == "$extension" ]] && result=1 && break
@@ -32,7 +33,7 @@ done
 
 # Update the README.md example code with the given macros.
 template_contents=$(cat '.githooks/readme-template.md')
-# All code examples in markdown should be indeded '    '
+# All code examples in markdown should be indented '    '
 readme_cpp_contents=$(cat 'examples/readme.cpp')
 
 echo "${template_contents/\$\{EXAMPLE_README_CPP\}/$readme_cpp_contents}" > README.md

@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch_amalgamated.hpp"
 #include "setup.hpp"
 #include <lift/lift.hpp>
 
@@ -27,7 +27,8 @@ TEST_CASE("resolve_host client")
 
     lift::client client{lift::client::options{.resolve_hosts = std::move(rhosts)}};
 
-    auto on_complete = [&](lift::request_ptr, lift::response response) -> void {
+    auto on_complete = [&](lift::request_ptr, lift::response response) -> void
+    {
         REQUIRE(response.lift_status() == lift::lift_status::success);
         REQUIRE(response.status_code() == lift::http::status_code::http_200_ok);
     };

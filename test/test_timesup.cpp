@@ -19,7 +19,7 @@ TEST_CASE("Timesup single request")
         {
             REQUIRE(response.lift_status() == lift::lift_status::timeout);
             REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
-            REQUIRE(response.total_time() == std::chrono::milliseconds{25});
+            REQUIRE(response.total_time() == std::chrono::milliseconds{5});
             REQUIRE(response.num_connects() == 0);
             REQUIRE(response.num_redirects() == 0);
         });

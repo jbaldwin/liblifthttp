@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)](https://github.com/jbaldwin/liblifthttp/workflows/build/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/jbaldwin/liblifthttp/badge.svg?branch=master)](https://coveralls.io/github/jbaldwin/liblifthttp?branch=master)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/jbaldwin/liblifthttp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jbaldwin/liblifthttp/context:cpp)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/2625260f88524abfa2c2974ad9328e45)](https://www.codacy.com/gh/jbaldwin/liblifthttp/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jbaldwin/liblifthttp&amp;utm_campaign=Badge_Grade)
 [![language][badge.language]][language]
 [![license][badge.license]][license]
@@ -169,7 +168,7 @@ Using `nginx` as the webserver with the default `fedora` configuration.
 
 File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
 
-Copyright © 2017-2022, Josh Baldwin
+Copyright © 2017-2023, Josh Baldwin
 
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue

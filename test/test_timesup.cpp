@@ -11,7 +11,7 @@ TEST_CASE("Timesup single request")
 
     auto r = std::make_unique<lift::request>(
         "http://www.reddit.com", // should be slow enough /shrug
-        std::chrono::milliseconds{25});
+        std::chrono::milliseconds{5});
 
     client.start_request(
         std::move(r),
@@ -36,13 +36,13 @@ TEST_CASE("Timesup two requests")
         REQUIRE(response.lift_status() == lift::lift_status::timeout);
         REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
         REQUIRE(
-            (response.total_time() == std::chrono::milliseconds{25} ||
-             response.total_time() == std::chrono::milliseconds{50}));
+            (response.total_time() == std::chrono::milliseconds{5} ||
+             response.total_time() == std::chrono::milliseconds{10}));
     };
 
     // should be slow enough /shrug
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{25}));
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{50}));
+    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{5}));
+    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{10}));
 
-    client.start_requests(std::move(requests));
+    client.start_requests(std::move(requests), callback);
 }

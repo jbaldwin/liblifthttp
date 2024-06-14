@@ -198,8 +198,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC lifthttp)
 
 #### Running Tests
 The tests are automatically run by GitHub Actions on all Pull Requests.  They can also be ran locally with a default
-localhost instance of `nginx`.  To do so the CMake option `LIFT_LOCALHOST_TESTS=ON` must be set otherwise the tests
-will use the hostname `nginx` setup in the CI settings.  After building and starting `nginx` tests can be run by issuing:
+localhost instance of `nginx` and `haproxy`.  To do so the CMake option `LIFT_LOCALHOST_TESTS=ON` must be set otherwise the tests
+will use the hostname `nginx` setup in the CI settings.  After building and starting `nginx` and `haproxy` tests can be run by issuing:
 
 ```bash
 # Invoke via cmake:
@@ -209,8 +209,10 @@ ctest -v
 ./test/liblifthttp_tests
 ```
 
-Note there are now proxy http requests that utilize an `haproxy` instance.  To run these locally you will also need
-to start an instance of `haproxy`.
+Note:
+* `nginx` should be default install/configuration running on port `80`.
+* `haproxy` should be running on port `*3128` with a backend pointing at the `nginx` instance. See `docker/build/haproxy/haproxy.cfg` to update the local configuration.
+
 
 ### Benchmarks
 Using the example benchmark code and a local `nginx` instance serving its default welcome page.  All benchmarks use `keep-alive` connections.  The benchmark is compared against `wrk` as that is basically optimal performance since

@@ -144,18 +144,15 @@ client::~client()
         std::this_thread::sleep_for(1ms);
     }
 
+    // This breaks the main UV_RUN_DEFAULT loop.
     uv_stop(&m_uv_loop);
+    // This tells the loop to cleanup all its resources.
     uv_async_send(&m_uv_async_shutdown_pipe);
 
-    while (true)
+    // Wait for the loop to finish cleaning up before closing up shop.
+    while (uv_loop_alive(&m_uv_loop) > 0)
     {
-        int v = uv_loop_alive(&m_uv_loop);
-        std::cerr << "uv_loop_alive() = [" << v << "]\n";
-        if (v == 0)
-        {
-            break;
-        }
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(1ms);
     }
 
     uv_loop_close(&m_uv_loop);
@@ -220,13 +217,13 @@ auto client::run() -> void
     }
 
     m_is_running.exchange(true, std::memory_order_release);
-    int v = uv_run(&m_uv_loop, UV_RUN_DEFAULT);
-    std::cerr << "uv_run(UV_RUN_DEFAULT) = [" << v << "]\n";
-    while (v > 0)
+    if (uv_run(&m_uv_loop, UV_RUN_DEFAULT) > 0)
     {
-        v = uv_run(&m_uv_loop, UV_RUN_NOWAIT);
-        std::cerr << "uv_run(UV_RUN_NOWAIT) = [" << v << "]\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        // Run until all uv_handle_t objects are cleaned up.
+        while (uv_run(&m_uv_loop, UV_RUN_NOWAIT) > 0)
+        {
+            std::this_thread::sleep_for(1ms);
+        }
     }
 
     m_is_running.exchange(false, std::memory_order_release);

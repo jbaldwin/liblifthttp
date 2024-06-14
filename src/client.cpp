@@ -144,12 +144,18 @@ client::~client()
         std::this_thread::sleep_for(1ms);
     }
 
-    uv_async_send(&m_uv_async_shutdown_pipe);
     uv_stop(&m_uv_loop);
+    uv_async_send(&m_uv_async_shutdown_pipe);
 
-    while (uv_loop_alive(&m_uv_loop))
+    while (true)
     {
-        std::this_thread::sleep_for(1ms);
+        int v = uv_loop_alive(&m_uv_loop);
+        std::cerr << "uv_loop_alive() = [" << v << "]\n";
+        if (v == 0)
+        {
+            break;
+        }
+        std::this_thread::sleep_for(1s);
     }
 
     uv_loop_close(&m_uv_loop);
@@ -214,7 +220,15 @@ auto client::run() -> void
     }
 
     m_is_running.exchange(true, std::memory_order_release);
-    uv_run(&m_uv_loop, UV_RUN_DEFAULT);
+    int v = uv_run(&m_uv_loop, UV_RUN_DEFAULT);
+    std::cerr << "uv_run(UV_RUN_DEFAULT) = [" << v << "]\n";
+    while (v > 0)
+    {
+        v = uv_run(&m_uv_loop, UV_RUN_NOWAIT);
+        std::cerr << "uv_run(UV_RUN_NOWAIT) = [" << v << "]\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+
     m_is_running.exchange(false, std::memory_order_release);
 
     if (m_on_thread_callback != nullptr)

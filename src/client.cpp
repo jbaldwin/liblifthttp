@@ -27,10 +27,10 @@ public:
 
     ~curl_context() = default;
 
-    curl_context(const curl_context&) = delete;
-    curl_context(curl_context&&)      = delete;
+    curl_context(const curl_context&)                             = delete;
+    curl_context(curl_context&&)                                  = delete;
     auto operator=(const curl_context&) noexcept -> curl_context& = delete;
-    auto operator=(curl_context&&) noexcept -> curl_context& = delete;
+    auto operator=(curl_context&&) noexcept -> curl_context&      = delete;
 
     auto init(uv_loop_t* uv_loop, curl_socket_t sock_fd) -> void
     {
@@ -79,6 +79,8 @@ auto on_uv_curl_perform_callback(uv_poll_t* req, int status, int events) -> void
 
 auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
 
+auto on_uv_shutdown_async(uv_async_t* handle) -> void;
+
 auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 
 client::client(options opts)
@@ -99,6 +101,9 @@ client::client(options opts)
 
     uv_async_init(&m_uv_loop, &m_uv_async, on_uv_requests_accept_async);
     m_uv_async.data = this;
+
+    uv_async_init(&m_uv_loop, &m_uv_async_shutdown_pipe, on_uv_shutdown_async);
+    m_uv_async_shutdown_pipe.data = this;
 
     uv_timer_init(&m_uv_loop, &m_uv_timer_curl);
     m_uv_timer_curl.data = this;
@@ -133,23 +138,20 @@ client::~client()
 {
     m_is_stopping.exchange(true, std::memory_order_release);
 
+    // Block until all requests are completed.
     while (!empty())
     {
         std::this_thread::sleep_for(1ms);
     }
 
-    uv_timer_stop(&m_uv_timer_curl);
-    uv_timer_stop(&m_uv_timer_timeout);
-    uv_close(uv_type_cast<uv_handle_t>(&m_uv_timer_curl), uv_close_callback);
-    uv_close(uv_type_cast<uv_handle_t>(&m_uv_timer_timeout), uv_close_callback);
-    uv_close(uv_type_cast<uv_handle_t>(&m_uv_async), uv_close_callback);
+    uv_async_send(&m_uv_async_shutdown_pipe);
+    uv_stop(&m_uv_loop);
 
     while (uv_loop_alive(&m_uv_loop))
     {
         std::this_thread::sleep_for(1ms);
-        uv_async_send(&m_uv_async); // fake a request to make sure the loop wakes up
     }
-    uv_stop(&m_uv_loop);
+
     uv_loop_close(&m_uv_loop);
 
     m_background_thread.join();
@@ -661,6 +663,18 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
     }
 
     c->m_grabbed_requests.clear();
+}
+
+auto on_uv_shutdown_async(uv_async_t* handle) -> void
+{
+    auto* c = static_cast<client*>(handle->data);
+
+    uv_timer_stop(&c->m_uv_timer_curl);
+    uv_timer_stop(&c->m_uv_timer_timeout);
+    uv_close(uv_type_cast<uv_handle_t>(&c->m_uv_timer_curl), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&c->m_uv_timer_timeout), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&c->m_uv_async), uv_close_callback);
+    uv_close(uv_type_cast<uv_handle_t>(&c->m_uv_async_shutdown_pipe), uv_close_callback);
 }
 
 auto on_uv_timesup_callback(uv_timer_t* handle) -> void

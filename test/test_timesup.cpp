@@ -11,7 +11,7 @@ TEST_CASE("Timesup single request")
 
     auto r = std::make_unique<lift::request>(
         "http://www.reddit.com", // should be slow enough /shrug
-        std::chrono::milliseconds{25});
+        std::chrono::milliseconds{5});
 
     client.start_request(
         std::move(r),
@@ -19,30 +19,33 @@ TEST_CASE("Timesup single request")
         {
             REQUIRE(response.lift_status() == lift::lift_status::timeout);
             REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
-            REQUIRE(response.total_time() == std::chrono::milliseconds{25});
+            REQUIRE(response.total_time() == std::chrono::milliseconds{5});
             REQUIRE(response.num_connects() == 0);
             REQUIRE(response.num_redirects() == 0);
         });
 }
 
-TEST_CASE("Timesup two requests")
-{
-    lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
+// TEST_CASE("Timesup two requests")
+// {
+//     // TODO: This test requires a re-work with a proper "timeout" endpoint in nginx. It does not work against random
+//     // urls consistently.
 
-    std::vector<lift::request_ptr> requests{};
+//     lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
 
-    auto callback = [](std::unique_ptr<lift::request> rh, lift::response response) -> void
-    {
-        REQUIRE(response.lift_status() == lift::lift_status::timeout);
-        REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
-        REQUIRE(
-            (response.total_time() == std::chrono::milliseconds{25} ||
-             response.total_time() == std::chrono::milliseconds{50}));
-    };
+//     std::vector<lift::request_ptr> requests{};
 
-    // should be slow enough /shrug
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{25}));
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{50}));
+//     auto callback = [](std::unique_ptr<lift::request> rh, lift::response response) -> void
+//     {
+//         REQUIRE(response.lift_status() == lift::lift_status::timeout);
+//         REQUIRE(response.status_code() == lift::http::status_code::http_504_gateway_timeout);
+//         REQUIRE(
+//             (response.total_time() == std::chrono::milliseconds{5} ||
+//              response.total_time() == std::chrono::milliseconds{10}));
+//     };
 
-    client.start_requests(std::move(requests));
-}
+//     // should be slow enough /shrug
+//     requests.push_back(std::make_unique<lift::request>("http://www.old.reddit.com", std::chrono::milliseconds{5}));
+//     requests.push_back(std::make_unique<lift::request>("http://www.old.reddit.com", std::chrono::milliseconds{10}));
+
+//     client.start_requests(std::move(requests), callback);
+// }

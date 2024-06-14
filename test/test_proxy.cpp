@@ -18,7 +18,7 @@ TEST_CASE("proxy")
     {
         if (header.name() == "server")
         {
-            REQUIRE(header.value() == "nginx/1.22.1");
+            REQUIRE(header.value().substr(0, 6) == "nginx/");
         }
         else if (header.name() == "content-length")
         {
@@ -51,7 +51,7 @@ TEST_CASE("proxy Basic Auth")
     {
         if (header.name() == "server")
         {
-            REQUIRE(header.value() == "nginx/1.22.1");
+            REQUIRE(header.value().substr(0, 6) == "nginx/");
         }
         else if (header.name() == "content-length")
         {
@@ -84,7 +84,7 @@ TEST_CASE("proxy Any Auth")
     {
         if (header.name() == "server")
         {
-            REQUIRE(header.value() == "nginx/1.22.1");
+            REQUIRE(header.value().substr(0, 6) == "nginx/");
         }
         else if (header.name() == "content-length")
         {

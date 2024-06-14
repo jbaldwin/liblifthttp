@@ -41,8 +41,8 @@ TEST_CASE("Timesup two requests")
     };
 
     // should be slow enough /shrug
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{5}));
-    requests.push_back(std::make_unique<lift::request>("http://www.reddit.com", std::chrono::milliseconds{10}));
+    requests.push_back(std::make_unique<lift::request>("http://www.old.reddit.com", std::chrono::milliseconds{5}));
+    requests.push_back(std::make_unique<lift::request>("http://www.old.reddit.com", std::chrono::milliseconds{10}));
 
     client.start_requests(std::move(requests), callback);
 }

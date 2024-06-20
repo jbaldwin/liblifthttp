@@ -77,10 +77,10 @@ public:
 
     ~client();
 
-    client(const client&) = delete;
-    client(client&&)      = delete;
+    client(const client&)                             = delete;
+    client(client&&)                                  = delete;
     auto operator=(const client&) noexcept -> client& = delete;
-    auto operator=(client&&) noexcept -> client& = delete;
+    auto operator=(client&&) noexcept -> client&      = delete;
 
     /**
      * @return True if the event loop is currently running.
@@ -224,6 +224,8 @@ private:
     uv_loop_t m_uv_loop{};
     /// The async trigger for injecting new requests into the event loop.
     uv_async_t m_uv_async{};
+    /// The async trigger to let uv_run() know its being shutdown
+    uv_async_t m_uv_async_shutdown_pipe{};
     /// libcurl requires a single timer to drive internal timeouts/wake-ups.
     uv_timer_t m_uv_timer_curl{};
     /// If set, the amount of time connections are allowed to connect, this can be
@@ -476,6 +478,8 @@ private:
      * @param handle The async object trigger, this will always be m_async.
      */
     friend auto on_uv_requests_accept_async(uv_async_t* handle) -> void;
+
+    friend auto on_uv_shutdown_async(uv_async_t* handle) -> void;
 
     friend auto on_uv_timesup_callback(uv_timer_t* handle) -> void;
 };

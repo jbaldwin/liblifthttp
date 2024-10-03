@@ -39,6 +39,7 @@ ${EXAMPLE_README_CPP}
 C++17 compilers tested
     g++-9
     g++-11
+    g++-13
     clang-9
     clang-14
 CMake
@@ -54,6 +55,7 @@ stdc++fs
 Tested on:
     ubuntu:20.04
     ubuntu:22.04 (with custom libcurl built)
+    ubuntu:24.04
     fedora:31
 ```
 
@@ -170,7 +172,7 @@ Using `nginx` as the webserver with the default `fedora` configuration.
 
 File bug reports, feature requests and questions using [GitHub Issues](https://github.com/jbaldwin/liblifthttp/issues)
 
-Copyright © 2017-2023, Josh Baldwin
+Copyright © 2017-2024, Josh Baldwin
 
 [badge.language]: https://img.shields.io/badge/language-C%2B%2B17-yellow.svg
 [badge.license]: https://img.shields.io/badge/license-Apache--2.0-blue

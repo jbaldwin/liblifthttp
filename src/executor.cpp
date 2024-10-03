@@ -73,6 +73,8 @@ auto executor::prepare() -> void
 
     switch (m_request->method())
     {
+        default:
+            /* INTENTIONAL FALLTHROUGH */
         case http::method::unknown: // default to GET on unknown/bad value.
             /* INTENTIONAL FALLTHROUGH */
         case http::method::get:
@@ -103,6 +105,8 @@ auto executor::prepare() -> void
 
     switch (m_request->version())
     {
+        default:
+            /* INTENTIONAL FALLTHROUGH */
         case http::version::unknown: // default to USE_BEST on unknown/bad value.
             /* INTENTIONAL FALLTHROUGH */
         case http::version::use_best:
@@ -223,6 +227,9 @@ auto executor::prepare() -> void
             {
                 switch (auth_type)
                 {
+                    default:
+                        // CURLAUTH_BASIC is the default per docs https://curl.se/libcurl/c/CURLOPT_PROXYAUTH.html.
+                        /* INTENTIONAL FALLTHROUGH */
                     case http_auth_type::basic:
                         auth_types |= CURLAUTH_BASIC;
                         break;
@@ -536,10 +543,9 @@ auto curl_write_data(void* buffer, size_t size, size_t nitems, void* user_ptr) -
     auto&  response     = executor_ptr->m_response;
     size_t data_length  = size * nitems;
 
-    std::copy(
-        static_cast<const char*>(buffer),
-        static_cast<const char*>(buffer) + data_length,
-        std::back_inserter(response.m_data));
+    std::string_view from{static_cast<const char*>(buffer), data_length};
+
+    std::copy(from.begin(), from.end(), std::back_inserter(response.m_data));
 
     return data_length;
 }

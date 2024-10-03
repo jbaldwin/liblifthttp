@@ -12,7 +12,7 @@ should_clang_format() {
     local result=0
 
     # Ignore the test/catch_amalgamated.hpp|cpp files
-    if [[ "$1" != *"catch_amalgamated"* ]]; then
+    if [[ "$1" != *"catch_amalgamated"* && "$1" != *"pragma"* ]]; then
         for ext in $FILE_EXTS; do
             # Otherwise, if the extension is in the array of extensions to reformat, echo 1.
             [[ "$ext" == "$extension" ]] && result=1 && break

@@ -27,10 +27,10 @@ public:
     response();
     ~response() = default;
 
-    response(const response&) = default;
-    response(response&&)      = default;
+    response(const response&)                             = default;
+    response(response&&)                                  = default;
     auto operator=(const response&) noexcept -> response& = default;
-    auto operator=(response&&) noexcept -> response& = default;
+    auto operator=(response&&) noexcept -> response&      = default;
 
     /**
      * The Lift status is how the request ended up in the event loop.

@@ -3,6 +3,7 @@
 #include "lift/header.hpp"
 #include "lift/http.hpp"
 #include "lift/impl/copy_util.hpp"
+#include "lift/impl/pragma.hpp"
 #include "lift/mime_field.hpp"
 #include "lift/resolve_host.hpp"
 #include "lift/response.hpp"
@@ -155,10 +156,10 @@ public:
         return std::make_unique<request>(std::move(url), std::move(timeout));
     }
 
-    request(const request&) = default;
-    request(request&&)      = default;
+    request(const request&)                             = default;
+    request(request&&)                                  = default;
     auto operator=(const request&) noexcept -> request& = default;
-    auto operator=(request&&) noexcept -> request& = default;
+    auto operator=(request&&) noexcept -> request&      = default;
 
     /**
      * Synchronously executes this request.
@@ -538,7 +539,12 @@ private:
      */
     auto async_future() -> async_future_type
     {
+        // gcc-13 is incorrectly thinking the 2nd type in the async_handlers_type is uninitialized.
+        // Its correct since it isn't used on this code path, but it isn't a warning/error.
+        DISABLE_WARNING_PUSH
+        DISABLE_WARNING_MAYBE_UNINITIALIZED
         m_on_complete_handler.m_object = {async_promise_type{}};
+        DISABLE_WARNING_POP
         return std::get<async_promise_type>(m_on_complete_handler.m_object.value()).get_future();
     }
 

@@ -30,6 +30,7 @@ message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}"
 
 set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp
+    inc/lift/impl/pragma.hpp
 
     inc/lift/client.hpp src/client.cpp
     inc/lift/const.hpp

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(lifthttp CXX)
 
 # Set the githooks directory to auto format and update the readme.

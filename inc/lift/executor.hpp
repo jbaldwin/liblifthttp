@@ -34,10 +34,10 @@ class executor
     friend request;
 
 public:
-    executor(const executor&) = delete;
-    executor(executor&&)      = delete;
+    executor(const executor&)                    = delete;
+    executor(executor&&)                         = delete;
     auto operator=(const executor&) -> executor& = delete;
-    auto operator=(executor&&) -> executor& = delete;
+    auto operator=(executor&&) -> executor&      = delete;
     ~executor();
 
 private:

@@ -42,10 +42,10 @@ public:
     explicit share(options opts);
     ~share();
 
-    share(const share&) = delete;
-    share(share&&)      = delete;
+    share(const share&)                             = delete;
+    share(share&&)                                  = delete;
     auto operator=(const share&) noexcept -> share& = delete;
-    auto operator=(share&&) noexcept -> share& = delete;
+    auto operator=(share&&) noexcept -> share&      = delete;
 
     static auto make_shared(options opts) -> std::shared_ptr<share> { return std::make_shared<share>(std::move(opts)); }
 

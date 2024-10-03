@@ -14,9 +14,8 @@ int main()
     // Debug information about any request can be added by including a callback handler for debug
     // information.  Just pass in a lambda to capture the verbose debug information.
     sync_request.debug_info_handler(
-        [](const lift::request& /*unused*/, lift::debug_info_type type, std::string_view data) {
-            std::cout << "sync_request (" << lift::to_string(type) << "): " << data;
-        });
+        [](const lift::request& /*unused*/, lift::debug_info_type type, std::string_view data)
+        { std::cout << "sync_request (" << lift::to_string(type) << "): " << data; });
 
     // Set the http method for this synchronous request.
     sync_request.method(lift::http::method::post);
@@ -63,7 +62,8 @@ int main()
     // Start the request that will be completed by callback.
     client.start_request(
         std::move(async_callback_request),
-        [](lift::request_ptr async_callback_request_returned, lift::response async_callback_response) {
+        [](lift::request_ptr async_callback_request_returned, lift::response async_callback_response)
+        {
             // This on complete callback will run on the lift::client background event loop thread.
             std::cout << "Lift status (async callback): ";
             std::cout << lift::to_string(async_callback_response.lift_status()) << "\n";

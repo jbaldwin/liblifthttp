@@ -38,11 +38,11 @@ int main(int argc, char* argv[])
 {
     constexpr char   short_options[] = "c:d:t:h";
     constexpr option long_options[]  = {
-        {"help", no_argument, nullptr, 'h'},
-        {"connections", required_argument, nullptr, 'c'},
-        {"duration", required_argument, nullptr, 'd'},
-        {"threads", required_argument, nullptr, 't'},
-        {nullptr, 0, nullptr, 0}};
+         {"help", no_argument, nullptr, 'h'},
+         {"connections", required_argument, nullptr, 'c'},
+         {"duration", required_argument, nullptr, 'd'},
+         {"threads", required_argument, nullptr, 't'},
+         {nullptr, 0, nullptr, 0}};
 
     int option_index = 0;
     int opt          = 0;
@@ -109,7 +109,8 @@ int main(int argc, char* argv[])
             clients.emplace_back(std::make_unique<lift::client>());
 
             callbacks.emplace_back(
-                [&clients, &success, &error, &callbacks, i](lift::request_ptr req_ptr, lift::response response) {
+                [&clients, &success, &error, &callbacks, i](lift::request_ptr req_ptr, lift::response response)
+                {
                     if (response.lift_status() == lift::lift_status::success)
                     {
                         success.fetch_add(1, std::memory_order_relaxed);

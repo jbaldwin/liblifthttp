@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace lift
 {
@@ -22,9 +22,9 @@ public:
     resolve_host(std::string resolve_host, uint16_t resolve_port, std::string resolved_ip_addr);
     ~resolve_host() = default;
 
-    resolve_host(const resolve_host&)     = default;
-    resolve_host(resolve_host&&) noexcept = default;
-    auto operator=(const resolve_host&) -> resolve_host& = default;
+    resolve_host(const resolve_host&)                        = default;
+    resolve_host(resolve_host&&) noexcept                    = default;
+    auto operator=(const resolve_host&) -> resolve_host&     = default;
     auto operator=(resolve_host&&) noexcept -> resolve_host& = default;
 
     /**

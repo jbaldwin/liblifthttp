@@ -85,7 +85,7 @@ auto executor::prepare() -> void
             curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L);
             break;
         case http::method::put:
-            curl_easy_setopt(m_curl_handle, CURLOPT_PUT, 1L);
+            curl_easy_setopt(m_curl_handle, CURLOPT_UPLOAD, 1L);
             break;
         case http::method::delete_t:
             curl_easy_setopt(m_curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");

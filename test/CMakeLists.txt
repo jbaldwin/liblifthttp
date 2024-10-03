@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(liblifthttp_tests)
 
 option(LIFT_LOCALHOST_TESTS "Define ON if running tests locally." OFF)

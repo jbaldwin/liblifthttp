@@ -101,7 +101,7 @@ public:
      * @return Gets the number of active HTTP requests currently running.  This includes
      *         the number of pending requests that haven't been started yet (if any).
      */
-    [[nodiscard]] auto size() const -> uint64_t { return m_active_request_count.load(std::memory_order_acquire); }
+    [[nodiscard]] auto size() const -> std::size_t { return m_active_request_count.load(std::memory_order_acquire); }
 
     /**
      * @return True if there are no requests pending or executing.
@@ -218,7 +218,7 @@ private:
     /// Set to true if the client is currently shutting down.
     std::atomic<bool> m_is_stopping{false};
     /// The active number of requests running.
-    std::atomic<uint64_t> m_active_request_count{0};
+    std::atomic<std::size_t> m_active_request_count{0};
 
     /// The UV event loop to drive libcurl.
     uv_loop_t m_uv_loop{};

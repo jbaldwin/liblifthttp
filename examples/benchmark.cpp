@@ -99,53 +99,39 @@ int main(int argc, char* argv[])
     std::atomic<uint64_t> error{0};
 
     {
-        std::vector<lift::request::async_callback_type> callbacks;
-        callbacks.reserve(threads);
-        std::vector<std::unique_ptr<lift::client>> clients;
-        clients.reserve(threads);
+        lift::client_pool clients{lift::client_pool::options{.client_count = threads}};
 
-        for (uint64_t i = 0; i < threads; ++i)
+        lift::request::async_callback_type on_complete =
+            [&clients, &success, &error, &on_complete](lift::request_ptr req_ptr, lift::response response)
         {
-            clients.emplace_back(std::make_unique<lift::client>());
-
-            callbacks.emplace_back(
-                [&clients, &success, &error, &callbacks, i](lift::request_ptr req_ptr, lift::response response)
-                {
-                    if (response.lift_status() == lift::lift_status::success)
-                    {
-                        success.fetch_add(1, std::memory_order_relaxed);
-                    }
-                    else if (response.lift_status() == lift::lift_status::error_failed_to_start)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        error.fetch_add(1, std::memory_order_relaxed);
-                    }
-
-                    // And request again until we are shutting down.
-                    auto copy_callback = callbacks[i];
-                    clients[i]->start_request(std::move(req_ptr), std::move(copy_callback));
-                });
-
-            for (uint64_t j = 0; j < connections; ++j)
+            if (response.lift_status() == lift::lift_status::success)
             {
-                auto request_ptr = std::make_unique<lift::request>(url, 30s);
-
-                request_ptr->follow_redirects(false);
-                request_ptr->header("Connection", "Keep-Alive");
-                auto copy_callback = callbacks[i];
-                clients[i]->start_request(std::move(request_ptr), std::move(copy_callback));
+                success.fetch_add(1, std::memory_order_relaxed);
             }
+            else if (response.lift_status() == lift::lift_status::error_failed_to_start)
+            {
+                return;
+            }
+            else
+            {
+                error.fetch_add(1, std::memory_order_relaxed);
+            }
+
+            clients.start_request(std::move(req_ptr), on_complete);
+        };
+
+        for (uint64_t j = 0; j < connections * threads; ++j)
+        {
+            auto request_ptr = std::make_unique<lift::request>(url, 30s);
+
+            request_ptr->follow_redirects(false);
+            request_ptr->header("Connection", "Keep-Alive");
+            clients.start_request(std::move(request_ptr), on_complete);
         }
 
         std::this_thread::sleep_for(duration);
 
-        for (auto& thread : clients)
-        {
-            thread->stop();
-        }
+        clients.stop();
     }
 
     print_stats(duration, threads, success, error);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lift/client.hpp"
+#include "lift/client_pool.hpp"
 #include "lift/const.hpp"
 #include "lift/escape.hpp"
 #include "lift/executor.hpp"

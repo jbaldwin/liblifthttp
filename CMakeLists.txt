@@ -32,6 +32,7 @@ set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp
     inc/lift/impl/pragma.hpp
 
+    inc/lift/client_pool.hpp src/client_pool.cpp
     inc/lift/client.hpp src/client.cpp
     inc/lift/const.hpp
     inc/lift/escape.hpp src/escape.cpp

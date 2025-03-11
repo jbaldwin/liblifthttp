@@ -1,18 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 project(lifthttp CXX)
 
-# Set the githooks directory to auto format and update the readme.
-message("${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR} -> git config --local core.hooksPath .githooks")
-execute_process(
-    COMMAND git config --local core.hooksPath .githooks
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(LIFT_BUILD_EXAMPLES "Build the examples. Default=ON" ON)
 option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
+option(LIFT_RUN_GITCONFIG  "Set the githooks directory to auto format code and update the readme, Default=OFF." OFF)
 
 if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
     set(
@@ -27,6 +21,16 @@ message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")
 message("${PROJECT_NAME} LIFT_BUILD_TESTS         = ${LIFT_BUILD_TESTS}")
 message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
 message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
+message("${PROJECT_NAME} LIFT_RUN_GITCONFIG       = ${LIFT_RUN_GITCONFIG}")
+
+if (LIBCORO_RUN_GITCONFIG)
+    # Set the githooks directory to auto format and update the readme.
+    message("${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR} -> git config --local core.hooksPath .githooks")
+    execute_process(
+        COMMAND git config --local core.hooksPath .githooks
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
 set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp

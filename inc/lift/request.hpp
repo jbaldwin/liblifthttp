@@ -255,6 +255,16 @@ public:
     auto follow_redirects(bool follow_redirects, std::optional<uint64_t> max_redirects = std::nullopt) -> void;
 
     /**
+     * @param ca_file The Certificate Authority (CA) bundle file to use.
+     */
+    auto ca_info(std::filesystem::path ca_file) -> void { m_ca_file = std::filesystem::absolute(ca_file); }
+
+    /**
+     * @return The Certificate Authority (CA) bundle file being used.
+     */
+    auto ca_info() const -> const std::optional<std::filesystem::path>& { return m_ca_file; }
+
+    /**
      * @return Is the peer SSL/TLS verified?
      */
     auto verify_ssl_peer() const -> bool { return m_verify_ssl_peer; }
@@ -493,6 +503,8 @@ private:
     bool m_follow_redirects{true};
     /// How many redirects should be followed? -1 infinite, 0 none, <num>.
     int64_t m_max_redirects{-1};
+    /// The Certificate Authority (CA) bundle file.
+    std::optional<std::filesystem::path> m_ca_file{};
     /// Should the peer be ssl verified?
     bool m_verify_ssl_peer{true};
     /// Should the host be ssl verified?

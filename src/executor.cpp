@@ -480,8 +480,8 @@ auto executor::reset() -> void
 
 auto executor::convert(CURLcode curl_code) -> lift_status
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch-enum"
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING(-Wswitch-enum)
     switch (curl_code)
     {
         case CURLcode::CURLE_OK:
@@ -503,7 +503,7 @@ auto executor::convert(CURLcode curl_code) -> lift_status
         default:
             return lift_status::error;
     }
-#pragma GCC diagnostic pop
+    DISABLE_WARNING_POP
 }
 
 auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t

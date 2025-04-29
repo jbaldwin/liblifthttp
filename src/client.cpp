@@ -5,9 +5,7 @@
 #include <curl/multi.h>
 
 #include <chrono>
-#include <sys/syscall.h>
 #include <thread>
-#include <unistd.h>
 
 using namespace std::chrono_literals;
 

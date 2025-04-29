@@ -15,5 +15,6 @@
 #else
     // unknown compiler, ignoring suppression directives
     #define DISABLE_WARNING_PUSH
+    #define DISABLE_WARNING_MAYBE_UNINITIALIZED
     #define DISABLE_WARNING_POP
 #endif

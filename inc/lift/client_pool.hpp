@@ -21,7 +21,7 @@ public:
         on_thread_callback_type on_thread_callback{nullptr};
     };
 
-    explicit client_pool(options opts = options{.client_count = 2, .on_thread_callback = nullptr});
+    explicit client_pool(options opts = options{2, nullptr});
 
     ~client_pool();
 

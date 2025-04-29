@@ -367,7 +367,7 @@ auto executor::prepare() -> void
             else
             {
                 curl_mime_filename(field, mime_field.name().data());
-                curl_mime_filedata(field, std::get<std::filesystem::path>(mime_field.value()).c_str());
+                curl_mime_filedata(field, std::get<std::filesystem::path>(mime_field.value()).string().c_str());
             }
         }
 

@@ -33,7 +33,11 @@ public:
     auto init(uv_loop_t* uv_loop, curl_socket_t sock_fd) -> void
     {
         m_sock_fd = sock_fd;
+#if defined(_WIN32) && !defined(__LWIP_OPT_H__) && !defined(LWIP_HDR_OPT_H)
+        uv_poll_init_socket(uv_loop, &m_poll_handle, m_sock_fd);
+#else
         uv_poll_init(uv_loop, &m_poll_handle, m_sock_fd);
+#endif
     }
 
     auto close()

@@ -76,6 +76,14 @@ public:
     }
 
     /**
+     * @return The network error message for diagnostics in case of a network request failure.
+     */
+    [[nodiscard]] const std::string& network_error_message() const
+    {
+        return m_network_error_message;
+    }
+
+    /**
      * @return The number of connections made to make this request
      */
     [[nodiscard]] auto num_connects() const -> uint8_t { return m_num_connects; }
@@ -110,6 +118,8 @@ private:
     uint8_t m_num_connects{0};
     /// The number of redirects traversed while processing the request.
     uint8_t m_num_redirects{0};
+    // The network error message for diagnostics in case of a network request failure.
+    std::string m_network_error_message;
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;

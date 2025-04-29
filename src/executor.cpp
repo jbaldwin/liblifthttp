@@ -51,8 +51,25 @@ auto executor::perform() -> response
 
     prepare();
 
+    m_curl_error_buffer.resize(CURL_ERROR_SIZE);
+    m_curl_error_buffer.at(0) = '\0';
+    curl_easy_setopt(m_curl_handle, CURLOPT_ERRORBUFFER, m_curl_error_buffer.data());
+
     auto curl_error_code     = curl_easy_perform(m_curl_handle);
     m_response.m_lift_status = convert(curl_error_code);
+
+    if (curl_error_code != CURLE_OK)
+    {
+        if (m_curl_error_buffer.at(0) != '\0')
+        {
+            m_response.m_network_error_message = std::move(m_curl_error_buffer);
+        }
+        else
+        {
+            m_response.m_network_error_message = curl_easy_strerror(curl_error_code);
+        }
+    }
+
     copy_curl_to_response();
 
     global_cleanup();

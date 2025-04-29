@@ -63,6 +63,8 @@ private:
     std::optional<std::multimap<uint64_t, executor*>::iterator> m_timeout_iterator{};
     // Has the on complete handler already been processed?
     bool m_on_complete_handler_processed{false};
+    // error buffer for curl error messages
+    std::string m_curl_error_buffer;
 
     /// Used internally to point at one of the sync or async requests.
     request* m_request{nullptr};

@@ -160,6 +160,12 @@ auto executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_FOLLOWLOCATION, 0L);
     }
 
+    // https://curl.se/libcurl/c/CURLOPT_CAINFO.html
+    if (const auto& ca_info = m_request->ca_info(); ca_info.has_value())
+    {
+        curl_easy_setopt(m_curl_handle, CURLOPT_CAINFO, ca_info.value().c_str());
+    }
+
     // https://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html
     curl_easy_setopt(m_curl_handle, CURLOPT_SSL_VERIFYPEER, (m_request->verify_ssl_peer()) ? 1L : 0L);
     // Note that 1L is valid, but curl docs say its basically deprecated.

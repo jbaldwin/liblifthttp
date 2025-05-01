@@ -63,8 +63,6 @@ private:
     std::optional<std::multimap<uint64_t, executor*>::iterator> m_timeout_iterator{};
     // Has the on complete handler already been processed?
     bool m_on_complete_handler_processed{false};
-    // error buffer for curl error messages
-    std::string m_curl_error_buffer;
 
     /// Used internally to point at one of the sync or async requests.
     request* m_request{nullptr};
@@ -111,8 +109,9 @@ private:
     /**
      * Copies all available HTTP response fields into the lift::response from
      * the curl handle.
+     * @param curl_code The result of the curl_easy_perform call.
      */
-    auto copy_curl_to_response() -> void;
+    auto copy_curl_to_response(CURLcode curl_code) -> void;
 
     /**
      * Sets the response object with appropriate times up values.

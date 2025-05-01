@@ -366,11 +366,9 @@ private:
      * Manages internal state accordingly, always call this function rather
      * than the request->OnComplete() function directly.
      * @param exe_ptr The request handle to complete.
-     * @param status The status of the request when completing.
+     * @param curl_code The status of the request when completing.
      */
-    auto complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void;
-
-    auto complete_request_normal_common(executor& exe, lift_status status) -> void;
+    auto complete_request_normal(executor_ptr exe_ptr, CURLcode curl_code) -> void;
 
     /**
      * Completes a request that has timed out but still has connection time remaining.

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace lift
@@ -86,6 +87,11 @@ public:
     [[nodiscard]] auto num_redirects() const -> uint8_t { return m_num_redirects; }
 
     /**
+     * @return The network error message for diagnostics in case of a network request failure (if enabled).
+     */
+    [[nodiscard]] std::string_view network_error_message() const;
+
+    /**
      * Formats the response in the raw HTTP format.
      */
     friend auto operator<<(std::ostream& os, const response& r) -> std::ostream&;
@@ -110,6 +116,10 @@ private:
     uint8_t m_num_connects{0};
     /// The number of redirects traversed while processing the request.
     uint8_t m_num_redirects{0};
+    // The curl error code in case of a network request failure.
+    CURLcode m_curl_code{CURLcode::CURLE_OK};
+    // The network error message for diagnostics in case of a network request failure.
+    char m_network_error_message[CURL_ERROR_SIZE];
 
     /// libcurl will call this function when a header is received for the HTTP request.
     friend auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;

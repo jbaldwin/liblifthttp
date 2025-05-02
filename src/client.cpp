@@ -267,12 +267,12 @@ auto client::check_actions(curl_socket_t socket, int event_bitmask) -> void
 
             // Notify the user (if it hasn't already timed out) that the request is completed.
             // This will also return the executor to the pool for reuse.
-            complete_request_normal(std::move(executor_ptr), executor::convert(easy_result));
+            complete_request_normal(std::move(executor_ptr), easy_result);
         }
     }
 }
 
-auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -> void
+auto client::complete_request_normal(executor_ptr exe_ptr, CURLcode curl_code) -> void
 {
     auto& exe = *exe_ptr.get();
 
@@ -290,14 +290,14 @@ auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -
 
         if (std::holds_alternative<request::async_callback_type>(on_complete_handler))
         {
-            complete_request_normal_common(exe, status);
+            exe.copy_curl_to_response(curl_code);
 
             auto& callback = std::get<request::async_callback_type>(on_complete_handler);
             callback(std::move(exe.m_request_async), std::move(exe.m_response));
         }
         else if (std::holds_alternative<request::async_promise_type>(on_complete_handler))
         {
-            complete_request_normal_common(exe, status);
+            exe.copy_curl_to_response(curl_code);
 
             auto& promise = std::get<request::async_promise_type>(on_complete_handler);
             promise.set_value(std::make_pair(std::move(exe.m_request_async), std::move(exe.m_response)));
@@ -308,12 +308,6 @@ auto client::complete_request_normal(executor_ptr exe_ptr, lift_status status) -
 
     return_executor(std::move(exe_ptr));
     m_active_request_count.fetch_sub(1, std::memory_order_release);
-}
-
-auto client::complete_request_normal_common(executor& exe, lift_status status) -> void
-{
-    exe.m_response.m_lift_status = status;
-    exe.copy_curl_to_response();
 }
 
 auto client::complete_request_timeout(executor& exe) -> void
@@ -653,7 +647,7 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
              * If curl_multi_add_handle fails then notify the user that the request failed to start
              * immediately.  This will return the just acquired executor back into the pool.
              */
-            c->complete_request_normal(std::move(executor_ptr), executor::convert(CURLcode::CURLE_SEND_ERROR));
+            c->complete_request_normal(std::move(executor_ptr), CURLcode::CURLE_SEND_ERROR);
         }
         else
         {

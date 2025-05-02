@@ -2,8 +2,6 @@
 #include "lift/client.hpp"
 #include "lift/init.hpp"
 
-#include <cstring>
-
 namespace lift
 {
 auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t;
@@ -406,37 +404,14 @@ auto executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGDATA, this);
     }
 
-    if (m_request->m_enable_error_message)
-    {
-        m_response.m_network_error_message.emplace();
-        m_response.m_network_error_message->resize(CURL_ERROR_SIZE);
-        static_assert(CURL_ERROR_SIZE > 0);
-        m_response.m_network_error_message->at(0) = '\0';
-        curl_easy_setopt(m_curl_handle, CURLOPT_ERRORBUFFER, m_response.m_network_error_message->data());
-    }
+    m_response.m_network_error_message[0] = '\0';
+    curl_easy_setopt(m_curl_handle, CURLOPT_ERRORBUFFER, m_response.m_network_error_message);
 }
 
 auto executor::copy_curl_to_response(CURLcode curl_code) -> void
 {
+    m_response.m_curl_code   = curl_code;
     m_response.m_lift_status = convert(curl_code);
-
-    if (m_response.m_network_error_message)
-    {
-        if (curl_code != CURLE_OK)
-        {
-            m_response.m_network_error_message->resize(std::strlen(m_response.m_network_error_message->c_str()));
-            if (m_response.m_network_error_message->empty())
-            {
-                // fallback to the more generic information from curl_easy_strerror if no detailed error information has
-                // been written to the error buffer
-                m_response.m_network_error_message = curl_easy_strerror(curl_code);
-            }
-        }
-        else
-        {
-            m_response.m_network_error_message.reset();
-        }
-    }
 
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);

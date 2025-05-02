@@ -482,20 +482,6 @@ public:
         m_debug_info_handler = std::move(callback_functor);
     }
 
-    /**
-     * @return Is network error message allocated and set in the response object if request fails?
-     */
-    auto enable_error_message() const -> bool { return m_enable_error_message; }
-
-    /**
-     * This feature defaults to disabled.
-     * @param enable Should network error message get allocated and set in the response object if request fails?
-     */
-    auto enable_error_message(bool enable) -> void
-    {
-        m_enable_error_message = enable;
-    }
-
 private:
     /// The on complete handler callback or promise to fulfill, this is only used for async requests.
     impl::copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
@@ -551,8 +537,6 @@ private:
     std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout{};
     /// The debug callback functor for `debug_info_type` information.  If nullptr will not be set.
     debug_info_callback_type m_debug_info_handler{nullptr};
-    /// Should network error message get allocated and set in the response object if request fails? https://curl.se/libcurl/c/CURLOPT_ERRORBUFFER.html
-    bool m_enable_error_message{false};
 
     /**
      * Used by the client to set an async callback for on completion notification to the user.

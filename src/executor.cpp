@@ -51,9 +51,8 @@ auto executor::perform() -> response
 
     prepare();
 
-    auto curl_error_code     = curl_easy_perform(m_curl_handle);
-    m_response.m_lift_status = convert(curl_error_code);
-    copy_curl_to_response();
+    auto curl_error_code = curl_easy_perform(m_curl_handle);
+    copy_curl_to_response(curl_error_code);
 
     global_cleanup();
 
@@ -404,10 +403,16 @@ auto executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGFUNCTION, curl_debug_info_callback);
         curl_easy_setopt(m_curl_handle, CURLOPT_DEBUGDATA, this);
     }
+
+    m_response.m_network_error_message[0] = '\0';
+    curl_easy_setopt(m_curl_handle, CURLOPT_ERRORBUFFER, m_response.m_network_error_message);
 }
 
-auto executor::copy_curl_to_response() -> void
+auto executor::copy_curl_to_response(CURLcode curl_code) -> void
 {
+    m_response.m_curl_code   = curl_code;
+    m_response.m_lift_status = convert(curl_code);
+
     long http_response_code = 0;
     curl_easy_getinfo(m_curl_handle, CURLINFO_RESPONSE_CODE, &http_response_code);
     m_response.m_status_code = http::to_enum(static_cast<uint16_t>(http_response_code));

@@ -109,8 +109,9 @@ private:
     /**
      * Copies all available HTTP response fields into the lift::response from
      * the curl handle.
+     * @param curl_code The result of the curl_easy_perform call.
      */
-    auto copy_curl_to_response() -> void;
+    auto copy_curl_to_response(CURLcode curl_code) -> void;
 
     /**
      * Sets the response object with appropriate times up values.

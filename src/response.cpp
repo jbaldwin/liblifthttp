@@ -7,6 +7,7 @@ namespace lift
 {
 response::response()
 {
+    m_network_error_message[0] = '\0';
     m_headers.reserve(header_default_count);
 }
 
@@ -21,6 +22,12 @@ auto response::header(std::string_view name) const -> std::optional<std::referen
     }
 
     return std::nullopt;
+}
+
+std::string_view response::network_error_message() const
+{
+    return std::string_view(
+        m_network_error_message[0] != '\0' ? m_network_error_message : curl_easy_strerror(m_curl_code));
 }
 
 auto operator<<(std::ostream& os, const response& r) -> std::ostream&

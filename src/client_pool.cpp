@@ -7,7 +7,8 @@ client_pool::client_pool(options opts) : m_on_thread_callback(opts.on_thread_cal
 {
     for (std::size_t i = 0; i < opts.client_count; ++i)
     {
-        auto options = lift::client::options{.on_thread_callback = m_on_thread_callback};
+        lift::client::options options;
+        options.on_thread_callback = m_on_thread_callback;
 
         m_clients.emplace_back(std::make_unique<lift::client>(options));
     }

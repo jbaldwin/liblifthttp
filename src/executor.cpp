@@ -366,7 +366,7 @@ auto executor::prepare() -> void
             else
             {
                 curl_mime_filename(field, mime_field.name().data());
-                curl_mime_filedata(field, std::get<std::filesystem::path>(mime_field.value()).c_str());
+                curl_mime_filedata(field, std::get<std::filesystem::path>(mime_field.value()).string().c_str());
             }
         }
 
@@ -485,8 +485,8 @@ auto executor::reset() -> void
 
 auto executor::convert(CURLcode curl_code) -> lift_status
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch-enum"
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING(-Wswitch-enum)
     switch (curl_code)
     {
         case CURLcode::CURLE_OK:
@@ -508,7 +508,7 @@ auto executor::convert(CURLcode curl_code) -> lift_status
         default:
             return lift_status::error;
     }
-#pragma GCC diagnostic pop
+    DISABLE_WARNING_POP
 }
 
 auto curl_write_header(char* buffer, size_t size, size_t nitems, void* user_ptr) -> size_t

@@ -32,6 +32,11 @@ if (LIBCORO_RUN_GITCONFIG)
     )
 endif()
 
+if(MSVC)
+    # curl/curl.h on Windows introduces the 'max' macro definition causing std::numeric_limits<uint8_t>::max compilation to fail
+    add_definitions(-DNOMINMAX)
+endif()
+
 set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp
     inc/lift/impl/pragma.hpp

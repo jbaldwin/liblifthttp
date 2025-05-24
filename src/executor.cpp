@@ -486,7 +486,7 @@ auto executor::reset() -> void
 auto executor::convert(CURLcode curl_code) -> lift_status
 {
     DISABLE_WARNING_PUSH
-    DISABLE_WARNING(-Wswitch-enum)
+    DISABLE_WARNING_SWITCH_ENUM
     switch (curl_code)
     {
         case CURLcode::CURLE_OK:

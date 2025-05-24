@@ -5,6 +5,7 @@
     #define DISABLE_WARNING(warningName) DO_PRAGMA(GCC diagnostic ignored #warningName)
 
     #define DISABLE_WARNING_MAYBE_UNINITIALIZED DISABLE_WARNING(-Wmaybe-uninitialized)
+    #define DISABLE_WARNING_SWITCH_ENUM         DISABLE_WARNING(-Wswitch-enum)
 #elif defined(__clang__)
     #define DO_PRAGMA(X) _Pragma(#X)
     #define DISABLE_WARNING_PUSH
@@ -12,9 +13,11 @@
     #define DISABLE_WARNING(warningNumber)
 
     #define DISABLE_WARNING_MAYBE_UNINITIALIZED
+    #define DISABLE_WARNING_SWITCH_ENUM
 #else
     // unknown compiler, ignoring suppression directives
     #define DISABLE_WARNING_PUSH
     #define DISABLE_WARNING_MAYBE_UNINITIALIZED
     #define DISABLE_WARNING_POP
+    #define DISABLE_WARNING_SWITCH_ENUM
 #endif

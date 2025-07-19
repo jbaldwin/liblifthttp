@@ -89,7 +89,6 @@ client::client(options opts)
     : m_connect_timeout(std::move(opts.connect_timeout)),
       m_curl_context_ready(),
       m_resolve_hosts(std::move(opts.resolve_hosts).value_or(std::vector<resolve_host>{})),
-      m_share_ptr(std::move(opts.share)),
       m_on_thread_callback(std::move(opts.on_thread_callback))
 {
     global_init();
@@ -633,7 +632,7 @@ auto on_uv_requests_accept_async(uv_async_t* handle) -> void
     for (auto& request_ptr : c->m_grabbed_requests)
     {
         auto executor_ptr = c->acquire_executor();
-        executor_ptr->start_async(std::move(request_ptr), c->m_share_ptr.get());
+        executor_ptr->start_async(std::move(request_ptr));
         executor_ptr->prepare();
 
         // This must be done before adding to the CURLM* object,

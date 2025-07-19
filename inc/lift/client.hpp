@@ -3,7 +3,6 @@
 #include "lift/executor.hpp"
 #include "lift/request.hpp"
 #include "lift/resolve_host.hpp"
-#include "lift/share.hpp"
 
 #include <curl/curl.h>
 #include <uv.h>
@@ -53,8 +52,6 @@ public:
         std::optional<std::chrono::milliseconds> connect_timeout{std::nullopt};
         /// A set of host:port combinations to bypass DNS resolving.
         std::optional<std::vector<resolve_host>> resolve_hosts{std::nullopt};
-        /// Should separate event loops share connection information?
-        share_ptr share{nullptr};
         /// If this functor is provided it is called on the background
         /// thread starting and thread stopping.  This can be used to set the
         /// thread's priority/niceness or possibly changes its thread name.
@@ -71,7 +68,6 @@ public:
             std::nullopt, // max connections
             std::nullopt, // connect timeout
             std::nullopt, // resolve hosts
-            nullptr,      // share ptr
             nullptr       // on thread callback
         });
 
@@ -267,10 +263,6 @@ private:
     /// When connection time is enabled on an event loop the curl timeout is the longer
     /// timeout value and these timeouts are the shorter value.
     std::multimap<time_point, executor*> m_timeouts{};
-
-    /// If the event loop is provided a share object then connection information like
-    /// DNS/SSL/Data pipelining can be shared across event loops.
-    share_ptr m_share_ptr{nullptr};
 
     /// Functor to call on background thread start/stop.
     on_thread_callback_type m_on_thread_callback{nullptr};

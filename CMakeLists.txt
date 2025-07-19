@@ -56,7 +56,6 @@ set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/request.hpp src/request.cpp
     inc/lift/resolve_host.hpp src/resolve_host.cpp
     inc/lift/response.hpp src/response.cpp
-    inc/lift/share.hpp src/share.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIBLIFTHTTP_SOURCE_FILES})

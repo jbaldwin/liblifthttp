@@ -17,12 +17,9 @@ auto curl_xfer_info(
 
 auto curl_debug_info_callback(CURL* handle, curl_infotype type, char* data, size_t size, void* userptr) -> int;
 
-executor::executor(request* request, share* share) : m_request_sync(request), m_request(m_request_sync), m_response()
+executor::executor(request* request) : m_request_sync(request), m_request(m_request_sync), m_response()
 {
-    if (share != nullptr)
-    {
-        m_curl_share_handle = share->m_curl_share_ptr;
-    }
+
 }
 
 executor::executor(client* c) : m_client(c)
@@ -35,14 +32,10 @@ executor::~executor()
     curl_easy_cleanup(m_curl_handle);
 }
 
-auto executor::start_async(request_ptr req_ptr, share* share) -> void
+auto executor::start_async(request_ptr req_ptr) -> void
 {
     m_request_async = std::move(req_ptr);
     m_request       = m_request_async.get();
-    if (share != nullptr)
-    {
-        m_curl_share_handle = share->m_curl_share_ptr;
-    }
 }
 
 auto executor::perform() -> response
@@ -389,12 +382,6 @@ auto executor::prepare() -> void
         curl_easy_setopt(m_curl_handle, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS, static_cast<long>(timeout.value().count()));
     }
 
-    // Note that this will lock the mutexes in the share callbacks.
-    if (m_curl_share_handle != nullptr)
-    {
-        curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, m_curl_share_handle);
-    }
-
     // Set debug info if the user added a debug info functor callback
     // https://curl.se/libcurl/c/CURLOPT_DEBUGFUNCTION.html
     if (m_request->m_debug_info_handler != nullptr)
@@ -476,9 +463,6 @@ auto executor::reset() -> void
     m_timeout_iterator.reset();
     m_on_complete_handler_processed = false;
     m_response                      = response{};
-
-    curl_easy_setopt(m_curl_handle, CURLOPT_SHARE, nullptr);
-    m_curl_share_handle = nullptr;
 
     curl_easy_reset(m_curl_handle);
 }

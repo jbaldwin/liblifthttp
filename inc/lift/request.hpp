@@ -7,7 +7,6 @@
 #include "lift/mime_field.hpp"
 #include "lift/resolve_host.hpp"
 #include "lift/response.hpp"
-#include "lift/share.hpp"
 
 #include <chrono>
 #include <functional>
@@ -167,10 +166,9 @@ public:
      * Note: If there is no timeout set on the request and the remote
      * server fails to respond this call can block forever.
      *
-     * @param share_ptr An optional lift::share for reusing/sharing connection information.
      * @return The HTTP response.
      */
-    auto perform(share_ptr share_ptr = nullptr) -> response;
+    auto perform() -> response;
 
     /**
      * Sets or unsets a transfer progress handler callback.  Called periodically to update the

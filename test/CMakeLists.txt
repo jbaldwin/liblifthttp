@@ -15,7 +15,6 @@ set(LIBLIFT_TEST_SOURCE_FILES
     test_proxy.cpp
     test_query_builder.cpp
     test_resolve_host.cpp
-    test_share.cpp
     test_sync_request.cpp
     test_timesup.cpp
     test_transfer_progress_request.cpp

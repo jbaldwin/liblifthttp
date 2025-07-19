@@ -20,7 +20,6 @@ You're using curl? Do you even lift?
 
 ## Known Bugs/Issues
 *   libcurl 7.81.0 is unsupported due to a known libcurl bug in the multi handle code.  Unfortunately ubuntu 22.04 comes with this version installed by default, you will need to manually install a different version of libcurl or build libcurl from source and link to it to avoid segfaults in asynchronous http requests via liblift.  See [here](https://github.com/jbaldwin/liblifthttp/issues/142) for more information
-*   libcurl share does not work across multiple threads, expect segfaults if you try and use the `lift::share` objects across threads.  The bug is apparently very difficult to fix and is unlikely to be fixed anytime soon after talking with the libcurl maintainer.
 
 ## Usage
 

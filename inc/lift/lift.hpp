@@ -13,4 +13,3 @@
 #include "lift/request.hpp"
 #include "lift/resolve_host.hpp"
 #include "lift/response.hpp"
-#include "lift/share.hpp"

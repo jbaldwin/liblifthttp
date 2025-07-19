@@ -60,9 +60,9 @@ request::request(std::string url, std::optional<std::chrono::milliseconds> timeo
 {
 }
 
-auto request::perform(share_ptr share_ptr) -> response
+auto request::perform() -> response
 {
-    executor exe{this, share_ptr.get()};
+    executor exe{this};
     return exe.perform();
 }
 

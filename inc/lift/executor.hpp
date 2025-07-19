@@ -49,8 +49,6 @@ private:
     curl_slist* m_curl_request_headers{nullptr};
     /// The HTTP curl resolve hosts.
     curl_slist* m_curl_resolve_hosts{nullptr};
-    /// The curl share object to use for this request.
-    CURLSH* m_curl_share_handle{nullptr};
 
     /// If sync request the pointer to the request.
     request* m_request_sync{nullptr};
@@ -78,9 +76,8 @@ private:
     /**
      * This constructor is used for executing a synchronous request.
      * @param request The synchronous request pointer.
-     * @param share Curl share handle to use for this request.
      */
-    executor(request* request, share* share);
+    executor(request* request);
 
     /**
      * This constructor is used for executing an asynchronous requests.
@@ -90,9 +87,8 @@ private:
 
     /**
      * @param req_ptr The asynchronous request to execute.
-     * @param share Curl share handle to use for this request.
      */
-    auto start_async(request_ptr req_ptr, share* share) -> void;
+    auto start_async(request_ptr req_ptr) -> void;
 
     /**
      * Synchronously performs the request and returns the response.

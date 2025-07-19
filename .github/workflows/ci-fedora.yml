@@ -1,0 +1,104 @@
+name: ci-fedora
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+    ci-fedora-gplusplus:
+        name: ci-fedora-${{ matrix.fedora_version }}-g++
+        runs-on: ubuntu-latest
+        container:
+            image: fedora:${{ matrix.fedora_version }}
+        services:
+            nginx:
+                image: nginx:stable
+            haproxy:
+                image: jbaldwindh/liblifthttp-automation-haproxy:0.1
+        strategy:
+            matrix:
+                fedora_version: [41]
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+            -   name: dnf
+                run: |
+                    sudo dnf install -y \
+                        cmake \
+                        git \
+                        ninja-build \
+                        gcc-c++ \
+                        zlib-devel \
+                        libcurl-devel \
+                        libuv-devel \
+                        iputils \
+                        curl
+            -   name: ping
+                run: |
+                    ping -c1 nginx
+            -   name: check-haproxy
+                run: |
+                    curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
+            -   name: build-release-g++
+                run: |
+                    mkdir build-release-g++
+                    cd build-release-g++
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=gcc \
+                        -DCMAKE_CXX_COMPILER=g++ \
+                        ..
+                    ninja
+            -   name: test-release-g++
+                run: |
+                    cd build-release-g++
+                    ctest -VV
+
+    ci-fedora-clang:
+        name: ci-fedora-${{ matrix.fedora_version }}-clang
+        runs-on: ubuntu-latest
+        container:
+            image: fedora:${{ matrix.fedora_version }}
+        services:
+            nginx:
+                image: nginx:stable
+            haproxy:
+                image: jbaldwindh/liblifthttp-automation-haproxy:0.1
+        strategy:
+            matrix:
+                fedora_version: [41]
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+            -   name: dnf
+                run: |
+                    sudo dnf install -y \
+                        cmake \
+                        git \
+                        ninja-build \
+                        clang \
+                        zlib-devel \
+                        libcurl-devel \
+                        libuv-devel \
+                        iputils \
+                        curl
+            -   name: ping
+                run: |
+                    ping -c1 nginx
+            -   name: check-haproxy
+                run: |
+                    curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
+            -   name: build-release-clang
+                run: |
+                    mkdir build-release-clang
+                    cd build-release-clang
+                    cmake \
+                        -GNinja \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_COMPILER=clang \
+                        -DCMAKE_CXX_COMPILER=clang++ \
+                        ..
+                    ninja
+            -   name: test-release-clang
+                run: |
+                    cd build-release-clang
+                    ctest -VV

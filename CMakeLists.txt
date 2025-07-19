@@ -23,7 +23,7 @@ message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
 message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 message("${PROJECT_NAME} LIFT_RUN_GITCONFIG       = ${LIFT_RUN_GITCONFIG}")
 
-if (LIBCORO_RUN_GITCONFIG)
+if (LIFT_RUN_GITCONFIG)
     # Set the githooks directory to auto format and update the readme.
     message("${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR} -> git config --local core.hooksPath .githooks")
     execute_process(
@@ -69,6 +69,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_USER_LINK_LIBRARIES})
 
 if(LIFT_CODE_COVERAGE)
+    if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+        target_compile_options(${PROJECT_NAME} PRIVATE -fprofile-update=atomic)
+    endif()
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
     target_link_libraries(${PROJECT_NAME} PRIVATE gcov)
 endif()

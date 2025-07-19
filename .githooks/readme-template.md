@@ -37,16 +37,15 @@ ${EXAMPLE_README_CPP}
 ### Requirements
 ```bash
 C++17 compilers tested
-    g++-9
-    g++-11
-    g++-13
-    clang-9
-    clang-14
+    g++ [9, 10, 11, 12, 13, 14]
+    clang [9, 14, 15, 16, 17, 18, 19]
 CMake
 make or ninja
 pthreads
 libcurl-devel >= 7.59
-    *UNSUPPORTED* 7.81.0 has a known libcurl mutli* bug that was fixed in 7.82.0.
+    *UNSUPPORTED* 7.81.0 has a known libcurl multi bug that was fixed in 7.82.0.
+    ubuntu-22.04 apt pacakges have this broken version, see ci-ubuntu.yml on how to
+    manually build and link to a working version of curl.
 libuv-devel
 zlib-devel
 openssl-devel (or equivalent curl support ssl library)
@@ -56,7 +55,7 @@ Tested on:
     ubuntu:20.04
     ubuntu:22.04 (with custom libcurl built)
     ubuntu:24.04
-    fedora:31
+    fedora:41
 ```
 
 ### Instructions

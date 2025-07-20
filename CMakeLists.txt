@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(lifthttp CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -9,12 +9,23 @@ option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. De
 option(LIFT_RUN_GITCONFIG  "Set the githooks directory to auto format code and update the readme, Default=OFF." OFF)
 
 if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
-    set(
-        LIFT_USER_LINK_LIBRARIES
-        curl z uv pthread dl stdc++fs
-        CACHE STRING
-        "Override ${PROJECT_NAME} required link libraries, defaults to [curl z uv pthread dl stdc++fs].  If changed all defaults must be accounted for manually."
-    )
+    if(MSVC)
+        find_package(libuv REQUIRED)
+        find_package(CURL REQUIRED)
+        set(
+            LIFT_USER_LINK_LIBRARIES
+            CURL::libcurl z libuv::uv pthread dl stdc++fs
+            CACHE STRING
+            "Override ${PROJECT_NAME} required link libraries, defaults to [CURL::libcurl z libuv::uv pthread dl stdc++fs]. If changed all defaults must be accounted for manually."
+        )
+    else()
+        set(
+            LIFT_USER_LINK_LIBRARIES
+            curl z uv pthread dl stdc++fs
+            CACHE STRING
+            "Override ${PROJECT_NAME} required link libraries, defaults to [curl z uv pthread dl stdc++fs]. If changed all defaults must be accounted for manually."
+        )
+    endif()
 endif()
 
 message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")

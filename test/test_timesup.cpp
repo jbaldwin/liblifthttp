@@ -7,7 +7,13 @@
 
 TEST_CASE("Timesup single request")
 {
-    lift::client client{lift::client::options{.connect_timeout = std::chrono::seconds{1}}};
+    lift::client client{lift::client::options{
+        std::nullopt,
+        std::nullopt,
+        std::chrono::seconds{1},
+        std::nullopt,
+        nullptr
+    }};
 
     auto r = std::make_unique<lift::request>(
         "http://www.reddit.com", // should be slow enough /shrug

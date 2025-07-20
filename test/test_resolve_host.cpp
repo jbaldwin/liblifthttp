@@ -25,7 +25,13 @@ TEST_CASE("resolve_host client")
         lift::resolve_host{"testhostname", nginx_port, service_ip_address},
         lift::resolve_host{"herpderp.com", nginx_port, service_ip_address}};
 
-    lift::client client{lift::client::options{.resolve_hosts = std::move(rhosts)}};
+    lift::client client{lift::client::options{
+        std::nullopt,
+        std::nullopt,
+        std::nullopt,
+        std::move(rhosts),
+        nullptr,
+    }};
 
     auto on_complete = [&](lift::request_ptr, lift::response response) -> void
     {

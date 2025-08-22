@@ -22,7 +22,7 @@ int main()
 {
     using namespace std::chrono_literals;
 
-    std::vector<std::string> urls = {"http://www.example.com", "http://www.google.com", "http://www.reddit.com"};
+    std::vector<std::string> urls = {"http://www.example.com", "https://www.google.com", "http://www.reddit.com"};
 
     lift::client client{};
 

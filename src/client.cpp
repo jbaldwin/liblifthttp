@@ -145,6 +145,8 @@ client::~client()
         std::this_thread::sleep_for(1ms);
     }
 
+    curl_multi_cleanup(m_cmh);
+
     // This breaks the main UV_RUN_DEFAULT loop.
     uv_stop(&m_uv_loop);
     // This tells the loop to cleanup all its resources.
@@ -161,7 +163,6 @@ client::~client()
     m_background_thread.join();
     m_executors.clear();
 
-    curl_multi_cleanup(m_cmh);
     global_cleanup();
 }
 

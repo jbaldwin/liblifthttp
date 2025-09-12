@@ -480,6 +480,14 @@ public:
         m_debug_info_handler = std::move(callback_functor);
     }
 
+    /**
+     * @param cookie_file The filename to read cookies from;
+     * empty string ("") enables the cookie engine without reading any initial cookies;
+     * "-" (a single minus sign) reads from stdin instead;
+     * std::nullopt disables the cookie engine and clears the list of files to read cookies from.
+     */
+    auto cookie_file(std::optional<std::filesystem::path> cookie_file) -> void { m_cookie_file = cookie_file; }
+
 private:
     /// The on complete handler callback or promise to fulfill, this is only used for async requests.
     impl::copy_but_actually_move<async_handlers_type> m_on_complete_handler{std::monostate{}};
@@ -535,6 +543,8 @@ private:
     std::optional<std::chrono::milliseconds> m_happy_eyeballs_timeout{};
     /// The debug callback functor for `debug_info_type` information.  If nullptr will not be set.
     debug_info_callback_type m_debug_info_handler{nullptr};
+    // The filename to read cookies from.
+    std::optional<std::filesystem::path> m_cookie_file;
 
     /**
      * Used by the client to set an async callback for on completion notification to the user.

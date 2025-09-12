@@ -393,6 +393,9 @@ auto executor::prepare() -> void
 
     m_response.m_network_error_message[0] = '\0';
     curl_easy_setopt(m_curl_handle, CURLOPT_ERRORBUFFER, m_response.m_network_error_message);
+    // https://curl.se/libcurl/c/CURLOPT_COOKIEFILE.html
+    curl_easy_setopt(
+        m_curl_handle, CURLOPT_COOKIEFILE, m_request->m_cookie_file ? m_request->m_cookie_file->string().c_str() : nullptr);
 }
 
 auto executor::copy_curl_to_response(CURLcode curl_code) -> void

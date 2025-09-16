@@ -58,7 +58,7 @@ set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/response.hpp src/response.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${LIBLIFTHTTP_SOURCE_FILES})
+add_library(${PROJECT_NAME} ${LIBLIFTHTTP_SOURCE_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 

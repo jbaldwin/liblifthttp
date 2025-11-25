@@ -154,7 +154,7 @@ jobs:
                     gunzip curl-7.86.0.tar.gz
                     tar -xf curl-7.86.0.tar
                     cd curl-7.86.0/
-                    ./configure --with-openssl
+                    ./configure --with-openssl --enable-versioned-symbols
                     make -j $(nproc)
                     make install
             -   name: build-release-g++

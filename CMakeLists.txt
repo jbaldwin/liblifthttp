@@ -8,19 +8,13 @@ option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 option(LIFT_RUN_GITCONFIG  "Set the githooks directory to auto format code and update the readme, Default=OFF." OFF)
 
-if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
-    set(
-        LIFT_USER_LINK_LIBRARIES
-        curl z uv pthread dl stdc++fs
-        CACHE STRING
-        "Override ${PROJECT_NAME} required link libraries, defaults to [curl z uv pthread dl stdc++fs].  If changed all defaults must be accounted for manually."
-    )
-endif()
+find_package(CURL REQUIRED)
+find_package(libuv REQUIRED)
+find_package(Threads REQUIRED)
 
 message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")
 message("${PROJECT_NAME} LIFT_BUILD_TESTS         = ${LIFT_BUILD_TESTS}")
 message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
-message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 message("${PROJECT_NAME} LIFT_RUN_GITCONFIG       = ${LIFT_RUN_GITCONFIG}")
 
 if (LIFT_RUN_GITCONFIG)
@@ -36,6 +30,9 @@ if(MSVC)
     # curl/curl.h on Windows introduces the 'max' macro definition causing std::numeric_limits<uint8_t>::max compilation to fail
     add_definitions(-DNOMINMAX)
 endif()
+
+# LibUV >=1.45 introduced an imported target 'libuv::uv'
+set(LIBUV_TARGET $<IF:$<TARGET_EXISTS:libuv::uv>,libuv::uv,uv>)
 
 set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp
@@ -64,8 +61,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_USER_LINK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl ${LIBUV_TARGET} Threads::Threads)
 
 if(LIFT_CODE_COVERAGE)
     if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")

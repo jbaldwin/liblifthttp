@@ -49,12 +49,16 @@ jobs:
                         -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_C_COMPILER=gcc-${{ matrix.gplusplus_version }} \
                         -DCMAKE_CXX_COMPILER=g++-${{ matrix.gplusplus_version }} \
+                        -DCMAKE_PREFIX_INSTALL=${{ github.workspace }}/install/gcc-${{ matrix.gplusplus_version }} \
                         ..
                     ninja
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
                     ctest -VV
+            -   name: install-release-g++
+                run: |
+                    cmake --build build-release-g++ --target install
 
     ci-ubuntu-20-04-clang:
         name: ci-ubuntu-20.04-clang-${{ matrix.clang_version }}
@@ -102,12 +106,16 @@ jobs:
                         -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_C_COMPILER=clang-${{ matrix.clang_version }} \
                         -DCMAKE_CXX_COMPILER=clang++-${{ matrix.clang_version }} \
+                        -DCMAKE_PREFIX_INSTALL=${{ github.workspace }}/install/clang-${{ matrix.clang_version }} \
                         ..
                     ninja
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
                     ctest -VV
+            -   name: install-release-clang
+                run: |
+                    cmake --build build-release-clang --target install
 
     ci-ubuntu-22-04-gplusplus-clang:
         name: ci-ubuntu-22.04-g++
@@ -236,12 +244,16 @@ jobs:
                         -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_C_COMPILER=gcc-${{ matrix.gplusplus_version }} \
                         -DCMAKE_CXX_COMPILER=g++-${{ matrix.gplusplus_version }} \
+                        -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install/gcc-${{ matrix.gplusplus_version }} \
                         ..
                     ninja
             -   name: test-release-g++
                 run: |
                     cd build-release-g++
                     ctest -VV
+            -   name: install-release-g++
+                run: |
+                    cmake --build build-release-g++ --target install
 
     ci-ubuntu-24-04-clang:
         name: ci-ubuntu-24.04-clang-${{ matrix.clang_version }}
@@ -289,9 +301,13 @@ jobs:
                         -DCMAKE_BUILD_TYPE=Release \
                         -DCMAKE_C_COMPILER=clang-${{ matrix.clang_version }} \
                         -DCMAKE_CXX_COMPILER=clang++-${{ matrix.clang_version }} \
+                        -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install/clang-${{ matrix.clang_version }} \
                         ..
                     ninja
             -   name: test-release-clang
                 run: |
                     cd build-release-clang
                     ctest -VV
+            -   name: install-release-clang
+                run: |
+                    cmake --build build-release-clang --target install

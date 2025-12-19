@@ -42,9 +42,6 @@ if(MSVC)
     add_definitions(-DNOMINMAX)
 endif()
 
-# LibUV >=1.45 introduced an imported target 'libuv::uv'
-set(LIBUV_TARGET $<IF:$<TARGET_EXISTS:libuv::uv>,libuv::uv,uv>)
-
 set(LIBLIFTHTTP_SOURCE_FILES
     inc/lift/impl/copy_util.hpp
     inc/lift/impl/pragma.hpp

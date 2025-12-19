@@ -9,8 +9,19 @@ option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. De
 option(LIFT_RUN_GITCONFIG  "Set the githooks directory to auto format code and update the readme, Default=OFF." OFF)
 
 find_package(CURL REQUIRED)
-find_package(libuv REQUIRED)
+find_package(libuv CONFIG QUIET)
 find_package(Threads REQUIRED)
+
+set(LIBUV_TARGET "")
+# LibUV >=1.45 introduced an imported target 'libuv::uv'
+if(TARGET libuv::uv)
+    set(LIBUV_TARGET libuv::uv)
+else()
+    find_package(PkgConfig REQUIRED)
+    # Fallback to pkg-config if libuv CMake config is not found
+    pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
+    set(LIBUV_TARGET PkgConfig::LIBUV)
+endif()
 
 message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")
 message("${PROJECT_NAME} LIFT_BUILD_TESTS         = ${LIFT_BUILD_TESTS}")

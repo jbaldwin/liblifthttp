@@ -34,7 +34,8 @@ jobs:
                         libcurl4-openssl-dev \
                         libuv1-dev \
                         curl \
-                        lcov
+                        lcov \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"

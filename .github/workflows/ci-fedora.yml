@@ -30,7 +30,8 @@ jobs:
                         libcurl-devel \
                         libuv-devel \
                         iputils \
-                        curl
+                        curl \
+                        pkgconf-pkg-config
             -   name: ping
                 run: |
                     ping -c1 nginx
@@ -80,7 +81,8 @@ jobs:
                         libcurl-devel \
                         libuv-devel \
                         iputils \
-                        curl
+                        curl \
+                        pkgconf-pkg-config
             -   name: ping
                 run: |
                     ping -c1 nginx

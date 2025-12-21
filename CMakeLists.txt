@@ -8,19 +8,24 @@ option(LIFT_BUILD_TESTS    "Build the tests. Default=ON" ON)
 option(LIFT_CODE_COVERAGE  "Enable code coverage, tests must also be enabled. Default=OFF" OFF)
 option(LIFT_RUN_GITCONFIG  "Set the githooks directory to auto format code and update the readme, Default=OFF." OFF)
 
-if(NOT DEFINED LIFT_USER_LINK_LIBRARIES)
-    set(
-        LIFT_USER_LINK_LIBRARIES
-        curl z uv pthread dl stdc++fs
-        CACHE STRING
-        "Override ${PROJECT_NAME} required link libraries, defaults to [curl z uv pthread dl stdc++fs].  If changed all defaults must be accounted for manually."
-    )
+find_package(CURL REQUIRED)
+find_package(libuv CONFIG QUIET)
+find_package(Threads REQUIRED)
+
+set(LIBUV_TARGET "")
+# LibUV >=1.45 introduced an imported target 'libuv::uv'
+if(TARGET libuv::uv)
+    set(LIBUV_TARGET libuv::uv)
+else()
+    find_package(PkgConfig REQUIRED)
+    # Fallback to pkg-config if libuv CMake config is not found
+    pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
+    set(LIBUV_TARGET PkgConfig::LIBUV)
 endif()
 
 message("${PROJECT_NAME} LIFT_BUILD_EXAMPLES      = ${LIFT_BUILD_EXAMPLES}")
 message("${PROJECT_NAME} LIFT_BUILD_TESTS         = ${LIFT_BUILD_TESTS}")
 message("${PROJECT_NAME} LIFT_CODE_COVERAGE       = ${LIFT_CODE_COVERAGE}")
-message("${PROJECT_NAME} LIFT_USER_LINK_LIBRARIES = ${LIFT_USER_LINK_LIBRARIES}")
 message("${PROJECT_NAME} LIFT_RUN_GITCONFIG       = ${LIFT_RUN_GITCONFIG}")
 
 if (LIFT_RUN_GITCONFIG)
@@ -64,8 +69,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${LIFT_CURL_INCLUDE})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIFT_USER_LINK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl ${LIBUV_TARGET} Threads::Threads)
 
 if(LIFT_CODE_COVERAGE)
     if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")

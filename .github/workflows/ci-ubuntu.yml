@@ -36,7 +36,8 @@ jobs:
                         zlib1g-dev \
                         libcurl4-openssl-dev \
                         libuv1-dev \
-                        curl
+                        curl \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
@@ -93,7 +94,8 @@ jobs:
                         zlib1g-dev \
                         libcurl4-openssl-dev \
                         libuv1-dev \
-                        curl
+                        curl \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
@@ -148,7 +150,8 @@ jobs:
                         libssl-dev \
                         libuv1-dev \
                         curl \
-                        wget
+                        wget \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
@@ -231,7 +234,8 @@ jobs:
                         zlib1g-dev \
                         libcurl4-openssl-dev \
                         libuv1-dev \
-                        curl
+                        curl \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
@@ -288,7 +292,8 @@ jobs:
                         zlib1g-dev \
                         libcurl4-openssl-dev \
                         libuv1-dev \
-                        curl
+                        curl \
+                        pkg-config
             -   name: check-haproxy
                 run: |
                     curl -v --user guest:guestpassword -x "http://haproxy:3128" "http://nginx/index.html"
